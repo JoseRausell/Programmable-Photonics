@@ -15,6 +15,7 @@ components/
   ps.html           Thermo-optic phase shifter: 2D heat conduction (method of images), Pπ, trenches, thermal crosstalk, time response
   dc.html           Directional coupler: coupled-mode theory vs gap, length, wavelength, asymmetry, tolerance
   mmi.html          MMI 1×2 / 2×2: self-imaging by modal propagation analysis, imbalance, phase, equivalent MZI error
+  ff.html           Feed-forward meshes: theory view + Reck / Clements simulators (decomposition, programming, hand editing, fidelity, Monte Carlo)
 ```
 
 Each simulation is a single self-contained HTML file (3D view, plots and model, no external libraries).
@@ -36,4 +37,4 @@ Every page has a "← Component catalog" link back to `index.html`.
 
 ## Planned components
 
-Feed-forward meshes (Reck / Clements) · hexagonal recirculating mesh.
+Hexagonal recirculating mesh.

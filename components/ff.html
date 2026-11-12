@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feed-forward meshes · Reck and Clements</title>
+<style>
+
+:root{
+  --bg:#0c1016; --card:#141a22; --card2:#10151c; --line:#243041; --text:#e6edf3; --muted:#8b98a9;
+  --thr:#4aa8ff; --refl:#d58cff; --fw:#5fd38d; --bw:#ff8f6b; --accent:#ffcc66; --laser:#ff4d6d; --warn:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:14px 20px 6px}
+header h1{font-size:19px;margin:0;font-weight:650}
+header .sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:10px 20px 20px}
+@media (max-width:1100px){main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600}
+.view{height:min(54vh,560px);min-height:380px;display:flex;flex-direction:column}
+.view canvas{flex:1;width:100%;min-height:0;display:block;border-radius:8px}
+#c3d{background:radial-gradient(ellipse at 50% 35%,#18212d 0%,#0d1218 75%);cursor:grab;touch-action:none}
+#c3d:active{cursor:grabbing}
+#cPlot{background:var(--card2);cursor:crosshair;touch-action:none}
+#cP2{background:var(--card2);height:240px;width:100%;display:block;border-radius:8px;cursor:crosshair;touch-action:none}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;color:var(--muted);border:0;padding:4px 10px;font:inherit;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:#223046;color:var(--text)}
+.toolbar label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+input[type=number]{background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;width:86px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.group{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.group h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin:7px 0}
+.row.off{opacity:.35;pointer-events:none}
+.row .lab{color:var(--muted);font-size:12.5px}
+.row .val{font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
+.row input[type=range]{grid-column:1/3;width:100%;accent-color:var(--accent);margin:2px 0 0}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0;font-size:12.5px;color:var(--muted)}
+.btn{background:#1d2735;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn:hover{background:#26344a}
+.btn.primary{border-color:#6b5a2b;background:#2d2615;color:var(--accent)}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
+.ro{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ro .k{font-size:11.5px;color:var(--muted)}
+.ro .v{font-size:15.5px;font-variant-numeric:tabular-nums;font-weight:600}
+.ro .v small{font-size:12px;color:var(--muted);font-weight:500}
+.span2{grid-column:1/-1}
+/* theory */
+.theory{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
+.th{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.th h3{margin:0 0 8px;font-size:14px;color:var(--accent)}
+.th p{margin:6px 0;color:#c9d3de;font-size:13px}
+.eq{display:block;text-align:center;line-height:2.4;margin:8px 0;font:15px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 3px}
+.frac>span:first-child{border-bottom:1px solid #cfd8e3;padding:0 4px 2px}
+.frac>span:last-child{padding:2px 4px 0}
+.live{font:600 12.5px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);background:#1f1a0e;border:1px solid #4a3d1c;border-radius:5px;padding:1px 6px;white-space:nowrap}
+table.fm{width:100%;border-collapse:collapse;font-size:13px}
+table.fm td{padding:5px 6px;border-bottom:1px solid #1f2836;color:#c9d3de;vertical-align:middle}
+table.fm td.f{font:14px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+table.fm td.f small{display:block;font:11.5px system-ui,sans-serif;color:var(--muted)}
+table.fm td:last-child{text-align:right}
+i.v{font-family:"Cambria Math","Times New Roman",serif;font-style:italic}
+a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1c;background:#1f1a0e;border-radius:8px;padding:3px 10px;margin-right:4px}a.back:hover{background:#2d2615}
+
+.row .val{display:flex;align-items:center;justify-content:flex-end;gap:4px;text-align:right}
+.numin{width:78px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font:inherit;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.numin:focus{outline:none;border-color:var(--accent)}
+.row .unit{color:var(--muted);font-size:12px;min-width:18px;text-align:left}
+.row .extra{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.cfgsel{background:#1f1a0e;color:var(--accent);border:1px solid #6b5a2b;border-radius:9px;padding:6px 10px;font:inherit;font-size:13.5px;cursor:pointer}
+
+.smat{display:inline-grid;grid-template-columns:auto auto;gap:2px 14px;padding:2px 9px;vertical-align:middle;border-left:1.5px solid #cfd8e3;border-right:1.5px solid #cfd8e3;border-radius:7px;line-height:1.7;text-align:center}
+
+.cfgbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:4px 20px 2px;font-size:13px;color:var(--muted)}
+#cMesh{width:100%;height:min(56vh,560px);min-height:360px;display:block;border-radius:8px;background:#0b0f15;cursor:pointer}
+#cMat{width:100%;height:220px;display:block;border-radius:8px;background:var(--card2)}
+#cPlot{width:100%;height:300px;display:block;border-radius:8px;background:var(--card2)}
+.schem{width:100%;height:250px;display:block;border-radius:8px;background:#0b0f15}
+.hide{display:none!important}
+select.sm{background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;font-size:12.5px}
+input.ni{width:56px}
+#selInfo{font-size:12.5px;color:var(--accent);margin:4px 0 2px}
+.theory p, .theory li{color:#c9d3de;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../index.html">← Component catalog</a>
+  <h1>Feed-forward meshes · Reck and Clements</h1>
+  <span class="sub">Universal N×N unitary transformations built from MZIs: decomposition, programming, propagation and robustness. Part of the Programmable Photonics interactive lab.</span>
+</header>
+<nav class="cfgbar">
+  <span>View</span>
+  <select id="selView" class="cfgsel">
+    <option value="theory">Theory: Reck vs Clements</option>
+    <option value="reck">Reck mesh (triangular)</option>
+    <option value="clements">Clements mesh (rectangular)</option>
+  </select>
+  <span id="viewNote"></span>
+</nav>
+
+<main id="vTheory">
+  <section class="card span2">
+    <h2>Two architectures for the same job</h2>
+    <div class="theory">
+      <div class="th">
+        <h3>1 · Linear optics is unitary</h3>
+        <p>A lossless linear circuit with <i class="v">N</i> inputs and <i class="v">N</i> outputs relates the output fields to the input fields through a unitary matrix, <b>E</b><sub>out</sub> = <i class="v">U</i> <b>E</b><sub>in</sub> with <i class="v">U</i>†<i class="v">U</i> = <i class="v">I</i>. A matrix of U(<i class="v">N</i>) has <i class="v">N</i>² real parameters.</p>
+        <p>The building block is the MZI with an internal phase θ and an external phase φ (see the MZI page). It implements any 2×2 transformation up to output phases:</p>
+        <div class="eq"><i class="v">T</i>(θ, φ) = j e<sup>jθ/2</sup><span class="smat"><span>e<sup>jφ</sup> sin(θ/2)</span><span>cos(θ/2)</span><span>e<sup>jφ</sup> cos(θ/2)</span><span>−sin(θ/2)</span></span></div>
+        <p>θ = π is the bar state, θ = 0 the cross state, and θ = π/2 a 50:50 split.</p>
+      </div>
+      <div class="th">
+        <h3>2 · Decomposition into 2×2 rotations</h3>
+        <p>Any <i class="v">U</i> can be factorized into <i class="v">N</i>(<i class="v">N</i>−1)/2 MZIs <i class="v">T</i><sub>m,m+1</sub>, each acting on two neighbouring waveguides, followed by a diagonal screen of <i class="v">N</i> output phases:</p>
+        <div class="eq"><i class="v">U</i> = <i class="v">D</i> · Π<sub>(m,n)</sub> <i class="v">T</i><sub>m,m+1</sub>(θ, φ), &nbsp;&nbsp; 2 · <span class="frac"><span><i class="v">N</i>(<i class="v">N</i>−1)</span><span>2</span></span> + <i class="v">N</i> = <i class="v">N</i>²</div>
+        <p>The phases are found by <b>nulling</b>: multiply <i class="v">U</i> by MZI matrices chosen to set one element to zero at a time, until only a diagonal is left. The order of the nulling defines the topology of the mesh.</p>
+      </div>
+      <div class="th">
+        <h3>3 · Reck (1994): triangular mesh</h3>
+        <p>The rows are nulled from the bottom, using multiplications from one side only. The MZIs form a triangle:</p>
+        <ul style="margin:4px 0 0 18px;padding:0">
+          <li>number of MZIs: <i class="v">N</i>(<i class="v">N</i>−1)/2</li>
+          <li>optical depth: <b>2<i class="v">N</i> − 3</b> MZI columns</li>
+          <li>light from different inputs crosses <b>very different numbers of MZIs</b> (from 1 up to 2<i class="v">N</i>−3)</li>
+        </ul>
+        <p>Paths of unequal length accumulate unequal loss, which distorts the transformation. The long paths also accumulate more phase errors.</p>
+        <canvas class="schem" id="schReck"></canvas>
+      </div>
+      <div class="th">
+        <h3>4 · Clements (2016): rectangular mesh</h3>
+        <p>Rows and columns are nulled alternately from both sides. The left-hand factors are then moved through the diagonal using <i class="v">T</i>⁻¹<i class="v">D</i> = <i class="v">D</i>′<i class="v">T</i>′:</p>
+        <ul style="margin:4px 0 0 18px;padding:0">
+          <li>same number of MZIs: <i class="v">N</i>(<i class="v">N</i>−1)/2</li>
+          <li>optical depth: <b><i class="v">N</i></b> columns, about half of Reck's</li>
+          <li>every path crosses a similar number of MZIs, so <b>loss is balanced</b></li>
+        </ul>
+        <p>The result is a more compact mesh that is more tolerant to loss, and the preferred choice in today's photonic processors.</p>
+        <canvas class="schem" id="schClem"></canvas>
+      </div>
+      <div class="th">
+        <h3>5 · Imperfections and fidelity</h3>
+        <p>Real MZIs have MMI imbalance (α), phase errors and loss. The quality of the implemented matrix <i class="v">T</i> is measured with the fidelity:</p>
+        <div class="eq"><i class="v">F</i> = <span class="frac"><span>|Tr(<i class="v">U</i>†<i class="v">T</i>)|²</span><span><i class="v">N</i> · Tr(<i class="v">T</i>†<i class="v">T</i>)</span></span></div>
+        <p>Random phase errors degrade both meshes similarly, because both have the same number of MZIs. Loss is different: in Reck it depends on the path, so <i class="v">F</i> drops faster, while Clements keeps it almost uniform. Try both in the simulations (Monte Carlo plots).</p>
+      </div>
+      <div class="th">
+        <h3>6 · Applications</h3>
+        <ul style="margin:4px 0 0 18px;padding:0">
+          <li>Optical matrix–vector multiplication for neural networks (inference at the speed of light).</li>
+          <li>Linear-optical quantum computing and boson sampling.</li>
+          <li>Reconfigurable switches and routers, mode (de)multiplexing and unscrambling.</li>
+          <li>Beamforming networks and optical signal processing.</li>
+        </ul>
+        <p>Select <b>Reck mesh</b> or <b>Clements mesh</b> in the menu above to program and explore them.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<main id="vSim" class="hide">
+  <section class="card span2">
+    <div class="toolbar">
+      <span id="meshTitle" style="color:var(--text);font-weight:600"></span>
+      <span>Click an MZI to edit it · colour = state (blue bar · orange cross) · waveguide glow = optical power</span>
+    </div>
+    <canvas id="cMesh"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>Controls</h2>
+    <div class="groups">
+      <div class="group" data-group="prog"><h3>Programming</h3>
+        <div class="inline">Target <select id="selTarget" class="sm">
+          <option value="dft">DFT (N×N splitter)</option><option value="rand">Random unitary (Haar)</option><option value="id">Identity</option>
+          <option value="rev">Reverse order (swap)</option><option value="shift">Cyclic shift</option><option value="route">Route port i → j</option><option value="had">Hadamard (N = 2, 4, 8)</option>
+        </select></div>
+        <div class="inline" id="routeWrap">i <input type="number" id="nRi" class="ni" min="1" value="1"> → j <input type="number" id="nRj" class="ni" min="1" value="4"></div>
+        <div class="inline"><button class="btn primary" id="bProg">Program mesh</button><button class="btn" id="bRand">New random</button></div>
+        <div class="inline after">Light input <select id="selIn" class="sm"></select></div>
+      </div>
+      <div class="group" data-group="err"><h3>Imperfections</h3>
+        <div class="inline after"><button class="btn" id="bSeed">New error sample</button></div>
+      </div>
+      <div class="group" data-group="edit"><h3>Edit MZI by hand</h3>
+        <div id="selInfo">No MZI selected: click one in the mesh.</div>
+        <div class="inline after"><button class="btn" id="bDesel">Deselect</button><button class="btn" id="bReprog">Undo edits (re-program)</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Implemented transformation</h2>
+    <div class="readouts" id="ro"></div>
+    <canvas id="cMat"></canvas>
+  </section>
+
+  <section class="card span2">
+    <div class="toolbar">
+      <div class="seg" id="segPlot"><button data-v="mcph" class="on">Fidelity vs phase error</button><button data-v="mcal">Fidelity vs MMI imbalance</button><button data-v="mcloss">Fidelity vs loss</button><button data-v="loss">Loss per input port</button></div>
+      <span id="plotNote"></span>
+    </div>
+    <canvas id="cPlot"></canvas>
+  </section>
+</main>
+<script>
+"use strict";
+const PI = Math.PI;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+let dirty = true;
+function f3(v) { const a = Math.abs(v); return !isFinite(v) ? '∞' : a >= 1000 ? v.toFixed(0) : a >= 100 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : a >= 1 ? v.toFixed(3) : v.toFixed(4); }
+const dB = p => 10 * Math.log10(Math.max(p, 1e-12));
+const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+function fitCanvas(c) {
+  const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  const W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); return { ctx, w: r.width, h: r.height };
+}
+function niceTicks(a, b, n) {
+  const span = b - a; if (!(span > 0)) return [a];
+  const s0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(s0))), q = s0 / mag;
+  const st = (q < 1.5 ? 1 : q < 3 ? 2 : q < 7 ? 5 : 10) * mag, t = [];
+  for (let v = Math.ceil(a / st - 1e-9) * st; v <= b + 1e-9; v += st) t.push(+v.toFixed(12));
+  return t;
+}
+function tickFmt(v, step) { const d = Math.max(0, Math.min(6, -Math.floor(Math.log10(step || 1) + 1e-9))); return v.toFixed(d); }
+function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
+  ctx.font = FONT; const w = ctx.measureText(text).width + 10, x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
+  ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
+  ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + 0.5);
+}
+/* colour maps: 'light' (dark → red → white, for optical intensity) and 'heat' (dark blue → red → yellow) */
+const CMAPS = {
+  light: [[0, [8, 10, 16]], [0.25, [90, 10, 40]], [0.5, [210, 40, 80]], [0.75, [255, 120, 120]], [1, [255, 235, 230]]],
+  heat: [[0, [14, 22, 48]], [0.25, [60, 30, 110]], [0.5, [180, 40, 90]], [0.75, [245, 120, 40]], [1, [255, 240, 150]]]
+};
+function cmap(name, t) {
+  const st = CMAPS[name]; t = clamp(t, 0, 1);
+  for (let i = 1; i < st.length; i++) if (t <= st[i][0]) { const u = (t - st[i - 1][0]) / (st[i][0] - st[i - 1][0]), a = st[i - 1][1], b = st[i][1]; return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u]; }
+  return st[st.length - 1][1];
+}
+/* ------------------------------------------------ sliders with editable numeric boxes */
+const LOGN = 2000;
+const toSlider = (c, v) => Math.round(LOGN * Math.log(v / c.min) / Math.log(c.max / c.min));
+const fromSlider = (c, u) => c.min * Math.pow(c.max / c.min, u / LOGN);
+const SLid = id => SL.find(c => c.id === id);
+const maxOf = c => typeof c.max === 'function' ? c.max() : c.max;
+function buildSliders() {
+  for (const c of SL) {
+    const host = document.querySelector(`[data-group="${c.g}"]`);
+    const row = document.createElement('div'); row.className = 'row'; row.id = 'row_' + c.id;
+    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val"><input type="text" inputmode="decimal" class="numin" id="n_${c.id}"><span class="unit">${c.unit ?? ''}</span><span class="extra" id="x_${c.id}"></span></span><input type="range" id="s_${c.id}">`;
+    const inl = host.querySelector('.inline.after'); if (inl) host.insertBefore(row, inl); else host.appendChild(row);
+    const s = row.querySelector('input[type=range]');
+    if (c.log) { s.min = 0; s.max = LOGN; s.step = 1; } else { s.min = c.min; s.max = maxOf(c); s.step = c.step; }
+    s.addEventListener('input', () => { c.set(c.log ? fromSlider(c, +s.value) : +s.value); if (c.after) c.after(); syncOut(c); dirty = true; });
+    const n = row.querySelector('.numin');
+    n.addEventListener('change', () => { let v = parseFloat(String(n.value).replace(',', '.')); if (isFinite(v)) { c.set(clamp(v, c.min, maxOf(c))); if (c.after) c.after(); syncSlider(c); dirty = true; } else syncOut(c); });
+    n.addEventListener('keydown', e => { if (e.key === 'Enter') n.blur(); });
+  }
+  SL.forEach(syncSlider);
+}
+function syncOut(c) {
+  const n = document.getElementById('n_' + c.id);
+  if (document.activeElement !== n) n.value = +c.get().toFixed(c.dec ?? 3);
+  document.getElementById('x_' + c.id).textContent = c.extra ? c.extra(c.get()) : '';
+}
+function syncSlider(c) {
+  const s = document.getElementById('s_' + c.id);
+  if (c.log) s.value = toSlider(c, c.get()); else { s.max = maxOf(c); s.value = c.get(); }
+  syncOut(c);
+}
+function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+function wireSeg(id, fn) { document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { fn(b.dataset.v); setSeg(id, b.dataset.v); dirty = true; }); }
+function readouts(id, items) { document.getElementById(id).innerHTML = items.map(([k, v]) => `<div class="ro"><div class="k">${k}</div><div class="v">${v}</div></div>`).join(''); }
+const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
+/* ------------------------------------------------ generic line plot
+   o = { x0, x1, y0, y1, xlabel, ylabel, series:[{x:[], y:[], color, width, dash}], vlines:[{x, color, label, dash}],
+         legend:[{color, label, dash}], yfmt, ylog } */
+function linePlot(canvas, o) {
+  const { ctx, w, h } = fitCanvas(canvas); ctx.clearRect(0, 0, w, h);
+  const m = { l: 60, r: 16, t: 30, b: 42 }, pw = w - m.l - m.r, ph = h - m.t - m.b; if (pw < 60 || ph < 40) return;
+  const ty = v => o.ylog ? Math.log10(Math.max(v, 1e-30)) : v;
+  const Y0 = ty(o.y0), Y1 = ty(o.y1);
+  const X = v => m.l + (v - o.x0) / (o.x1 - o.x0) * pw, Y = v => m.t + (1 - (ty(v) - Y0) / (Y1 - Y0)) * ph;
+  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  const xt = niceTicks(o.x0, o.x1, Math.max(3, Math.round(pw / 90))), xst = xt.length > 1 ? xt[1] - xt[0] : 1;
+  let yt; if (o.ylog) { yt = []; for (let d = Math.ceil(Y0); d <= Math.floor(Y1); d++) yt.push(Math.pow(10, d)); } else yt = niceTicks(o.y0, o.y1, Math.max(3, Math.round(ph / 55)));
+  const yst = !o.ylog && yt.length > 1 ? yt[1] - yt[0] : 1;
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
+  for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
+  for (const b of (o.bands || [])) { ctx.fillStyle = b.color; ctx.fillRect(X(b.x0), m.t, X(b.x1) - X(b.x0), ph); }
+  for (const v of (o.vlines || [])) {
+    if (v.x < o.x0 || v.x > o.x1) continue;
+    ctx.strokeStyle = v.color; ctx.lineWidth = 1.2; ctx.setLineDash(v.dash || [4, 4]);
+    ctx.beginPath(); ctx.moveTo(X(v.x), m.t); ctx.lineTo(X(v.x), m.t + ph); ctx.stroke(); ctx.setLineDash([]);
+    if (v.label) { ctx.font = FONT; ctx.fillStyle = v.color; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(v.label, X(v.x), m.t + 4 + (v.row || 0) * 14); }
+  }
+  for (const s of o.series) {
+    ctx.beginPath(); let pen = false;
+    for (let i = 0; i < s.x.length; i++) { const y = s.y[i]; if (!isFinite(y)) { pen = false; continue; } const px = X(s.x[i]), py = Y(y); if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py); }
+    ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 2; ctx.setLineDash(s.dash || []); ctx.lineJoin = 'round'; ctx.stroke(); ctx.setLineDash([]);
+  }
+  for (const p of (o.points || [])) { if (p.x < o.x0 || p.x > o.x1) continue; ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 5, 0, 2 * PI); ctx.fillStyle = p.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); }
+  ctx.restore();
+  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of xt) ctx.fillText(tickFmt(t, xst), X(t), m.t + ph + 6);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const t of yt) ctx.fillText(o.yfmt ? o.yfmt(t) : (o.ylog ? (t >= 1 ? String(t) : t.toExponential(0)) : tickFmt(t, yst)), m.l - 6, Y(t));
+  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
+  ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText(o.ylabel, 0, 0); ctx.restore();
+  let lx = m.l; const ly = 14; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
+  return { X, Y, m, pw, ph };
+}
+
+/* ================================================================ complex linear algebra (N ≤ 8) */
+const cx = (re, im = 0) => [re, im];
+const cmul = (a, b) => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]];
+const cadd = (a, b) => [a[0] + b[0], a[1] + b[1]];
+const csub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+const cconj = a => [a[0], -a[1]];
+const cabs2 = a => a[0] * a[0] + a[1] * a[1];
+const cabs = a => Math.sqrt(cabs2(a));
+const carg = a => Math.atan2(a[1], a[0]);
+const cexpj = p => [Math.cos(p), Math.sin(p)];
+const cdiv = (a, b) => { const d = cabs2(b) || 1e-300; return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d]; };
+const cscale = (a, s) => [a[0] * s, a[1] * s];
+const matI = N => Array.from({ length: N }, (_, i) => Array.from({ length: N }, (_, j) => cx(i === j ? 1 : 0)));
+const matCopy = A => A.map(r => r.map(c => [c[0], c[1]]));
+function matMul(A, B) { const N = A.length, M = B[0].length, K = B.length, C = []; for (let i = 0; i < N; i++) { const row = []; for (let j = 0; j < M; j++) { let s = [0, 0]; for (let k = 0; k < K; k++) s = cadd(s, cmul(A[i][k], B[k][j])); row.push(s); } C.push(row); } return C; }
+const dag = A => A[0].map((_, j) => A.map(r => cconj(r[j])));
+function leftMul2(W, m, T) { const N = W.length; for (let c = 0; c < N; c++) { const a = W[m][c], b = W[m + 1][c]; W[m][c] = cadd(cmul(T[0][0], a), cmul(T[0][1], b)); W[m + 1][c] = cadd(cmul(T[1][0], a), cmul(T[1][1], b)); } }
+function rightMul2(W, m, T) { const N = W.length; for (let r = 0; r < N; r++) { const a = W[r][m], b = W[r][m + 1]; W[r][m] = cadd(cmul(a, T[0][0]), cmul(b, T[1][0])); W[r][m + 1] = cadd(cmul(a, T[0][1]), cmul(b, T[1][1])); } }
+/* ideal MZI: internal phase θ (upper arm) + external phase φ (upper input), 50:50 MMIs
+   T(θ, φ) = j e^{jθ/2} [[e^{jφ} sin θ/2, cos θ/2], [e^{jφ} cos θ/2, −sin θ/2]]   (θ = π → bar, θ = 0 → cross) */
+function Tmzi(th, ph) { const g = cmul([0, 1], cexpj(th / 2)), s = Math.sin(th / 2), c = Math.cos(th / 2), e = cexpj(ph); return [[cmul(g, cscale(e, s)), cscale(g, c)], [cmul(g, cscale(e, c)), cscale(g, -s)]]; }
+/* physical MZI with imbalanced MMIs (α₁, α₂), phase errors and loss: M(α₂)·P(θ)·M(α₁)·P_ext(φ)·√η */
+function Treal(th, ph, a1, a2, eta) {
+  const M = a => { const s = Math.sin(PI / 4 + a), c = Math.cos(PI / 4 + a); return [[cx(s), cx(0, c)], [cx(0, c), cx(s)]]; };
+  const P = (x) => [[cexpj(x), cx(0)], [cx(0), cx(1)]];
+  let T = matMul(M(a2), matMul(P(th), matMul(M(a1), P(ph))));
+  const t = Math.sqrt(eta); return T.map(r => r.map(c => cscale(c, t)));
+}
+const safeArg = z => cabs2(z) < 1e-24 ? 0 : carg(z);
+/* nulling: right-multiply by T†, make new column k of the pair zero, for row vector (u0, u1) */
+function nullRight(u0, u1, k) {
+  if (k === 0) return { th: 2 * Math.atan2(cabs(u1), cabs(u0)), ph: cabs2(u0) < 1e-24 ? 0 : -safeArg(cdiv(cscale(u1, -1), u0)) };
+  return { th: 2 * Math.atan2(cabs(u0), cabs(u1)), ph: cabs2(u0) < 1e-24 ? 0 : -safeArg(cdiv(u1, u0)) };
+}
+/* nulling: left-multiply by T, make new row k zero, for column vector (v0, v1) */
+function nullLeft(v0, v1, k) {
+  if (k === 0) return { th: 2 * Math.atan2(cabs(v1), cabs(v0)), ph: cabs2(v0) < 1e-24 ? 0 : safeArg(cdiv(cscale(v1, -1), v0)) };
+  return { th: 2 * Math.atan2(cabs(v0), cabs(v1)), ph: cabs2(v0) < 1e-24 ? 0 : safeArg(cdiv(v1, v0)) };
+}
+/* write a 2×2 unitary V as diag(p, q) · T(θ', φ') */
+function splitDT(V) {
+  const c = clamp(cabs(V[0][1]), 0, 1), th = 2 * Math.acos(c), s = Math.sin(th / 2), g = cmul([0, 1], cexpj(th / 2));
+  let p, q, e;
+  if (c > 1e-9 && s > 1e-9) { p = cdiv(V[0][1], cscale(g, c)); q = cdiv(V[1][1], cscale(g, -s)); e = cdiv(V[0][0], cscale(cmul(p, g), s)); }
+  else if (s <= 1e-9) { p = cdiv(V[0][1], g); q = cdiv(V[1][0], g); e = cx(1); }      // cross state
+  else { q = cdiv(V[1][1], cscale(g, -1)); p = cdiv(V[0][0], g); e = cx(1); }        // bar state
+  return { p, q, th, ph: carg(e) };
+}
+/* Reck: null each row from the bottom with right multiplications only →  U = D · R_m ⋯ R_1 */
+function decompReck(U) {
+  const N = U.length, W = matCopy(U), ops = [];
+  for (let r = N - 1; r >= 1; r--) for (let c = 0; c < r; c++) {
+    const { th, ph } = nullRight(W[r][c], W[r][c + 1], 0); rightMul2(W, c, dag(Tmzi(th, ph))); ops.push({ m: c, th, ph });
+  }
+  return finish(N, ops, W.map((r, i) => r[i]));
+}
+/* Clements: alternate nulling from the right and from the left, then move the left factors through D */
+function decompClements(U) {
+  const N = U.length, W = matCopy(U), right = [], left = [];
+  for (let i = 1; i <= N - 1; i++) {
+    if (i % 2 === 1) for (let j = 0; j <= i - 1; j++) { const m = i - j - 1, r = N - 1 - j; const { th, ph } = nullRight(W[r][m], W[r][m + 1], 0); rightMul2(W, m, dag(Tmzi(th, ph))); right.push({ m, th, ph }); }
+    else for (let j = 1; j <= i; j++) { const m = N + j - i - 2, col = j - 1; const { th, ph } = nullLeft(W[m][col], W[m + 1][col], 1); leftMul2(W, m, Tmzi(th, ph)); left.push({ m, th, ph }); }
+  }
+  const d = W.map((r, i) => r[i]), ops = right.slice();
+  for (let l = left.length - 1; l >= 0; l--) {
+    const L = left[l], Ti = dag(Tmzi(L.th, L.ph)), V = [[cmul(Ti[0][0], d[L.m]), cmul(Ti[0][1], d[L.m + 1])], [cmul(Ti[1][0], d[L.m]), cmul(Ti[1][1], d[L.m + 1])]];
+    const sp = splitDT(V); d[L.m] = sp.p; d[L.m + 1] = sp.q; ops.push({ m: L.m, th: sp.th, ph: sp.ph });
+  }
+  return finish(N, ops, d);
+}
+function finish(N, ops, d) {
+  const last = Array(N).fill(-1);
+  for (const o of ops) { o.th = ((o.th % (2 * PI)) + 2 * PI) % (2 * PI); o.ph = ((o.ph % (2 * PI)) + 2 * PI) % (2 * PI); o.col = Math.max(last[o.m], last[o.m + 1]) + 1; last[o.m] = last[o.m + 1] = o.col; }
+  return { N, ops, D: d.map(z => ((carg(z) % (2 * PI)) + 2 * PI) % (2 * PI)), depth: Math.max(...last) + 1 };
+}
+/* implemented matrix of a programmed mesh (optionally with errors) */
+function meshMatrix(mesh, err) {
+  const N = mesh.N; let M = matI(N);
+  mesh.ops.forEach((o, i) => { const e = err ? err.ops[i] : null; leftMul2(M, o.m, e ? Treal(o.th + e.dth, o.ph + e.dph, e.a1, e.a2, e.eta) : Tmzi(o.th, o.ph)); });
+  return M.map((r, i) => r.map(c => cmul(cexpj(mesh.D[i] + (err ? err.dD[i] : 0)), c)));
+}
+function fidelity(U, T) { const N = U.length; let tr = [0, 0], nT = 0; for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { tr = cadd(tr, cmul(cconj(U[i][j]), T[i][j])); nT += cabs2(T[i][j]); } return cabs2(tr) / (N * nT); }
+/* random numbers */
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function gauss(r) { let u = 0, v = 0; while (u === 0) u = r(); v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * PI * v); }
+function haar(N, r) {   // Haar-random unitary: Gram–Schmidt on a complex Gaussian matrix
+  const A = Array.from({ length: N }, () => Array.from({ length: N }, () => cx(gauss(r), gauss(r))));
+  const Q = [];
+  for (let j = 0; j < N; j++) { let v = A.map(row => row[j]); for (const q of Q) { let p = [0, 0]; for (let i = 0; i < N; i++) p = cadd(p, cmul(cconj(q[i]), v[i])); v = v.map((x, i) => csub(x, cmul(p, q[i]))); } const n = Math.sqrt(v.reduce((s, x) => s + cabs2(x), 0)); Q.push(v.map(x => cscale(x, 1 / n))); }
+  return Array.from({ length: N }, (_, i) => Array.from({ length: N }, (_, j) => Q[j][i]));
+}
+function makeErrors(mesh, sig, seed) {
+  const r = rng(seed), eta = Math.pow(10, -sig.loss / 10);
+  return { ops: mesh.ops.map(() => ({ dth: sig.ph * gauss(r), dph: sig.ph * gauss(r), a1: sig.al * gauss(r), a2: sig.al * gauss(r), eta })), dD: Array.from({ length: mesh.N }, () => sig.ph * gauss(r)) };
+}
+
+const S = { view: 'theory', N: 6, target: 'dft', ri: 1, rj: 4, inp: 0, sph: 0, sal: 0, loss: 0, seed: 1, sel: -1, randSeed: 11, plot: 'mcph', edited: false };
+let U = null, mesh = null, err = null, Timp = null, hoverBox = -1, boxes = [];
+/* ------------------------------------------------ targets */
+function target() {
+  const N = S.N, M = (f) => Array.from({ length: N }, (_, i) => Array.from({ length: N }, (_, j) => f(i, j)));
+  switch (S.target) {
+    case 'id': return matI(N);
+    case 'rev': return M((i, j) => cx(i === N - 1 - j ? 1 : 0));
+    case 'shift': return M((i, j) => cx(i === (j + 1) % N ? 1 : 0));
+    case 'route': { const a = clamp(S.ri, 1, N) - 1, b = clamp(S.rj, 1, N) - 1; return M((i, j) => { const pj = j === a ? b : j === b ? a : j; return cx(i === pj ? 1 : 0); }); }
+    case 'had': { if ([2, 4, 8].includes(N)) { const h = (i, j) => { let p = 0, x = i & j; while (x) { p ^= x & 1; x >>= 1; } return p ? -1 : 1; }; return M((i, j) => cx(h(i, j) / Math.sqrt(N))); } }
+    // falls through to DFT when N is not a power of two
+    case 'dft': return M((k, n) => cscale(cexpj(-2 * PI * k * n / N), 1 / Math.sqrt(N)));
+    case 'rand': return haar(N, rng(S.randSeed * 7919 + N));
+  }
+}
+function program() { U = target(); mesh = S.view === 'reck' ? decompReck(U) : decompClements(U); S.sel = -1; S.edited = false; refreshErr(); }
+function refreshErr() { err = makeErrors(mesh, { ph: S.sph, al: S.sal, loss: S.loss }, S.seed); Timp = meshMatrix(mesh, err); mcCache = null; dirty = true; }
+const recompute = () => { Timp = meshMatrix(mesh, err); dirty = true; };
+/* ------------------------------------------------ propagation for display: power in every waveguide after each column */
+function propagate() {
+  const N = mesh.N; let E = Array.from({ length: N }, (_, k) => S.inp < 0 ? cx(1 / Math.sqrt(N)) : cx(k === S.inp ? 1 : 0));
+  const cols = [E.map(cabs2)], byCol = Array.from({ length: mesh.depth }, () => []);
+  mesh.ops.forEach((o, i) => byCol[o.col].push(i));
+  for (let c = 0; c < mesh.depth; c++) {
+    for (const i of byCol[c]) { const o = mesh.ops[i], e = err.ops[i], T = Treal(o.th + e.dth, o.ph + e.dph, e.a1, e.a2, e.eta); const a = E[o.m], b = E[o.m + 1]; E[o.m] = cadd(cmul(T[0][0], a), cmul(T[0][1], b)); E[o.m + 1] = cadd(cmul(T[1][0], a), cmul(T[1][1], b)); }
+    cols.push(E.map(cabs2));
+  }
+  return cols;
+}
+/* ------------------------------------------------ mesh drawing (used for the simulation and the theory schematics) */
+const glowCol = p => { const t = Math.sqrt(clamp(p, 0, 1)); return `rgb(${60 + 195 * t | 0},${76 - 20 * t | 0},${98 + 6 * t | 0})`; };
+function stateCol(th, a = 1) { const b = Math.sin(th / 2) ** 2; return `rgba(${255 * (1 - b) + 74 * b | 0},${149 * (1 - b) + 168 * b | 0},${72 * (1 - b) + 255 * b | 0},${a})`; }
+function drawMesh(cv, ms, opt) {
+  const { ctx, w, h } = fitCanvas(cv); ctx.clearRect(0, 0, w, h);
+  const N = ms.N, m = { l: opt.light ? 74 : 26, r: opt.light ? 112 : 26, t: 26, b: 22 };
+  const yk = k => m.t + (k + 0.5) * (h - m.t - m.b) / N, dy = (h - m.t - m.b) / N;
+  const xD = w - m.r + 10, x0 = m.l, cw = (xD - 30 - x0) / ms.depth, xc = c => x0 + (c + 0.5) * cw;
+  const bw = Math.min(cw * 0.6, 54), cols = opt.light ? propagate() : null;
+  // waveguides, coloured by the power after each column
+  for (let k = 0; k < N; k++) for (let c = 0; c <= ms.depth; c++) {
+    const xa = c === 0 ? 8 : xc(c - 1), xb = c === ms.depth ? (opt.light ? xD : w - 8) : xc(c), p = cols ? cols[c][k] : 0;
+    ctx.strokeStyle = cols ? glowCol(p) : '#46546a'; ctx.lineWidth = cols ? 2.5 + 3 * Math.sqrt(p) : 2.5; ctx.beginPath(); ctx.moveTo(xa, yk(k)); ctx.lineTo(xb, yk(k)); ctx.stroke();
+    if (cols && p > 0.01) { ctx.save(); ctx.strokeStyle = `rgba(255,220,230,${0.55 * Math.sqrt(p)})`; ctx.lineWidth = 1.6; ctx.setLineDash([5, 12]); ctx.lineDashOffset = -opt.t * 40; ctx.beginPath(); ctx.moveTo(xa, yk(k)); ctx.lineTo(xb, yk(k)); ctx.stroke(); ctx.restore(); }
+  }
+  // MZIs
+  boxes = [];
+  ms.ops.forEach((o, i) => {
+    const x = xc(o.col), y0 = yk(o.m) - Math.min(12, dy * 0.3), y1 = yk(o.m + 1) + Math.min(12, dy * 0.3);
+    ctx.fillStyle = '#141b25'; roundRect(ctx, x - bw / 2, y0, bw, y1 - y0, 6); ctx.fill();
+    ctx.fillStyle = stateCol(o.th, 0.28); ctx.fill();
+    ctx.strokeStyle = i === opt.sel ? '#ffffff' : i === opt.hover ? '#ffcc66' : stateCol(o.th, 0.95); ctx.lineWidth = i === opt.sel ? 2.6 : 1.6; ctx.stroke();
+    // inside the box: two couplers, two arms and the heater on the upper arm
+    const ya = yk(o.m), yb = yk(o.m + 1), xl = x - bw / 2 + 7, xr = x + bw / 2 - 7, ua = ya + (yb - ya) * 0.2, ub = yb - (yb - ya) * 0.2;
+    ctx.fillStyle = 'rgba(200,210,225,0.3)'; ctx.fillRect(xl - 2, ya - 2, 4, yb - ya + 4); ctx.fillRect(xr - 2, ya - 2, 4, yb - ya + 4);
+    ctx.strokeStyle = 'rgba(200,210,225,0.5)'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(xl, ua); ctx.lineTo(xr, ua); ctx.moveTo(xl, ub); ctx.lineTo(xr, ub); ctx.stroke();
+    ctx.fillStyle = '#ffb347'; ctx.fillRect(x - bw / 5, ua - 4.5, 2 * bw / 5, 3);
+    if (opt.labels && bw > 32 && dy > 30) { ctx.fillStyle = '#e6edf3'; ctx.font = '11px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(`θ ${(o.th / PI).toFixed(2)}π`, x, (ya + yb) / 2); }
+    boxes.push({ i, x0: x - bw / 2, x1: x + bw / 2, y0, y1 });
+  });
+  // output phase screen and labels
+  if (opt.light) {
+    ctx.font = FONT; ctx.textBaseline = 'middle';
+    for (let k = 0; k < N; k++) {
+      ctx.fillStyle = '#1d2735'; ctx.fillRect(xD - 9, yk(k) - 8, 18, 16); ctx.strokeStyle = '#5c6c84'; ctx.strokeRect(xD - 9, yk(k) - 8, 18, 16);
+      ctx.fillStyle = '#ffb347'; ctx.fillRect(xD - 6, yk(k) - 6, 12, 2.5);
+      const pin = cols[0][k], pout = cols[ms.depth][k];
+      ctx.textAlign = 'right'; ctx.fillStyle = pin > 0.001 ? '#ff8fa8' : '#5c6c84'; ctx.fillText(`in ${k + 1}${pin > 0.001 ? ` ${(pin * 100).toFixed(0)}%` : ''}`, m.l - 18, yk(k) - 10);
+      ctx.textAlign = 'left'; ctx.fillStyle = pout > 0.005 ? '#4aa8ff' : '#5c6c84'; ctx.fillText(`out ${k + 1}: ${(pout * 100).toFixed(1)}%`, xD + 16, yk(k));
+    }
+    ctx.fillStyle = '#8b98a9'; ctx.textAlign = 'center'; ctx.fillText('D', xD, m.t - 12);
+    if (opt.hover >= 0 && opt.hover < ms.ops.length) { const o = ms.ops[opt.hover], b = boxes[opt.hover]; tag(ctx, (b.x0 + b.x1) / 2, b.y0 - 12, `MZI ${opt.hover + 1} · θ = ${(o.th / PI).toFixed(3)}π · φ = ${(o.ph / PI).toFixed(3)}π · bar ${(Math.sin(o.th / 2) ** 2 * 100).toFixed(0)} %`, '#fff', 'rgba(8,11,16,0.92)'); }
+  }
+}
+/* ------------------------------------------------ matrices */
+function drawMatrices() {
+  const { ctx, w, h } = fitCanvas(document.getElementById('cMat')); ctx.clearRect(0, 0, w, h);
+  const N = S.N, size = Math.min((w - 40) / 3 - 10, h - 40), top = 26;
+  const mats = [['Target |U|²', U, 'light'], ['Implemented |T|²', Timp, 'light'], ['|T − U|', null, 'heat']];
+  mats.forEach(([title, M, cm], q) => {
+    const x0 = 10 + q * ((w - 20) / 3) + ((w - 20) / 3 - size) / 2, cs = size / N;
+    ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(title, x0 + size / 2, top - 8);
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      const v = M ? cabs2(M[i][j]) : cabs(csub(Timp[i][j], cmul(cexpj(globalPhase()), U[i][j])));
+      const c = cmap(cm, M ? Math.sqrt(v) : clamp(v / 0.3, 0, 1)); ctx.fillStyle = `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`; ctx.fillRect(x0 + j * cs + 0.5, top + i * cs + 0.5, cs - 1, cs - 1);
+    }
+    ctx.strokeStyle = '#3a4a60'; ctx.strokeRect(x0, top, size, size);
+  });
+}
+function globalPhase() { let tr = [0, 0]; for (let i = 0; i < S.N; i++) for (let j = 0; j < S.N; j++) tr = cadd(tr, cmul(cconj(U[i][j]), Timp[i][j])); return carg(tr); }
+/* ------------------------------------------------ Monte Carlo + loss plots */
+let mcCache = null;
+function drawPlot() {
+  const cv = document.getElementById('cPlot');
+  if (S.plot === 'loss') {
+    const colP = (T) => T[0].map((_, j) => 10 * Math.log10(T.reduce((s, r) => s + cabs2(r[j]), 0)));
+    const L = Math.max(S.loss, 0.2), sig = { ph: 0, al: 0, loss: L };
+    const R = decompReck(U), C = decompClements(U), pr = colP(meshMatrix(R, makeErrors(R, sig, 1))), pc = colP(meshMatrix(C, makeErrors(C, sig, 1)));
+    const xs = pr.map((_, i) => i + 1), lo = Math.min(...pr, ...pc);
+    setTxt('plotNote', `Total transmission for light entering each input, with ${L} dB loss per MZI${S.loss < 0.2 ? ' (example value)' : ''}`);
+    linePlot(cv, { x0: 0.8, x1: S.N + 0.2, y0: Math.floor(lo - 0.5), y1: 0.2, xlabel: 'Input port', ylabel: 'Transmission (dB)',
+      series: [{ x: xs, y: pr, color: '#ff9548', width: 2.2 }, { x: xs, y: pc, color: '#5fd38d', width: 2.2 }],
+      points: xs.map((x, i) => ({ x, y: pr[i], color: '#ff9548' })).concat(xs.map((x, i) => ({ x, y: pc[i], color: '#5fd38d' }))),
+      legend: [{ color: '#ff9548', label: `Reck (spread ${(Math.max(...pr) - Math.min(...pr)).toFixed(2)} dB)` }, { color: '#5fd38d', label: `Clements (spread ${(Math.max(...pc) - Math.min(...pc)).toFixed(2)} dB)` }] });
+    return;
+  }
+  const key = S.plot + '|' + S.N + '|' + S.target + '|' + S.randSeed + '|' + S.ri + '|' + S.rj;
+  if (!mcCache || mcCache.key !== key) {
+    const R = decompReck(U), C = decompClements(U), xs = [], fr = [], fc = [], NT = 30;
+    const xmax = S.plot === 'mcloss' ? 1 : S.plot === 'mcal' ? 0.15 : 0.25;
+    for (let i = 0; i <= 12; i++) {
+      const s = xmax * i / 12, sig = { ph: S.plot === 'mcph' ? s : 0, al: S.plot === 'mcal' ? s : 0, loss: S.plot === 'mcloss' ? s : 0 };
+      let a = 0, b = 0; for (let t = 0; t < NT; t++) { a += fidelity(U, meshMatrix(R, makeErrors(R, sig, 1000 + t))); b += fidelity(U, meshMatrix(C, makeErrors(C, sig, 1000 + t))); }
+      xs.push(s); fr.push(a / NT); fc.push(b / NT);
+    }
+    mcCache = { key, xs, fr, fc, xmax };
+  }
+  const { xs, fr, fc, xmax } = mcCache, lo = Math.min(...fr, ...fc);
+  const lab = { mcph: 'Phase error σ (rad) on every θ, φ and output phase', mcal: 'MMI imbalance σ_α (rad) on every coupler', mcloss: 'Loss per MZI (dB)' }[S.plot];
+  const cur = S.plot === 'mcph' ? S.sph : S.plot === 'mcal' ? S.sal : S.loss;
+  setTxt('plotNote', `Mean fidelity over 30 random samples, same target for both meshes`);
+  linePlot(cv, { x0: 0, x1: xmax, y0: Math.max(0, Math.min(0.9, lo - 0.02)), y1: 1.002, xlabel: lab, ylabel: 'Fidelity F',
+    series: [{ x: xs, y: fr, color: '#ff9548', width: 2.2 }, { x: xs, y: fc, color: '#5fd38d', width: 2.2 }],
+    vlines: cur > 0 ? [{ x: cur, color: 'rgba(255,255,255,0.6)', label: 'current' }] : [],
+    legend: [{ color: '#ff9548', label: 'Reck' }, { color: '#5fd38d', label: 'Clements' }] });
+}
+/* ------------------------------------------------ readouts */
+function update() {
+  const F = fidelity(U, Timp), N = S.N;
+  const colP = Timp[0].map((_, j) => Timp.reduce((s, r) => s + cabs2(r[j]), 0)), il = colP.map(v => -10 * Math.log10(v));
+  readouts('ro', [
+    ['Architecture', S.view === 'reck' ? 'Reck <small>triangular</small>' : 'Clements <small>rectangular</small>'],
+    ['MZIs · columns (depth)', `${mesh.ops.length} <small>·</small> ${mesh.depth} <small>(${S.view === 'reck' ? '2N−3' : 'N'})</small>`],
+    ['Fidelity F', `${(F * 100).toFixed(3)} <small>%</small>`],
+    ['Mean insertion loss', `${(il.reduce((a, b) => a + b, 0) / N).toFixed(2)} <small>dB</small>`],
+    ['Loss spread between inputs', `${(Math.max(...il) - Math.min(...il)).toFixed(2)} <small>dB</small>`],
+    ['Hand edits', S.edited ? '<span style="color:var(--accent)">yes</span>' : '<small>none</small>']
+  ]);
+  const o = S.sel >= 0 ? mesh.ops[S.sel] : null;
+  document.getElementById('selInfo').textContent = o ? `MZI ${S.sel + 1} · column ${o.col + 1} · waveguides ${o.m + 1}–${o.m + 2} · bar ${(Math.sin(o.th / 2) ** 2 * 100).toFixed(1)} %` : 'No MZI selected: click one in the mesh.';
+  ['thSel', 'phSel'].forEach(id => document.getElementById('row_' + id).classList.toggle('off', !o));
+  setTxt('meshTitle', `${S.view === 'reck' ? 'Reck' : 'Clements'} mesh · N = ${N} · ${mesh.ops.length} MZIs`);
+}
+/* ------------------------------------------------ controls */
+const SL = [
+  { id: 'N', g: 'prog', lab: 'Number of ports N', min: 2, max: 8, step: 1, unit: '', dec: 0, get: () => S.N, set: v => S.N = Math.round(v), after: () => { buildInputs(); program(); } },
+  { id: 'sph', g: 'err', lab: 'Phase error σ (θ, φ, output)', min: 0, max: 0.3, step: 0.001, unit: 'rad', dec: 3, get: () => S.sph, set: v => S.sph = v, after: refreshErr },
+  { id: 'sal', g: 'err', lab: 'MMI imbalance σ_α', min: 0, max: 0.15, step: 0.001, unit: 'rad', dec: 3, get: () => S.sal, set: v => S.sal = v, after: refreshErr },
+  { id: 'loss', g: 'err', lab: 'Loss per MZI', min: 0, max: 1, step: 0.01, unit: 'dB', dec: 2, get: () => S.loss, set: v => S.loss = v, after: refreshErr },
+  { id: 'thSel', g: 'edit', lab: 'Internal phase θ (splitting)', min: 0, max: 2, step: 0.001, unit: 'π', dec: 3, get: () => S.sel >= 0 ? mesh.ops[S.sel].th / PI : 0, set: v => { if (S.sel >= 0) { mesh.ops[S.sel].th = v * PI; S.edited = true; } }, after: recompute },
+  { id: 'phSel', g: 'edit', lab: 'External phase φ', min: 0, max: 2, step: 0.001, unit: 'π', dec: 3, get: () => S.sel >= 0 ? mesh.ops[S.sel].ph / PI : 0, set: v => { if (S.sel >= 0) { mesh.ops[S.sel].ph = v * PI; S.edited = true; } }, after: recompute }
+];
+function buildInputs() { const s = document.getElementById('selIn'); s.innerHTML = Array.from({ length: S.N }, (_, k) => `<option value="${k}">Port ${k + 1}</option>`).join('') + '<option value="-1">All ports (equal power)</option>'; if (S.inp >= S.N) S.inp = 0; s.value = S.inp; }
+document.getElementById('selIn').onchange = e => { S.inp = +e.target.value; dirty = true; };
+document.getElementById('selTarget').onchange = e => { S.target = e.target.value; document.getElementById('routeWrap').classList.toggle('hide', S.target !== 'route'); program(); };
+document.getElementById('nRi').onchange = e => { S.ri = +e.target.value; if (S.target === 'route') program(); };
+document.getElementById('nRj').onchange = e => { S.rj = +e.target.value; if (S.target === 'route') program(); };
+document.getElementById('bProg').onclick = program;
+document.getElementById('bReprog').onclick = program;
+document.getElementById('bRand').onclick = () => { S.randSeed++; S.target = 'rand'; document.getElementById('selTarget').value = 'rand'; program(); };
+document.getElementById('bSeed').onclick = () => { S.seed++; refreshErr(); };
+document.getElementById('bDesel').onclick = () => { S.sel = -1; dirty = true; };
+wireSeg('segPlot', v => S.plot = v);
+const cMesh = document.getElementById('cMesh');
+const hit = e => { for (const b of boxes) if (e.offsetX >= b.x0 && e.offsetX <= b.x1 && e.offsetY >= b.y0 && e.offsetY <= b.y1) return b.i; return -1; };
+cMesh.addEventListener('pointermove', e => { hoverBox = hit(e); });
+cMesh.addEventListener('pointerleave', () => { hoverBox = -1; });
+cMesh.addEventListener('click', e => { const i = hit(e); S.sel = i; SL.forEach(syncSlider); dirty = true; });
+function setView(v) {
+  S.view = v; document.getElementById('selView').value = v;
+  document.getElementById('vTheory').classList.toggle('hide', v !== 'theory'); document.getElementById('vSim').classList.toggle('hide', v === 'theory');
+  setTxt('viewNote', v === 'theory' ? 'Read the comparison, then pick a mesh to simulate it.' : v === 'reck' ? 'Triangular mesh: depth 2N−3, unequal path lengths.' : 'Rectangular mesh: depth N, balanced paths.');
+  if (v === 'theory') drawSchematics(); else { program(); SL.forEach(syncSlider); }
+  dirty = true;
+}
+document.getElementById('selView').onchange = e => setView(e.target.value);
+function drawSchematics() {
+  const U6 = haar(6, rng(5));
+  drawMesh(document.getElementById('schReck'), decompReck(U6), { light: false, labels: false, sel: -1, hover: -1 });
+  drawMesh(document.getElementById('schClem'), decompClements(U6), { light: false, labels: false, sel: -1, hover: -1 });
+}
+window.addEventListener('resize', () => { if (S.view === 'theory') drawSchematics(); dirty = true; });
+buildInputs(); document.getElementById('routeWrap').classList.add('hide');
+program(); buildSliders(); setView('theory');
+let tA = 0, last = performance.now();
+(function loop(now) {
+  now = now || performance.now(); tA += Math.min(0.05, (now - last) / 1000); last = now;
+  if (S.view !== 'theory') {
+    drawMesh(cMesh, mesh, { light: true, labels: true, sel: S.sel, hover: hoverBox, t: tA });
+    if (dirty) { dirty = false; drawMatrices(); drawPlot(); update(); SL.forEach(syncOut); }
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
