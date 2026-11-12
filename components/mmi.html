@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MMI coupler · self-imaging</title>
+<style>
+
+:root{
+  --bg:#0c1016; --card:#141a22; --card2:#10151c; --line:#243041; --text:#e6edf3; --muted:#8b98a9;
+  --thr:#4aa8ff; --refl:#d58cff; --fw:#5fd38d; --bw:#ff8f6b; --accent:#ffcc66; --laser:#ff4d6d; --warn:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:14px 20px 6px}
+header h1{font-size:19px;margin:0;font-weight:650}
+header .sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:10px 20px 20px}
+@media (max-width:1100px){main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600}
+.view{height:min(54vh,560px);min-height:380px;display:flex;flex-direction:column}
+.view canvas{flex:1;width:100%;min-height:0;display:block;border-radius:8px}
+#c3d{background:radial-gradient(ellipse at 50% 35%,#18212d 0%,#0d1218 75%);cursor:grab;touch-action:none}
+#c3d:active{cursor:grabbing}
+#cPlot{background:var(--card2);cursor:crosshair;touch-action:none}
+#cP2{background:var(--card2);height:240px;width:100%;display:block;border-radius:8px;cursor:crosshair;touch-action:none}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;color:var(--muted);border:0;padding:4px 10px;font:inherit;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:#223046;color:var(--text)}
+.toolbar label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+input[type=number]{background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;width:86px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.group{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.group h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin:7px 0}
+.row.off{opacity:.35;pointer-events:none}
+.row .lab{color:var(--muted);font-size:12.5px}
+.row .val{font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
+.row input[type=range]{grid-column:1/3;width:100%;accent-color:var(--accent);margin:2px 0 0}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0;font-size:12.5px;color:var(--muted)}
+.btn{background:#1d2735;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn:hover{background:#26344a}
+.btn.primary{border-color:#6b5a2b;background:#2d2615;color:var(--accent)}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
+.ro{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ro .k{font-size:11.5px;color:var(--muted)}
+.ro .v{font-size:15.5px;font-variant-numeric:tabular-nums;font-weight:600}
+.ro .v small{font-size:12px;color:var(--muted);font-weight:500}
+.span2{grid-column:1/-1}
+/* theory */
+.theory{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
+.th{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.th h3{margin:0 0 8px;font-size:14px;color:var(--accent)}
+.th p{margin:6px 0;color:#c9d3de;font-size:13px}
+.eq{display:block;text-align:center;line-height:2.4;margin:8px 0;font:15px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 3px}
+.frac>span:first-child{border-bottom:1px solid #cfd8e3;padding:0 4px 2px}
+.frac>span:last-child{padding:2px 4px 0}
+.live{font:600 12.5px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);background:#1f1a0e;border:1px solid #4a3d1c;border-radius:5px;padding:1px 6px;white-space:nowrap}
+table.fm{width:100%;border-collapse:collapse;font-size:13px}
+table.fm td{padding:5px 6px;border-bottom:1px solid #1f2836;color:#c9d3de;vertical-align:middle}
+table.fm td.f{font:14px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+table.fm td.f small{display:block;font:11.5px system-ui,sans-serif;color:var(--muted)}
+table.fm td:last-child{text-align:right}
+i.v{font-family:"Cambria Math","Times New Roman",serif;font-style:italic}
+a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1c;background:#1f1a0e;border-radius:8px;padding:3px 10px;margin-right:4px}a.back:hover{background:#2d2615}
+
+.row .val{display:flex;align-items:center;justify-content:flex-end;gap:4px;text-align:right}
+.numin{width:78px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font:inherit;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.numin:focus{outline:none;border-color:var(--accent)}
+.row .unit{color:var(--muted);font-size:12px;min-width:18px;text-align:left}
+.row .extra{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.cfgsel{background:#1f1a0e;color:var(--accent);border:1px solid #6b5a2b;border-radius:9px;padding:6px 10px;font:inherit;font-size:13.5px;cursor:pointer}
+
+.smat{display:inline-grid;grid-template-columns:auto auto;gap:2px 14px;padding:2px 9px;vertical-align:middle;border-left:1.5px solid #cfd8e3;border-right:1.5px solid #cfd8e3;border-radius:7px;line-height:1.7;text-align:center}
+
+#cF{background:#07090d;cursor:crosshair}
+#cPlot{background:var(--card2)}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../index.html">← Component catalog</a>
+  <h1>Multimode interference (MMI) coupler · 1×2 and 2×2</h1>
+  <span class="sub">Self-imaging by modal propagation analysis: the field in the multimode section, imaging lengths, imbalance and phase. Part of the Programmable Photonics interactive lab.</span>
+</header>
+<main>
+  <section class="card view">
+    <h2>Top view · optical intensity |E(x, z)|²</h2>
+    <canvas id="cF"></canvas>
+  </section>
+  <section class="card view">
+    <div class="toolbar">
+      <div class="seg" id="segPlot"><button data-v="len" class="on">vs length</button><button data-v="lam">vs wavelength</button><button data-v="wid">vs width (tolerance)</button></div>
+    </div>
+    <canvas id="cPlot"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>Controls</h2>
+    <div class="inline" style="margin-bottom:10px">
+      <span>Configuration:</span>
+      <span class="seg" id="segCfg"><button data-v="1x2" class="on">1×2 splitter</button><button data-v="2x2">2×2 coupler</button></span>
+    </div>
+    <div class="inline" style="margin-bottom:10px" id="lenBtns"></div>
+    <div class="groups">
+      <div class="group" data-group="geo"><h3>Geometry</h3></div>
+      <div class="group" data-group="opt"><h3>Optics</h3></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Figures of merit</h2>
+    <div class="readouts" id="ro"></div>
+  </section>
+
+  <section class="card span2">
+    <h2>Theory</h2>
+    <div class="theory">
+      <div class="th">
+        <h3>1 · Modes of the multimode section</h3>
+        <p>The wide section of width <i class="v">W</i> guides <i class="v">M</i> lateral modes. With the effective width <i class="v">W</i><sub>e</sub> (which includes the penetration of the field into the cladding, TE polarization):</p>
+        <div class="eq"><i class="v">W</i><sub>e</sub> = <i class="v">W</i> + <span class="frac"><span>λ</span><span>π</span></span> (<i class="v">n</i><sub>r</sub>² − <i class="v">n</i><sub>c</sub>²)<sup>−1/2</sup>, &nbsp; ψ<sub>ν</sub>(<i class="v">x</i>) ∝ sin<span class="frac"><span>(ν+1)π (<i class="v">x</i> + <i class="v">W</i><sub>e</sub>/2)</span><span><i class="v">W</i><sub>e</sub></span></span>, &nbsp; β<sub>ν</sub> = √(<i class="v">k</i>²<i class="v">n</i><sub>r</sub>² − ((ν+1)π/<i class="v">W</i><sub>e</sub>)²)</div>
+        <p>The beat length of the two lowest modes sets every imaging distance:</p>
+        <div class="eq"><i class="v">L</i><sub>π</sub> = <span class="frac"><span>π</span><span>β<sub>0</sub> − β<sub>1</sub></span></span> ≈ <span class="frac"><span>4 <i class="v">n</i><sub>r</sub> <i class="v">W</i><sub>e</sub>²</span><span>3 λ</span></span>, &nbsp; β<sub>0</sub> − β<sub>ν</sub> ≈ <span class="frac"><span>ν(ν+2)π</span><span>3<i class="v">L</i><sub>π</sub></span></span> <span class="live" id="lvLpi"></span></div>
+      </div>
+      <div class="th">
+        <h3>2 · Self-imaging</h3>
+        <p>The input field is expanded in the modes, <i class="v">c</i><sub>ν</sub> = ∫ <i class="v">E</i><sub>in</sub> ψ<sub>ν</sub> d<i class="v">x</i>. Each mode then accumulates its own phase:</p>
+        <div class="eq"><i class="v">E</i>(<i class="v">x</i>, <i class="v">z</i>) = Σ<sub>ν</sub> <i class="v">c</i><sub>ν</sub> ψ<sub>ν</sub>(<i class="v">x</i>) e<sup>j(β<sub>0</sub> − β<sub>ν</sub>)<i class="v">z</i></sup></div>
+        <p>Since the phases go as ν(ν+2), they realign periodically and the input is reproduced as one or several images:</p>
+        <ul style="color:#c9d3de;font-size:13px;margin:6px 0 0 18px;padding:0">
+          <li><b>General interference</b> (any input): <i class="v">N</i> images at <i class="v">z</i> = 3<i class="v">L</i><sub>π</sub>/<i class="v">N</i>. A 2×2 coupler at <b>3<i class="v">L</i><sub>π</sub>/2</b>.</li>
+          <li><b>Paired interference</b> (inputs at ±<i class="v">W</i><sub>e</sub>/6, modes 2, 5, 8… not excited): <i class="v">N</i> images at <i class="v">L</i><sub>π</sub>/<i class="v">N</i>. A shorter 2×2 at <b><i class="v">L</i><sub>π</sub>/2</b>.</li>
+          <li><b>Symmetric interference</b> (centred input, only even modes): <i class="v">N</i> images at 3<i class="v">L</i><sub>π</sub>/(4<i class="v">N</i>). A 1×2 splitter at <b>3<i class="v">L</i><sub>π</sub>/8</b>, with outputs at ±<i class="v">W</i><sub>e</sub>/4.</li>
+        </ul>
+        <p>The exact (non-paraxial) β<sub>ν</sub> used here makes the higher modes slightly mismatched, so the images are not perfect. Modes beyond cut-off are lost, which adds excess loss.</p>
+      </div>
+      <div class="th">
+        <h3>3 · Outputs, phase and link to the MZI</h3>
+        <p>The output amplitudes are the overlaps of <i class="v">E</i>(<i class="v">x</i>, <i class="v">L</i>) with the output waveguide modes. An ideal 1×2 splits 50:50 in phase. An ideal 2×2 splits 50:50 with a 90° difference:</p>
+        <div class="eq"><i class="v">M</i><sub>MMI</sub> = <span class="frac"><span>1</span><span>√2</span></span><span class="smat"><span>1</span><span>j</span><span>j</span><span>1</span></span> &nbsp;→&nbsp; with errors: &nbsp;<span class="frac"><span><i class="v">P</i><sub>1</sub></span><span><i class="v">P</i><sub>1</sub> + <i class="v">P</i><sub>2</sub></span></span> = sin²(π/4 + α)</div>
+        <p>α is the imbalance of the MZI model: <span class="live" id="lvA"></span></p>
+        <p>Since <i class="v">L</i><sub>π</sub> ∝ <i class="v">W</i><sub>e</sub>²/λ, a width error shifts the imaging point by δ<i class="v">L</i>/<i class="v">L</i> ≈ 2δ<i class="v">W</i>/<i class="v">W</i><sub>e</sub>. The splitting changes slowly with λ, so an MMI is more broadband and fabrication-tolerant than a directional coupler, at the cost of a larger footprint.</p>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+"use strict";
+const PI = Math.PI;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+let dirty = true;
+function f3(v) { const a = Math.abs(v); return !isFinite(v) ? '∞' : a >= 1000 ? v.toFixed(0) : a >= 100 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : a >= 1 ? v.toFixed(3) : v.toFixed(4); }
+const dB = p => 10 * Math.log10(Math.max(p, 1e-12));
+const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+function fitCanvas(c) {
+  const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  const W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); return { ctx, w: r.width, h: r.height };
+}
+function niceTicks(a, b, n) {
+  const span = b - a; if (!(span > 0)) return [a];
+  const s0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(s0))), q = s0 / mag;
+  const st = (q < 1.5 ? 1 : q < 3 ? 2 : q < 7 ? 5 : 10) * mag, t = [];
+  for (let v = Math.ceil(a / st - 1e-9) * st; v <= b + 1e-9; v += st) t.push(+v.toFixed(12));
+  return t;
+}
+function tickFmt(v, step) { const d = Math.max(0, Math.min(6, -Math.floor(Math.log10(step || 1) + 1e-9))); return v.toFixed(d); }
+function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
+  ctx.font = FONT; const w = ctx.measureText(text).width + 10, x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
+  ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
+  ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + 0.5);
+}
+/* colour maps: 'light' (dark → red → white, for optical intensity) and 'heat' (dark blue → red → yellow) */
+const CMAPS = {
+  light: [[0, [8, 10, 16]], [0.25, [90, 10, 40]], [0.5, [210, 40, 80]], [0.75, [255, 120, 120]], [1, [255, 235, 230]]],
+  heat: [[0, [14, 22, 48]], [0.25, [60, 30, 110]], [0.5, [180, 40, 90]], [0.75, [245, 120, 40]], [1, [255, 240, 150]]]
+};
+function cmap(name, t) {
+  const st = CMAPS[name]; t = clamp(t, 0, 1);
+  for (let i = 1; i < st.length; i++) if (t <= st[i][0]) { const u = (t - st[i - 1][0]) / (st[i][0] - st[i - 1][0]), a = st[i - 1][1], b = st[i][1]; return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u]; }
+  return st[st.length - 1][1];
+}
+/* ------------------------------------------------ sliders with editable numeric boxes */
+const LOGN = 2000;
+const toSlider = (c, v) => Math.round(LOGN * Math.log(v / c.min) / Math.log(c.max / c.min));
+const fromSlider = (c, u) => c.min * Math.pow(c.max / c.min, u / LOGN);
+const SLid = id => SL.find(c => c.id === id);
+const maxOf = c => typeof c.max === 'function' ? c.max() : c.max;
+function buildSliders() {
+  for (const c of SL) {
+    const host = document.querySelector(`[data-group="${c.g}"]`);
+    const row = document.createElement('div'); row.className = 'row'; row.id = 'row_' + c.id;
+    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val"><input type="text" inputmode="decimal" class="numin" id="n_${c.id}"><span class="unit">${c.unit ?? ''}</span><span class="extra" id="x_${c.id}"></span></span><input type="range" id="s_${c.id}">`;
+    const inl = host.querySelector('.inline.after'); if (inl) host.insertBefore(row, inl); else host.appendChild(row);
+    const s = row.querySelector('input[type=range]');
+    if (c.log) { s.min = 0; s.max = LOGN; s.step = 1; } else { s.min = c.min; s.max = maxOf(c); s.step = c.step; }
+    s.addEventListener('input', () => { c.set(c.log ? fromSlider(c, +s.value) : +s.value); if (c.after) c.after(); syncOut(c); dirty = true; });
+    const n = row.querySelector('.numin');
+    n.addEventListener('change', () => { let v = parseFloat(String(n.value).replace(',', '.')); if (isFinite(v)) { c.set(clamp(v, c.min, maxOf(c))); if (c.after) c.after(); syncSlider(c); dirty = true; } else syncOut(c); });
+    n.addEventListener('keydown', e => { if (e.key === 'Enter') n.blur(); });
+  }
+  SL.forEach(syncSlider);
+}
+function syncOut(c) {
+  const n = document.getElementById('n_' + c.id);
+  if (document.activeElement !== n) n.value = +c.get().toFixed(c.dec ?? 3);
+  document.getElementById('x_' + c.id).textContent = c.extra ? c.extra(c.get()) : '';
+}
+function syncSlider(c) {
+  const s = document.getElementById('s_' + c.id);
+  if (c.log) s.value = toSlider(c, c.get()); else { s.max = maxOf(c); s.value = c.get(); }
+  syncOut(c);
+}
+function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+function wireSeg(id, fn) { document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { fn(b.dataset.v); setSeg(id, b.dataset.v); dirty = true; }); }
+function readouts(id, items) { document.getElementById(id).innerHTML = items.map(([k, v]) => `<div class="ro"><div class="k">${k}</div><div class="v">${v}</div></div>`).join(''); }
+const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
+/* ------------------------------------------------ generic line plot
+   o = { x0, x1, y0, y1, xlabel, ylabel, series:[{x:[], y:[], color, width, dash}], vlines:[{x, color, label, dash}],
+         legend:[{color, label, dash}], yfmt, ylog } */
+function linePlot(canvas, o) {
+  const { ctx, w, h } = fitCanvas(canvas); ctx.clearRect(0, 0, w, h);
+  const m = { l: 60, r: 16, t: 30, b: 42 }, pw = w - m.l - m.r, ph = h - m.t - m.b; if (pw < 60 || ph < 40) return;
+  const ty = v => o.ylog ? Math.log10(Math.max(v, 1e-30)) : v;
+  const Y0 = ty(o.y0), Y1 = ty(o.y1);
+  const X = v => m.l + (v - o.x0) / (o.x1 - o.x0) * pw, Y = v => m.t + (1 - (ty(v) - Y0) / (Y1 - Y0)) * ph;
+  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  const xt = niceTicks(o.x0, o.x1, Math.max(3, Math.round(pw / 90))), xst = xt.length > 1 ? xt[1] - xt[0] : 1;
+  let yt; if (o.ylog) { yt = []; for (let d = Math.ceil(Y0); d <= Math.floor(Y1); d++) yt.push(Math.pow(10, d)); } else yt = niceTicks(o.y0, o.y1, Math.max(3, Math.round(ph / 55)));
+  const yst = !o.ylog && yt.length > 1 ? yt[1] - yt[0] : 1;
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
+  for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
+  for (const b of (o.bands || [])) { ctx.fillStyle = b.color; ctx.fillRect(X(b.x0), m.t, X(b.x1) - X(b.x0), ph); }
+  for (const v of (o.vlines || [])) {
+    if (v.x < o.x0 || v.x > o.x1) continue;
+    ctx.strokeStyle = v.color; ctx.lineWidth = 1.2; ctx.setLineDash(v.dash || [4, 4]);
+    ctx.beginPath(); ctx.moveTo(X(v.x), m.t); ctx.lineTo(X(v.x), m.t + ph); ctx.stroke(); ctx.setLineDash([]);
+    if (v.label) { ctx.font = FONT; ctx.fillStyle = v.color; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(v.label, X(v.x), m.t + 4 + (v.row || 0) * 14); }
+  }
+  for (const s of o.series) {
+    ctx.beginPath(); let pen = false;
+    for (let i = 0; i < s.x.length; i++) { const y = s.y[i]; if (!isFinite(y)) { pen = false; continue; } const px = X(s.x[i]), py = Y(y); if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py); }
+    ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 2; ctx.setLineDash(s.dash || []); ctx.lineJoin = 'round'; ctx.stroke(); ctx.setLineDash([]);
+  }
+  for (const p of (o.points || [])) { if (p.x < o.x0 || p.x > o.x1) continue; ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 5, 0, 2 * PI); ctx.fillStyle = p.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); }
+  ctx.restore();
+  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of xt) ctx.fillText(tickFmt(t, xst), X(t), m.t + ph + 6);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const t of yt) ctx.fillText(o.yfmt ? o.yfmt(t) : (o.ylog ? (t >= 1 ? String(t) : t.toExponential(0)) : tickFmt(t, yst)), m.l - 6, Y(t));
+  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
+  ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText(o.ylabel, 0, 0); ctx.restore();
+  let lx = m.l; const ly = 14; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
+  return { X, Y, m, pw, ph };
+}
+
+const S = { cfg: '1x2', W: 6, L: 0, lam: 1550, nr: 2.85, nc: 1.44, Wa: 1.4, off: 0.25, plot: 'len' };
+const defOff = cfg => cfg === '1x2' ? 0.25 : 1 / 6;
+/* ------------------------------------------------ modal propagation analysis */
+function model(o = S) {
+  const lam = o.lam / 1000, k = 2 * PI / lam, NA = Math.sqrt(o.nr * o.nr - o.nc * o.nc);
+  const We = o.W + lam / PI / NA, beta = [];
+  for (let n = 0; (n + 1) * PI / We < k * NA && n < 200; n++) beta.push(Math.sqrt((k * o.nr) ** 2 - ((n + 1) * PI / We) ** 2));
+  const M = beta.length, Lpi = PI / (beta[0] - beta[1]);
+  const NX = 500, dx = We / NX, xs = Array.from({ length: NX }, (_, i) => -We / 2 + (i + 0.5) * dx);
+  const psi = (n, x) => Math.sqrt(2 / We) * Math.sin((n + 1) * PI * (x + We / 2) / We);
+  const w0 = 0.42 * o.Wa, g = (x, x0) => Math.pow(2 / (PI * w0 * w0), 0.25) * Math.exp(-(((x - x0) / w0) ** 2));
+  const xo = o.off * We, inPos = o.cfg === '1x2' ? 0 : xo, outPos = [xo, -xo];
+  const ov = (x0) => beta.map((_, n) => { let s = 0; for (const x of xs) s += psi(n, x) * g(x, x0); return s * dx; });
+  const c = ov(inPos), o1 = ov(outPos[0]), o2 = ov(outPos[1]);
+  return { lam, We, beta, M, Lpi, c, o1, o2, psi, inPos, outPos, w0 };
+}
+function outputs(md, L) {
+  let r1 = 0, i1 = 0, r2 = 0, i2 = 0;
+  for (let n = 0; n < md.M; n++) { const ph = -(md.beta[n] - md.beta[0]) * L, cs = Math.cos(ph), sn = Math.sin(ph); r1 += md.c[n] * md.o1[n] * cs; i1 += md.c[n] * md.o1[n] * sn; r2 += md.c[n] * md.o2[n] * cs; i2 += md.c[n] * md.o2[n] * sn; }
+  const P1 = r1 * r1 + i1 * i1, P2 = r2 * r2 + i2 * i2;
+  return { P1, P2, T: P1 + P2, dph: Math.atan2(i1 * r2 - r1 * i2, r1 * r2 + i1 * i2) };
+}
+function optL(md, target) { let best = target, bt = -1; for (let i = 0; i <= 600; i++) { const L = target * (0.85 + 0.3 * i / 600), T = outputs(md, L).T; if (T > bt) { bt = T; best = L; } } return best; }
+const idealL = md => S.cfg === '1x2' ? 3 * md.Lpi / 8 : (S.L2mode === 'gen' ? 1.5 * md.Lpi : 0.5 * md.Lpi);
+/* ------------------------------------------------ top-view field map */
+const cF = document.getElementById('cF'); let fCache = { key: '' };
+function drawField() {
+  const { ctx, w, h } = fitCanvas(cF); ctx.clearRect(0, 0, w, h);
+  const md = model(), L = S.L, out = outputs(md, L);
+  const m = { l: 12, r: 92, t: 30, b: 34 }, pw = w - m.l - m.r, phh = h - m.t - m.b;
+  const zin = 0.14 * L, zout = 0.14 * L, z0 = -zin, z1 = L + zout;
+  const X = z => m.l + (z - z0) / (z1 - z0) * pw, xspan = md.We * 1.25, Y = x => m.t + phh / 2 - x / xspan * phh;
+  // field inside the MMI
+  const key = [S.cfg, S.W, S.L, S.lam, S.nr, S.nc, S.Wa, S.off].join('|');
+  if (fCache.key !== key) {
+    const NZ = 700, NXp = 160, img = new Float32Array(NZ * NXp); let mx = 0;
+    const ps = []; for (let n = 0; n < md.M; n++) { const row = new Float32Array(NXp); for (let i = 0; i < NXp; i++) row[i] = md.c[n] * md.psi(n, -md.We / 2 + (i + 0.5) / NXp * md.We); ps.push(row); }
+    for (let j = 0; j < NZ; j++) {
+      const z = (j + 0.5) / NZ * L, cs = [], sn = [];
+      for (let n = 0; n < md.M; n++) { const ph = -(md.beta[n] - md.beta[0]) * z; cs.push(Math.cos(ph)); sn.push(Math.sin(ph)); }
+      for (let i = 0; i < NXp; i++) { let re = 0, im = 0; for (let n = 0; n < md.M; n++) { const a = ps[n][i]; re += a * cs[n]; im += a * sn[n]; } const v = re * re + im * im; img[j * NXp + i] = v; if (v > mx) mx = v; }
+    }
+    const off = document.createElement('canvas'); off.width = NZ; off.height = NXp; const oc = off.getContext('2d'), id = oc.createImageData(NZ, NXp);
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NXp; i++) { const c = cmap('light', Math.pow(img[j * NXp + i] / mx, 0.7)), k = ((NXp - 1 - i) * NZ + j) * 4; id.data[k] = c[0]; id.data[k + 1] = c[1]; id.data[k + 2] = c[2]; id.data[k + 3] = 255; }
+    oc.putImageData(id, 0, 0); fCache = { key, off };
+  }
+  ctx.imageSmoothingEnabled = true; ctx.drawImage(fCache.off, X(0), Y(md.We / 2), X(L) - X(0), Y(-md.We / 2) - Y(md.We / 2));
+  ctx.strokeStyle = 'rgba(200,215,235,0.55)'; ctx.lineWidth = 1.2; ctx.strokeRect(X(0), Y(md.We / 2), X(L) - X(0), Y(-md.We / 2) - Y(md.We / 2));
+  // access waveguides
+  const wg = (z0_, z1_, x, p) => { const hw = S.Wa / 2; const c = cmap('light', Math.pow(clamp(p, 0, 1), 0.7)); ctx.fillStyle = `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`; ctx.fillRect(X(z0_), Y(x + hw), X(z1_) - X(z0_), Y(x - hw) - Y(x + hw)); ctx.strokeStyle = 'rgba(200,215,235,0.55)'; ctx.strokeRect(X(z0_), Y(x + hw), X(z1_) - X(z0_), Y(x - hw) - Y(x + hw)); };
+  if (S.cfg === '1x2') wg(z0, 0, 0, 1); else { wg(z0, 0, md.outPos[0], 1); wg(z0, 0, md.outPos[1], 0); }
+  wg(L, z1, md.outPos[0], out.P1 / 0.5 * 0.9); wg(L, z1, md.outPos[1], out.P2 / 0.5 * 0.9);
+  // imaging-length markers
+  const marks = S.cfg === '1x2' ? [[3 * md.Lpi / 8, '3Lπ/8']] : [[md.Lpi / 2, 'Lπ/2'], [1.5 * md.Lpi, '3Lπ/2']];
+  ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  for (const [z, lab] of marks) if (z > 0 && z <= L * 1.001) { ctx.strokeStyle = 'rgba(255,204,102,0.75)'; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(X(z), Y(md.We / 2) - 6); ctx.lineTo(X(z), Y(-md.We / 2) + 6); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#ffcc66'; ctx.fillText(lab, X(z), Y(md.We / 2) - 8); }
+  // labels
+  tag(ctx, X(L) + (X(z1) - X(L)) + 4, Y(md.outPos[0]), `${(out.P1 * 100).toFixed(1)} %`, '#4aa8ff', 'rgba(12,16,22,0.85)', 'left');
+  tag(ctx, X(L) + (X(z1) - X(L)) + 4, Y(md.outPos[1]), `${(out.P2 * 100).toFixed(1)} %`, '#ff9548', 'rgba(12,16,22,0.85)', 'left');
+  tag(ctx, X(z0) + 4, m.t - 14, 'input', '#ff8fa8', 'rgba(12,16,22,0.85)', 'left');
+  ctx.fillStyle = '#9fb0c3'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of niceTicks(0, L, 6)) { ctx.fillText(t, X(t), Y(-md.We / 2) + 8); }
+  ctx.fillText(`z (µm) · W = ${S.W} µm, transverse axis stretched`, m.l + pw / 2, h - 16);
+  if (hoverF) { const z = z0 + (hoverF.x - m.l) / pw * (z1 - z0); if (z >= 0 && z <= L) { const o = outputs(md, z); ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.moveTo(hoverF.x, Y(md.We / 2)); ctx.lineTo(hoverF.x, Y(-md.We / 2)); ctx.stroke(); tag(ctx, hoverF.x + 8, m.t - 14, `z = ${z.toFixed(1)} µm = ${(z / md.Lpi).toFixed(3)} Lπ · if cut here: ${(o.P1 * 100).toFixed(0)} % / ${(o.P2 * 100).toFixed(0)} %`, '#fff', 'rgba(8,11,16,0.9)', 'left'); } }
+}
+let hoverF = null;
+cF.addEventListener('pointermove', e => { hoverF = { x: e.offsetX, y: e.offsetY }; drawField(); });
+cF.addEventListener('pointerleave', () => { hoverF = null; drawField(); });
+cF.addEventListener('click', e => { const md = model(), L = S.L, z0 = -0.14 * L, z1 = 1.14 * L, r = cF.getBoundingClientRect(), pw = r.width - 12 - 92, z = z0 + (e.offsetX - 12) / pw * (z1 - z0); if (z > 1) { S.L = z; syncSlider(SLid('L')); dirty = true; } });
+/* ------------------------------------------------ plots */
+const cPlot = document.getElementById('cPlot');
+function drawPlot() {
+  const md = model(), out = outputs(md, S.L);
+  if (S.plot === 'len') {
+    const Lm = Math.max(S.L * 1.25, S.cfg === '1x2' ? 0.7 * md.Lpi : 1.8 * md.Lpi), xs = [], a = [], b = [], t = [];
+    for (let i = 0; i <= 600; i++) { const L = Lm * i / 600, o = outputs(md, L); xs.push(L); a.push(o.P1); b.push(o.P2); t.push(o.T); }
+    const vl = S.cfg === '1x2' ? [{ x: 3 * md.Lpi / 8, color: '#ffcc66', label: '3Lπ/8' }] : [{ x: md.Lpi / 2, color: '#ffcc66', label: 'Lπ/2' }, { x: 1.5 * md.Lpi, color: '#ffcc66', label: '3Lπ/2' }];
+    linePlot(cPlot, { x0: 0, x1: Lm, y0: 0, y1: 1.05, xlabel: 'MMI length L (µm)', ylabel: 'Output power (normalized)',
+      series: [{ x: xs, y: t, color: 'rgba(230,237,243,0.6)', width: 1.5, dash: [5, 4] }, { x: xs, y: a, color: '#4aa8ff' }, { x: xs, y: b, color: '#ff9548' }],
+      vlines: vl, points: [{ x: S.L, y: out.P1, color: '#4aa8ff' }, { x: S.L, y: out.P2, color: '#ff9548' }],
+      legend: [{ color: '#4aa8ff', label: S.cfg === '1x2' ? 'out 1 (upper)' : 'out 1 (bar)' }, { color: '#ff9548', label: S.cfg === '1x2' ? 'out 2 (lower)' : 'out 2 (cross)' }, { color: 'rgba(230,237,243,0.6)', label: 'total', dash: [5, 4] }] });
+  } else {
+    const isL = S.plot === 'lam', xs = [], a = [], b = [], t = [], N = 120;
+    const x0 = isL ? 1450 : S.W - 0.5, x1 = isL ? 1650 : S.W + 0.5;
+    for (let i = 0; i <= N; i++) { const v = x0 + (x1 - x0) * i / N, md2 = model(isL ? { ...S, lam: v } : { ...S, W: v }), o = outputs(md2, S.L); xs.push(v); a.push(dB(o.P1)); b.push(dB(o.P2)); t.push(dB(o.T)); }
+    linePlot(cPlot, { x0, x1, y0: -8, y1: 0.5, xlabel: isL ? 'Wavelength λ (nm)' : 'MMI width W (µm) · band = ±50 nm fabrication error', ylabel: 'Output power (dB)',
+      series: [{ x: xs, y: t, color: 'rgba(230,237,243,0.6)', width: 1.5, dash: [5, 4] }, { x: xs, y: a, color: '#4aa8ff' }, { x: xs, y: b, color: '#ff9548' }],
+      bands: isL ? [] : [{ x0: S.W - 0.05, x1: S.W + 0.05, color: 'rgba(255,204,102,0.12)' }],
+      vlines: [{ x: isL ? S.lam : S.W, color: isL ? 'rgba(255,77,109,0.9)' : '#ffcc66', label: isL ? 'λ' : 'design' }],
+      legend: [{ color: '#4aa8ff', label: 'out 1' }, { color: '#ff9548', label: 'out 2' }, { color: 'rgba(230,237,243,0.6)', label: 'total (excess loss)', dash: [5, 4] }] });
+  }
+}
+/* ------------------------------------------------ readouts */
+function update() {
+  const md = model(), o = outputs(md, S.L), Li = idealL(md);
+  const alpha = Math.asin(Math.sqrt(clamp(o.P1 / o.T, 0, 1))) - PI / 4, dph = o.dph * 180 / PI;
+  readouts('ro', [
+    ['Effective width Wₑ', `${f3(md.We)} <small>µm</small>`],
+    ['Beat length Lπ', `${f3(md.Lpi)} <small>µm</small>`],
+    ['Guided modes M', `${md.M}`],
+    ['L / Lπ', `${(S.L / md.Lpi).toFixed(4)}`],
+    ['Paraxial imaging length', `${f3(Li)} <small>µm</small>`],
+    ['Out 1 · out 2', `${(o.P1 * 100).toFixed(1)}<small>%</small> · ${(o.P2 * 100).toFixed(1)}<small>%</small>`],
+    ['Imbalance', `${(10 * Math.log10(o.P1 / o.P2)).toFixed(3)} <small>dB</small>`],
+    ['Excess loss', `${(-dB(o.T)).toFixed(3)} <small>dB</small>`],
+    ['Phase difference out1 − out2', `${dph.toFixed(1)}° <small>(ideal ${S.cfg === '1x2' ? '0°' : '±90°'})</small>`],
+    ['Equivalent MZI imbalance α', `${alpha.toFixed(4)} <small>rad</small>`]
+  ]);
+  setTxt('lvLpi', `Lπ = ${f3(md.Lpi)} µm · M = ${md.M}`); setTxt('lvA', `α = ${alpha.toFixed(4)} rad`);
+}
+/* ------------------------------------------------ controls */
+const SL = [
+  { id: 'W', g: 'geo', lab: 'MMI width W', min: 2, max: 20, step: 0.01, unit: 'µm', dec: 2, get: () => S.W, set: v => S.W = v },
+  { id: 'L', g: 'geo', lab: 'MMI length L', min: 1, max: () => Math.max(400, 2 * model().Lpi), step: 0.01, unit: 'µm', dec: 2, get: () => S.L, set: v => S.L = v },
+  { id: 'Wa', g: 'geo', lab: 'Access waveguide width', min: 0.5, max: 3, step: 0.01, unit: 'µm', dec: 2, get: () => S.Wa, set: v => S.Wa = v },
+  { id: 'off', g: 'geo', lab: 'Port position ±x / Wₑ', min: 0.05, max: 0.45, step: 0.001, unit: '', dec: 3, get: () => S.off, set: v => S.off = v, extra: v => `(${f3(v * model().We)} µm)` },
+  { id: 'lam', g: 'opt', lab: 'Wavelength λ', min: 1450, max: 1650, step: 0.1, unit: 'nm', dec: 1, get: () => S.lam, set: v => S.lam = v },
+  { id: 'nr', g: 'opt', lab: 'Slab effective index n_r', min: 1.6, max: 3.2, step: 0.001, unit: '', dec: 3, get: () => S.nr, set: v => S.nr = v },
+  { id: 'nc', g: 'opt', lab: 'Lateral cladding index n_c', min: 1, max: 2, step: 0.001, unit: '', dec: 3, get: () => S.nc, set: v => S.nc = v }
+];
+function lenButtons() {
+  const host = document.getElementById('lenBtns');
+  host.innerHTML = (S.cfg === '1x2' ? '<span>Length:</span><button class="btn primary" data-l="sym">Set L = 3Lπ/8 (symmetric)</button>'
+    : '<span>Length:</span><button class="btn primary" data-l="pair">Set L = Lπ/2 (paired, ports ±Wₑ/6)</button><button class="btn" data-l="gen">Set L = 3Lπ/2 (general)</button>') + '<span style="font-size:12px">optimized for maximum transmission around the paraxial length</span>';
+  host.querySelectorAll('button').forEach(b => b.onclick = () => { if (b.dataset.l === 'pair') S.off = 1 / 6; const md = model(); S.L = optL(md, b.dataset.l === 'gen' ? 1.5 * md.Lpi : b.dataset.l === 'pair' ? 0.5 * md.Lpi : 3 * md.Lpi / 8); SL.forEach(syncSlider); dirty = true; });
+}
+wireSeg('segPlot', v => S.plot = v);
+wireSeg('segCfg', v => { S.cfg = v; S.off = defOff(v); const md = model(); S.L = optL(md, v === '1x2' ? 3 * md.Lpi / 8 : 0.5 * md.Lpi); lenButtons(); SL.forEach(syncSlider); });
+window.addEventListener('resize', () => { fCache.key = ''; dirty = true; });
+{ const md = model(); S.L = optL(md, 3 * md.Lpi / 8); } lenButtons(); buildSliders();
+(function loop() { if (dirty) { dirty = false; drawField(); drawPlot(); update(); SL.forEach(syncOut); } requestAnimationFrame(loop); })();
+</script>
+</body>
+</html>

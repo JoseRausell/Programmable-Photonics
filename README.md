@@ -12,6 +12,9 @@ components/
   mzi.html          MZI / tunable basic unit (TBU) and thermo-optic phase shifter
   ring.html         Single-bus ring / racetrack: coupling regimes, Q, backscattering splitting, thermal tuning
   adddrop.html      Add-drop ring / racetrack: through & drop, critical coupling, backscattering (reflection + add port), thermal tuning
+  ps.html           Thermo-optic phase shifter: 2D heat conduction (method of images), Pπ, trenches, thermal crosstalk, time response
+  dc.html           Directional coupler: coupled-mode theory vs gap, length, wavelength, asymmetry, tolerance
+  mmi.html          MMI 1×2 / 2×2: self-imaging by modal propagation analysis, imbalance, phase, equivalent MZI error
 ```
 
 Each simulation is a single self-contained HTML file (3D view, plots and model, no external libraries).
@@ -33,5 +36,4 @@ Every page has a "← Component catalog" link back to `index.html`.
 
 ## Planned components
 
-Phase shifter · directional coupler · MMI ·
-feed-forward meshes (Reck / Clements) · hexagonal recirculating mesh.
+Feed-forward meshes (Reck / Clements) · hexagonal recirculating mesh.

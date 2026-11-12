@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thermo-optic phase shifter</title>
+<style>
+
+:root{
+  --bg:#0c1016; --card:#141a22; --card2:#10151c; --line:#243041; --text:#e6edf3; --muted:#8b98a9;
+  --thr:#4aa8ff; --refl:#d58cff; --fw:#5fd38d; --bw:#ff8f6b; --accent:#ffcc66; --laser:#ff4d6d; --warn:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:14px 20px 6px}
+header h1{font-size:19px;margin:0;font-weight:650}
+header .sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:10px 20px 20px}
+@media (max-width:1100px){main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600}
+.view{height:min(54vh,560px);min-height:380px;display:flex;flex-direction:column}
+.view canvas{flex:1;width:100%;min-height:0;display:block;border-radius:8px}
+#c3d{background:radial-gradient(ellipse at 50% 35%,#18212d 0%,#0d1218 75%);cursor:grab;touch-action:none}
+#c3d:active{cursor:grabbing}
+#cPlot{background:var(--card2);cursor:crosshair;touch-action:none}
+#cP2{background:var(--card2);height:240px;width:100%;display:block;border-radius:8px;cursor:crosshair;touch-action:none}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;color:var(--muted);border:0;padding:4px 10px;font:inherit;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:#223046;color:var(--text)}
+.toolbar label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+input[type=number]{background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;width:86px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.group{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.group h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin:7px 0}
+.row.off{opacity:.35;pointer-events:none}
+.row .lab{color:var(--muted);font-size:12.5px}
+.row .val{font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
+.row input[type=range]{grid-column:1/3;width:100%;accent-color:var(--accent);margin:2px 0 0}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0;font-size:12.5px;color:var(--muted)}
+.btn{background:#1d2735;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn:hover{background:#26344a}
+.btn.primary{border-color:#6b5a2b;background:#2d2615;color:var(--accent)}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
+.ro{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ro .k{font-size:11.5px;color:var(--muted)}
+.ro .v{font-size:15.5px;font-variant-numeric:tabular-nums;font-weight:600}
+.ro .v small{font-size:12px;color:var(--muted);font-weight:500}
+.span2{grid-column:1/-1}
+/* theory */
+.theory{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
+.th{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.th h3{margin:0 0 8px;font-size:14px;color:var(--accent)}
+.th p{margin:6px 0;color:#c9d3de;font-size:13px}
+.eq{display:block;text-align:center;line-height:2.4;margin:8px 0;font:15px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 3px}
+.frac>span:first-child{border-bottom:1px solid #cfd8e3;padding:0 4px 2px}
+.frac>span:last-child{padding:2px 4px 0}
+.live{font:600 12.5px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);background:#1f1a0e;border:1px solid #4a3d1c;border-radius:5px;padding:1px 6px;white-space:nowrap}
+table.fm{width:100%;border-collapse:collapse;font-size:13px}
+table.fm td{padding:5px 6px;border-bottom:1px solid #1f2836;color:#c9d3de;vertical-align:middle}
+table.fm td.f{font:14px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+table.fm td.f small{display:block;font:11.5px system-ui,sans-serif;color:var(--muted)}
+table.fm td:last-child{text-align:right}
+i.v{font-family:"Cambria Math","Times New Roman",serif;font-style:italic}
+a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1c;background:#1f1a0e;border-radius:8px;padding:3px 10px;margin-right:4px}a.back:hover{background:#2d2615}
+
+.row .val{display:flex;align-items:center;justify-content:flex-end;gap:4px;text-align:right}
+.numin{width:78px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font:inherit;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.numin:focus{outline:none;border-color:var(--accent)}
+.row .unit{color:var(--muted);font-size:12px;min-width:18px;text-align:left}
+.row .extra{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.cfgsel{background:#1f1a0e;color:var(--accent);border:1px solid #6b5a2b;border-radius:9px;padding:6px 10px;font:inherit;font-size:13.5px;cursor:pointer}
+
+.smat{display:inline-grid;grid-template-columns:auto auto;gap:2px 14px;padding:2px 9px;vertical-align:middle;border-left:1.5px solid #cfd8e3;border-right:1.5px solid #cfd8e3;border-radius:7px;line-height:1.7;text-align:center}
+
+#cX{background:var(--card2);cursor:crosshair}
+#cPlot{background:var(--card2)}
+.cbar{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:6px}
+.cbar .grad{flex:1;height:10px;border-radius:5px;background:linear-gradient(90deg,rgb(14,22,48),rgb(60,30,110),rgb(180,40,90),rgb(245,120,40),rgb(255,240,150))}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../index.html">← Component catalog</a>
+  <h1>Thermo-optic phase shifter</h1>
+  <span class="sub">Where does Pπ come from? 2D heat conduction in the cross-section (method of images), trenches, thermal crosstalk and time response. Part of the Programmable Photonics interactive lab.</span>
+</header>
+<main>
+  <section class="card view">
+    <h2>Cross-section · temperature rise ΔT</h2>
+    <canvas id="cX"></canvas>
+    <div class="cbar"><span>0 K</span><div class="grad"></div><span id="cbMax"></span></div>
+  </section>
+  <section class="card view">
+    <div class="toolbar">
+      <div class="seg" id="segPlot"><button data-v="phase" class="on">Phase vs power</button><button data-v="dist">Pπ vs heater distance</button><button data-v="xt">Crosstalk vs separation</button><button data-v="time">Time response</button></div>
+    </div>
+    <canvas id="cPlot"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>Controls</h2>
+    <div class="inline" style="margin-bottom:10px">
+      <span>Presets:</span>
+      <button class="btn" id="pStd">Standard SOI heater</button>
+      <button class="btn primary" id="pTr">With isolation trenches</button>
+    </div>
+    <div class="groups">
+      <div class="group" data-group="drive"><h3>Drive</h3></div>
+      <div class="group" data-group="geo"><h3>Geometry</h3>
+        <div class="inline after">Isolation trenches <span class="seg" id="segTr"><button data-v="off" class="on">Off</button><button data-v="on">On</button></span></div>
+      </div>
+      <div class="group" data-group="nb"><h3>Neighbouring waveguide</h3>
+        <div class="inline after">Show neighbour <span class="seg" id="segNb"><button data-v="on" class="on">On</button><button data-v="off">Off</button></span></div>
+      </div>
+      <div class="group" data-group="time"><h3>Time response</h3></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Figures of merit</h2>
+    <div class="readouts" id="ro"></div>
+    <div id="warn" style="font-size:12.5px;color:var(--warn,#ff6b6b);min-height:18px"></div>
+  </section>
+
+  <section class="card span2">
+    <h2>Theory</h2>
+    <div class="theory">
+      <div class="th">
+        <h3>1 · Thermo-optic effect</h3>
+        <p>Heating changes the refractive index of silicon, dn/dT ≈ 1.86·10⁻⁴ K⁻¹. A temperature rise ΔT over a length <i class="v">L</i> gives a phase shift:</p>
+        <div class="eq">Δ<i class="v">φ</i> = <span class="frac"><span>2π</span><span>λ</span></span> <span class="frac"><span>d<i class="v">n</i></span><span>d<i class="v">T</i></span></span> Δ<i class="v">T</i> <i class="v">L</i></div>
+        <p>A π shift needs ΔT<sub>π</sub> = λ / (2 L dn/dT): <span class="live" id="lvTpi"></span></p>
+      </div>
+      <div class="th">
+        <h3>2 · Heat conduction in the cross-section</h3>
+        <p>The heater is a line source dissipating <i class="v">q</i> = <i class="v">P</i>/<i class="v">L</i> (W/m) on top of the oxide (k ≈ 1.4 W/m·K). The substrate acts as a heat sink (ΔT = 0) and the top surface is adiabatic. Solving ∇²T = 0 with the method of images (the infinite series has a closed form) gives:</p>
+        <div class="eq">Δ<i class="v">T</i> = <span class="frac"><span><i class="v">q</i></span><span>2π<i class="v">k</i></span></span> ln <span class="frac"><span>sinh²<i class="v">A</i> + sin²<i class="v">B</i><sub>+</sub></span><span>sinh²<i class="v">A</i> + sin²<i class="v">B</i><sub>−</sub></span></span>, &nbsp; <i class="v">A</i> = <span class="frac"><span>π(<i class="v">x</i> − <i class="v">x</i><sub>0</sub>)</span><span>4<i class="v">H</i></span></span>, &nbsp; <i class="v">B</i><sub>±</sub> = <span class="frac"><span>π(<i class="v">y</i> ± <i class="v">H</i>)</span><span>4<i class="v">H</i></span></span></div>
+        <div class="eq">Δ<i class="v">T</i>(<i class="v">x</i>, <i class="v">y</i>) = <i class="v">G</i>(<i class="v">x</i>, <i class="v">y</i>) · <i class="v">P</i>/<i class="v">L</i></div>
+        <p><i class="v">H</i> is the total oxide thickness (BOX + d) and <i class="v">x</i><sub>0</sub> the source position. Far from the heater ΔT decays as exp(−π|x|/2H). The heater width is integrated numerically. Geometry factor at the core: <span class="live" id="lvG"></span></p>
+      </div>
+      <div class="th">
+        <h3>3 · Pπ does not depend on the length</h3>
+        <p>Combining both equations, the length cancels:</p>
+        <div class="eq"><i class="v">P</i><sub>π</sub> = <span class="frac"><span>λ</span><span>2 (d<i class="v">n</i>/d<i class="v">T</i>) <i class="v">G</i><sub>core</sub></span></span> <span class="live" id="lvPpi"></span></div>
+        <p>A longer heater reaches the same phase with a lower temperature and current density (better reliability), but needs the same power. Pπ is set by how efficiently heat reaches the core: the heater–core distance, the oxide thickness and the lateral heat spreading.</p>
+      </div>
+      <div class="th">
+        <h3>4 · Isolation trenches</h3>
+        <p>Deep trenches etched next to the waveguide block lateral heat flow. Here they are modelled as adiabatic walls at <i class="v">x</i> = ±<i class="v">a</i>, which adds mirror images in <i class="v">x</i>. Heat is forced to flow down towards the core, so <i class="v">G</i><sub>core</sub> grows and Pπ drops. Removing the substrate under the heater (undercut) reduces Pπ much further, but slows the response.</p>
+        <p>Ideal trenches also isolate the neighbouring waveguides completely (zero crosstalk outside the trenches). In real devices some heat still couples through the substrate.</p>
+      </div>
+      <div class="th">
+        <h3>5 · Thermal crosstalk</h3>
+        <p>A neighbouring waveguide at distance <i class="v">s</i> also heats up and picks up an unwanted phase:</p>
+        <div class="eq">XT = <span class="frac"><span>Δ<i class="v">φ</i><sub>neighbour</sub></span><span>Δ<i class="v">φ</i><sub>own</sub></span></span> = <span class="frac"><span><i class="v">G</i>(<i class="v">s</i>, <i class="v">y</i><sub>core</sub>)</span><span><i class="v">G</i>(0, <i class="v">y</i><sub>core</sub>)</span></span> <span class="live" id="lvXT"></span></div>
+        <p>In dense programmable meshes this crosstalk has to be calibrated (a crosstalk matrix) or reduced with trenches and larger spacing.</p>
+      </div>
+      <div class="th">
+        <h3>6 · Time response</h3>
+        <p>The slowest thermal mode of an oxide stack of thickness <i class="v">H</i> (sink below, adiabatic top) gives a first-order response:</p>
+        <div class="eq">τ ≈ <span class="frac"><span>4<i class="v">H</i>²</span><span>π² α<sub>th</sub></span></span>, &nbsp; α<sub>th</sub> = <span class="frac"><span><i class="v">k</i></span><span>ρ<i class="v">c</i><sub>p</sub></span></span>, &nbsp; <i class="v">f</i><sub>3dB</sub> = <span class="frac"><span>1</span><span>2πτ</span></span> <span class="live" id="lvTau"></span></div>
+        <p>With overdrive (pre-emphasis), the heater is driven at <i class="v">k</i>·<i class="v">P</i> for <i class="v">t</i><sub>1</sub> = τ ln(<i class="v">k</i>/(<i class="v">k</i>−1)) and then set to <i class="v">P</i>, so the target phase is reached at <i class="v">t</i><sub>1</sub> instead of after several τ.</p>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+"use strict";
+const PI = Math.PI;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+let dirty = true;
+function f3(v) { const a = Math.abs(v); return !isFinite(v) ? '∞' : a >= 1000 ? v.toFixed(0) : a >= 100 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : a >= 1 ? v.toFixed(3) : v.toFixed(4); }
+const dB = p => 10 * Math.log10(Math.max(p, 1e-12));
+const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+function fitCanvas(c) {
+  const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  const W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); return { ctx, w: r.width, h: r.height };
+}
+function niceTicks(a, b, n) {
+  const span = b - a; if (!(span > 0)) return [a];
+  const s0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(s0))), q = s0 / mag;
+  const st = (q < 1.5 ? 1 : q < 3 ? 2 : q < 7 ? 5 : 10) * mag, t = [];
+  for (let v = Math.ceil(a / st - 1e-9) * st; v <= b + 1e-9; v += st) t.push(+v.toFixed(12));
+  return t;
+}
+function tickFmt(v, step) { const d = Math.max(0, Math.min(6, -Math.floor(Math.log10(step || 1) + 1e-9))); return v.toFixed(d); }
+function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
+  ctx.font = FONT; const w = ctx.measureText(text).width + 10, x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
+  ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
+  ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + 0.5);
+}
+/* colour maps: 'light' (dark → red → white, for optical intensity) and 'heat' (dark blue → red → yellow) */
+const CMAPS = {
+  light: [[0, [8, 10, 16]], [0.25, [90, 10, 40]], [0.5, [210, 40, 80]], [0.75, [255, 120, 120]], [1, [255, 235, 230]]],
+  heat: [[0, [14, 22, 48]], [0.25, [60, 30, 110]], [0.5, [180, 40, 90]], [0.75, [245, 120, 40]], [1, [255, 240, 150]]]
+};
+function cmap(name, t) {
+  const st = CMAPS[name]; t = clamp(t, 0, 1);
+  for (let i = 1; i < st.length; i++) if (t <= st[i][0]) { const u = (t - st[i - 1][0]) / (st[i][0] - st[i - 1][0]), a = st[i - 1][1], b = st[i][1]; return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u]; }
+  return st[st.length - 1][1];
+}
+/* ------------------------------------------------ sliders with editable numeric boxes */
+const LOGN = 2000;
+const toSlider = (c, v) => Math.round(LOGN * Math.log(v / c.min) / Math.log(c.max / c.min));
+const fromSlider = (c, u) => c.min * Math.pow(c.max / c.min, u / LOGN);
+const SLid = id => SL.find(c => c.id === id);
+const maxOf = c => typeof c.max === 'function' ? c.max() : c.max;
+function buildSliders() {
+  for (const c of SL) {
+    const host = document.querySelector(`[data-group="${c.g}"]`);
+    const row = document.createElement('div'); row.className = 'row'; row.id = 'row_' + c.id;
+    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val"><input type="text" inputmode="decimal" class="numin" id="n_${c.id}"><span class="unit">${c.unit ?? ''}</span><span class="extra" id="x_${c.id}"></span></span><input type="range" id="s_${c.id}">`;
+    const inl = host.querySelector('.inline.after'); if (inl) host.insertBefore(row, inl); else host.appendChild(row);
+    const s = row.querySelector('input[type=range]');
+    if (c.log) { s.min = 0; s.max = LOGN; s.step = 1; } else { s.min = c.min; s.max = maxOf(c); s.step = c.step; }
+    s.addEventListener('input', () => { c.set(c.log ? fromSlider(c, +s.value) : +s.value); if (c.after) c.after(); syncOut(c); dirty = true; });
+    const n = row.querySelector('.numin');
+    n.addEventListener('change', () => { let v = parseFloat(String(n.value).replace(',', '.')); if (isFinite(v)) { c.set(clamp(v, c.min, maxOf(c))); if (c.after) c.after(); syncSlider(c); dirty = true; } else syncOut(c); });
+    n.addEventListener('keydown', e => { if (e.key === 'Enter') n.blur(); });
+  }
+  SL.forEach(syncSlider);
+}
+function syncOut(c) {
+  const n = document.getElementById('n_' + c.id);
+  if (document.activeElement !== n) n.value = +c.get().toFixed(c.dec ?? 3);
+  document.getElementById('x_' + c.id).textContent = c.extra ? c.extra(c.get()) : '';
+}
+function syncSlider(c) {
+  const s = document.getElementById('s_' + c.id);
+  if (c.log) s.value = toSlider(c, c.get()); else { s.max = maxOf(c); s.value = c.get(); }
+  syncOut(c);
+}
+function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+function wireSeg(id, fn) { document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { fn(b.dataset.v); setSeg(id, b.dataset.v); dirty = true; }); }
+function readouts(id, items) { document.getElementById(id).innerHTML = items.map(([k, v]) => `<div class="ro"><div class="k">${k}</div><div class="v">${v}</div></div>`).join(''); }
+const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
+/* ------------------------------------------------ generic line plot
+   o = { x0, x1, y0, y1, xlabel, ylabel, series:[{x:[], y:[], color, width, dash}], vlines:[{x, color, label, dash}],
+         legend:[{color, label, dash}], yfmt, ylog } */
+function linePlot(canvas, o) {
+  const { ctx, w, h } = fitCanvas(canvas); ctx.clearRect(0, 0, w, h);
+  const m = { l: 60, r: 16, t: 30, b: 42 }, pw = w - m.l - m.r, ph = h - m.t - m.b; if (pw < 60 || ph < 40) return;
+  const ty = v => o.ylog ? Math.log10(Math.max(v, 1e-30)) : v;
+  const Y0 = ty(o.y0), Y1 = ty(o.y1);
+  const X = v => m.l + (v - o.x0) / (o.x1 - o.x0) * pw, Y = v => m.t + (1 - (ty(v) - Y0) / (Y1 - Y0)) * ph;
+  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  const xt = niceTicks(o.x0, o.x1, Math.max(3, Math.round(pw / 90))), xst = xt.length > 1 ? xt[1] - xt[0] : 1;
+  let yt; if (o.ylog) { yt = []; for (let d = Math.ceil(Y0); d <= Math.floor(Y1); d++) yt.push(Math.pow(10, d)); } else yt = niceTicks(o.y0, o.y1, Math.max(3, Math.round(ph / 55)));
+  const yst = !o.ylog && yt.length > 1 ? yt[1] - yt[0] : 1;
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
+  for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
+  for (const b of (o.bands || [])) { ctx.fillStyle = b.color; ctx.fillRect(X(b.x0), m.t, X(b.x1) - X(b.x0), ph); }
+  for (const v of (o.vlines || [])) {
+    if (v.x < o.x0 || v.x > o.x1) continue;
+    ctx.strokeStyle = v.color; ctx.lineWidth = 1.2; ctx.setLineDash(v.dash || [4, 4]);
+    ctx.beginPath(); ctx.moveTo(X(v.x), m.t); ctx.lineTo(X(v.x), m.t + ph); ctx.stroke(); ctx.setLineDash([]);
+    if (v.label) { ctx.font = FONT; ctx.fillStyle = v.color; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(v.label, X(v.x), m.t + 4 + (v.row || 0) * 14); }
+  }
+  for (const s of o.series) {
+    ctx.beginPath(); let pen = false;
+    for (let i = 0; i < s.x.length; i++) { const y = s.y[i]; if (!isFinite(y)) { pen = false; continue; } const px = X(s.x[i]), py = Y(y); if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py); }
+    ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 2; ctx.setLineDash(s.dash || []); ctx.lineJoin = 'round'; ctx.stroke(); ctx.setLineDash([]);
+  }
+  for (const p of (o.points || [])) { if (p.x < o.x0 || p.x > o.x1) continue; ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 5, 0, 2 * PI); ctx.fillStyle = p.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); }
+  ctx.restore();
+  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of xt) ctx.fillText(tickFmt(t, xst), X(t), m.t + ph + 6);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const t of yt) ctx.fillText(o.yfmt ? o.yfmt(t) : (o.ylog ? (t >= 1 ? String(t) : t.toExponential(0)) : tickFmt(t, yst)), m.l - 6, Y(t));
+  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
+  ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText(o.ylabel, 0, 0); ctx.restore();
+  let lx = m.l; const ly = 14; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
+  return { X, Y, m, pw, ph };
+}
+
+const LAM = 1.55e-6, DNDT = 1.86e-4, KOX = 1.4, RHOC = 2200 * 745;
+const S = { P: 10, L: 300, d: 2.2, tbox: 2, wh: 2, trench: false, a: 3, nb: true, s: 8, kod: 2, plot: 'phase' };
+/* Geometry factor G(x, y): ΔT per unit line power (K per W/m). y = 0 at the substrate, heater on top at y = H. */
+function Gxy(x, y, geo) {
+  // Closed form of the infinite image series: strip with ΔT = 0 at y = 0 and an adiabatic top at y = H
+  // (equivalent to a Dirichlet strip of width 2H with the source on its mid-plane):
+  // ΔT = q/(2πk) · ln[(sinh²A + sin²B₊)/(sinh²A + sin²B₋)],  A = π(x−x₀)/4H,  B± = π(y ± H)/4H
+  const { H, wh, a, trench } = geo, Nh = 8, N = 6; let tot = 0;
+  if (trench && Math.abs(x) > a) return 0;
+  const Bp = Math.sin(PI * (y + H) / (4 * H)) ** 2, Bm = Math.sin(PI * (y - H) / (4 * H)) ** 2;
+  for (let i = 0; i < Nh; i++) {
+    const xs = (i + 0.5) / Nh * wh - wh / 2, xi = [];
+    if (trench) for (let n = -N; n <= N; n++) xi.push(xs + 4 * n * a, 2 * a - xs + 4 * n * a); else xi.push(xs);
+    for (const xc of xi) { const A = Math.sinh(PI * (x - xc) / (4 * H)) ** 2; tot += Math.log(A + Bp) - Math.log(A + Bm); }
+  }
+  return tot / (2 * PI * KOX) / Nh;
+}
+const geoOf = (o = S) => ({ H: (o.tbox + o.d) * 1e-6, wh: o.wh * 1e-6, a: o.a * 1e-6, trench: o.trench });
+function physics(o = S) {
+  const geo = geoOf(o), yc = o.tbox * 1e-6, G0 = Gxy(0, yc, geo);
+  const Ppi = LAM / (2 * DNDT * G0);                    // W
+  const q = o.P * 1e-3 / (o.L * 1e-6), dT = G0 * q, dphi = 2 * PI / LAM * DNDT * dT * o.L * 1e-6;
+  const Gh = Gxy(0, geo.H - 0.08e-6, geo), dTh = Gh * q;
+  const xt = Gxy(o.s * 1e-6, yc, geo) / G0;
+  const tau = 4 * geo.H ** 2 / (PI * PI * (KOX / RHOC));
+  return { geo, G0, Ppi, dT, dphi, dTh, xt, tau, dTpi: LAM / (2 * o.L * 1e-6 * DNDT) };
+}
+/* ------------------------------------------------ cross-section map (G is cached; ΔT scales with P/L) */
+const cX = document.getElementById('cX'); let mapCache = { key: '' }, xview = null;
+function viewRange() { return { X: Math.max(9, (S.nb ? S.s + 3 : 0), S.trench ? S.a + 3 : 0, S.wh / 2 + 4), y0: -0.9, y1: S.tbox + S.d + 1.1 }; }
+function computeMap() {
+  const v = viewRange(), key = [S.d, S.tbox, S.wh, S.trench, S.a, v.X].join('|');
+  if (mapCache.key === key) return mapCache;
+  const geo = geoOf(), H = S.tbox + S.d, NX = 170, NY = 60, g = new Float32Array(NX * NY);
+  for (let j = 0; j < NY; j++) { const y = (j + 0.5) / NY * H; for (let i = 0; i < NX; i++) { const x = -v.X + (i + 0.5) / NX * 2 * v.X; g[j * NX + i] = Gxy(x * 1e-6, y * 1e-6, geo); } }
+  mapCache = { key, g, NX, NY, X: v.X, H };
+  return mapCache;
+}
+function drawX() {
+  const { ctx, w, h } = fitCanvas(cX); ctx.clearRect(0, 0, w, h);
+  const ph = physics(), mc = computeMap(), v = viewRange(), H = mc.H;
+  const m = { l: 44, r: 14, t: 14, b: 34 }, pw = w - m.l - m.r, phh = h - m.t - m.b;
+  const sx = pw / (2 * v.X), sy = phh / (v.y1 - v.y0), s = Math.min(sx, sy * 3);   // allow vertical stretch up to 3×
+  const X = x => m.l + pw / 2 + x * sx, Y = y => m.t + phh - (y - v.y0) * sy;
+  xview = { X, Y, sx, sy, v, m, pw, phh };
+  const q = S.P * 1e-3 / (S.L * 1e-6), Tmax = Math.max(ph.dTh, 1e-9);
+  // substrate
+  ctx.fillStyle = '#2a3341'; ctx.fillRect(m.l, Y(0), pw, Y(v.y0) - Y(0));
+  ctx.fillStyle = '#8b98a9'; ctx.font = FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText('Si substrate (heat sink, ΔT = 0)', m.l + 8, (Y(0) + Y(v.y0)) / 2);
+  // heat map
+  const off = document.createElement('canvas'); off.width = mc.NX; off.height = mc.NY; const oc = off.getContext('2d'), img = oc.createImageData(mc.NX, mc.NY);
+  for (let j = 0; j < mc.NY; j++) for (let i = 0; i < mc.NX; i++) { const t = mc.g[j * mc.NX + i] * q / Tmax, c = cmap('heat', Math.sqrt(Math.max(t, 0))), k = ((mc.NY - 1 - j) * mc.NX + i) * 4; img.data[k] = c[0]; img.data[k + 1] = c[1]; img.data[k + 2] = c[2]; img.data[k + 3] = 255; }
+  oc.putImageData(img, 0, 0); ctx.imageSmoothingEnabled = true; ctx.drawImage(off, X(-mc.X), Y(H), X(mc.X) - X(-mc.X), Y(0) - Y(H));
+  // air above
+  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, Y(H) - m.t);
+  // trenches
+  if (S.trench) for (const sg of [-1, 1]) { const x0 = sg > 0 ? S.a : -S.a - 1.2, x1 = sg > 0 ? S.a + 1.2 : -S.a; ctx.fillStyle = '#0e131a'; ctx.fillRect(X(x0), Y(H), X(x1) - X(x0), Y(0) - Y(H)); ctx.strokeStyle = '#5c6c84'; ctx.strokeRect(X(x0), Y(H), X(x1) - X(x0), Y(0) - Y(H)); }
+  if (S.trench) { ctx.fillStyle = 'rgba(14,19,26,0.75)'; ctx.fillRect(m.l, Y(H), X(-S.a - 1.2) - m.l, Y(0) - Y(H)); ctx.fillRect(X(S.a + 1.2), Y(H), m.l + pw - X(S.a + 1.2), Y(0) - Y(H)); }
+  // waveguide core(s) and heater
+  const core = (x, lab) => { const cw = 0.5, ch = 0.22; ctx.fillStyle = '#9ec5ff'; ctx.fillRect(X(x - cw / 2), Y(S.tbox + ch / 2), cw * sx, ch * sy); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(X(x - cw / 2), Y(S.tbox + ch / 2), cw * sx, ch * sy); if (lab) tag(ctx, X(x), Y(S.tbox) + 18, lab, '#c9e0ff'); };
+  core(0, 'waveguide'); if (S.nb) core(S.s, `neighbour · ${(ph.xt * 100).toFixed(1)} %`);
+  ctx.fillStyle = '#ffb347'; ctx.fillRect(X(-S.wh / 2), Y(H + 0.15), S.wh * sx, 0.15 * sy + 2);
+  tag(ctx, X(0), Y(H + 0.15) - 12, `heater · P = ${f3(S.P)} mW`, '#ffcc66');
+  // dimension arrows
+  ctx.strokeStyle = 'rgba(200,210,225,0.6)'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(X(-S.wh / 2 - 1.2), Y(H)); ctx.lineTo(X(-S.wh / 2 - 1.2), Y(S.tbox)); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(`d = ${S.d} µm`, X(-S.wh / 2 - 1.4), Y((H + S.tbox) / 2));
+  // axes
+  ctx.strokeStyle = '#3a4a60'; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, phh);
+  ctx.fillStyle = '#9fb0c3'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of niceTicks(-v.X, v.X, 8)) ctx.fillText(t, X(t), m.t + phh + 4);
+  ctx.fillText('x (µm) · vertical axis stretched', m.l + pw / 2, h - 14);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; for (const t of niceTicks(0, H, 3)) ctx.fillText(t, m.l - 5, Y(t));
+  document.getElementById('cbMax').textContent = `${f3(Tmax)} K (heater)`;
+  if (hoverX) { const xm = (hoverX.x - X(0)) / sx, ym = (Y(0) - hoverX.y) / sy; if (ym >= 0 && ym <= H && Math.abs(xm) <= v.X) { const T = Gxy(xm * 1e-6, ym * 1e-6, ph.geo) * q; tag(ctx, hoverX.x + 10, hoverX.y - 12, `ΔT = ${f3(T)} K at (${xm.toFixed(1)}, ${ym.toFixed(1)}) µm`, '#fff', 'rgba(8,11,16,0.9)', 'left'); } }
+}
+let hoverX = null;
+cX.addEventListener('pointermove', e => { hoverX = { x: e.offsetX, y: e.offsetY }; drawX(); });
+cX.addEventListener('pointerleave', () => { hoverX = null; drawX(); });
+/* ------------------------------------------------ plots */
+const cPlot = document.getElementById('cPlot');
+function drawPlot() {
+  const ph = physics(), Ppi = ph.Ppi * 1e3;
+  if (S.plot === 'phase') {
+    const Pm = Math.max(3 * Ppi, S.P * 1.2), xs = [], y1 = [], y2 = [];
+    for (let i = 0; i <= 200; i++) { const P = Pm * i / 200; xs.push(P); y1.push(P / Ppi); y2.push(P / Ppi * ph.xt); }
+    linePlot(cPlot, { x0: 0, x1: Pm, y0: 0, y1: Pm / Ppi * 1.05, xlabel: 'Heater power P (mW)', ylabel: 'Phase shift Δφ / π',
+      series: [{ x: xs, y: y1, color: '#4aa8ff', width: 2.4 }].concat(S.nb ? [{ x: xs, y: y2, color: '#ff9548', width: 2 }] : []),
+      vlines: [{ x: Ppi, color: '#ffcc66', label: `Pπ = ${f3(Ppi)} mW` }, { x: 2 * Ppi, color: 'rgba(255,204,102,0.6)', label: '2Pπ' }],
+      points: [{ x: S.P, y: S.P / Ppi, color: '#4aa8ff' }].concat(S.nb ? [{ x: S.P, y: S.P / Ppi * ph.xt, color: '#ff9548' }] : []),
+      legend: [{ color: '#4aa8ff', label: 'own waveguide' }].concat(S.nb ? [{ color: '#ff9548', label: `neighbour at ${S.s} µm (crosstalk)` }] : []) });
+  } else if (S.plot === 'dist') {
+    const xs = [], a = [], b = [];
+    for (let i = 0; i <= 60; i++) { const d = 0.4 + 4.1 * i / 60; xs.push(d); a.push(physics({ ...S, d, trench: false }).Ppi * 1e3); b.push(physics({ ...S, d, trench: true }).Ppi * 1e3); }
+    linePlot(cPlot, { x0: 0.4, x1: 4.5, y0: 0, y1: Math.max(...a) * 1.1, xlabel: 'Heater–core distance d (µm)', ylabel: 'Pπ (mW)',
+      series: [{ x: xs, y: a, color: '#4aa8ff' }, { x: xs, y: b, color: '#5fd38d' }],
+      points: [{ x: S.d, y: Ppi, color: S.trench ? '#5fd38d' : '#4aa8ff' }],
+      legend: [{ color: '#4aa8ff', label: 'no trenches' }, { color: '#5fd38d', label: `trenches at ±${S.a} µm` }] });
+  } else if (S.plot === 'xt') {
+    const xs = [], a = [], b = [], smax = 40;
+    for (let i = 0; i <= 120; i++) { const s = 1 + (smax - 1) * i / 120; xs.push(s); a.push(physics({ ...S, s, trench: false }).xt * 100); b.push(physics({ ...S, s, trench: true }).xt * 100); }
+    linePlot(cPlot, { x0: 1, x1: smax, y0: 0.01, y1: 100, ylog: true, xlabel: 'Separation to the neighbouring waveguide s (µm)', ylabel: 'Thermal crosstalk (%)',
+      series: [{ x: xs, y: a, color: '#4aa8ff' }, { x: xs, y: b.map(v => v > 0 ? v : NaN), color: '#5fd38d' }],
+      vlines: S.trench ? [{ x: S.a, color: 'rgba(95,211,141,0.7)', label: 'trench wall' }] : [],
+      points: S.nb ? [{ x: S.s, y: Math.max(ph.xt * 100, 0.0101), color: '#ff9548' }] : [],
+      legend: [{ color: '#4aa8ff', label: 'no trenches' }, { color: '#5fd38d', label: 'ideal trenches (zero outside)' }] });
+  } else {
+    const tau = ph.tau * 1e6, k = S.kod, t1 = tau * Math.log(k / (k - 1)), tm = 6 * tau, xs = [], a = [], b = [];
+    for (let i = 0; i <= 300; i++) { const t = tm * i / 300; xs.push(t); a.push(1 - Math.exp(-t / tau)); b.push(t < t1 ? k * (1 - Math.exp(-t / tau)) : 1); }
+    linePlot(cPlot, { x0: 0, x1: tm, y0: 0, y1: 1.15, xlabel: 'Time after the step (µs)', ylabel: 'Phase / target phase',
+      series: [{ x: xs, y: a, color: '#4aa8ff' }, { x: xs, y: b, color: '#ff9548' }],
+      vlines: [{ x: tau, color: 'rgba(74,168,255,0.7)', label: 'τ' }, { x: 2.2 * tau, color: 'rgba(74,168,255,0.5)', label: '10–90 %', row: 1 }, { x: t1, color: 'rgba(255,149,72,0.8)', label: 't₁', row: 2 }],
+      legend: [{ color: '#4aa8ff', label: 'step to P' }, { color: '#ff9548', label: `overdrive ${k}× for t₁` }] });
+  }
+}
+/* ------------------------------------------------ readouts + theory live values */
+function update() {
+  const ph = physics(), Ppi = ph.Ppi * 1e3, tau = ph.tau * 1e6;
+  readouts('ro', [
+    ['ΔT at the core', `${f3(ph.dT)} <small>K</small>`],
+    ['Phase shift Δφ', `${(ph.dphi / PI).toFixed(3)}<small>π</small>`],
+    ['Pπ', `${f3(Ppi)} <small>mW</small>`],
+    ['Tuning efficiency', `${f3(PI / Ppi)} <small>rad/mW</small>`],
+    ['ΔT at the heater', `${f3(ph.dTh)} <small>K</small>`],
+    ['Core / heater ΔT', `${(ph.dT / ph.dTh * 100).toFixed(1)} <small>%</small>`],
+    ['ΔTπ needed (this L)', `${f3(ph.dTpi)} <small>K</small>`],
+    ['Crosstalk to neighbour', S.nb ? `${(ph.xt * 100).toFixed(2)} <small>% · ${(ph.dphi * ph.xt / PI).toFixed(3)}π</small>` : '<small>—</small>'],
+    ['Time constant τ', `${f3(tau)} <small>µs</small>`],
+    ['Bandwidth f₃dB', `${f3(1 / (2 * PI * ph.tau) / 1e3)} <small>kHz</small>`],
+    ['Pπ · τ', `${f3(Ppi * tau)} <small>mW·µs</small>`],
+    ['Geometry factor G', `${ph.G0.toFixed(4)} <small>K/(W/m)</small>`]
+  ]);
+  setTxt('warn', ph.dTh > 300 ? 'Heater above +300 K: risk of damage. Use a longer heater (same Pπ, lower temperature).' : '');
+  setTxt('lvTpi', `${f3(ph.dTpi)} K for L = ${S.L} µm`); setTxt('lvG', `G = ${ph.G0.toFixed(4)} K/(W/m)`);
+  setTxt('lvPpi', `${f3(Ppi)} mW`); setTxt('lvXT', S.nb ? `${(ph.xt * 100).toFixed(2)} % at s = ${S.s} µm` : 'neighbour off');
+  setTxt('lvTau', `τ = ${f3(tau)} µs · f₃dB = ${f3(1 / (2 * PI * ph.tau) / 1e3)} kHz`);
+}
+/* ------------------------------------------------ controls */
+const SL = [
+  { id: 'P', g: 'drive', lab: 'Heater power P', min: 0, max: 80, step: 0.05, unit: 'mW', dec: 2, get: () => S.P, set: v => S.P = v, extra: v => `(${(v / (physics().Ppi * 1e3)).toFixed(2)} Pπ)` },
+  { id: 'L', g: 'drive', lab: 'Heater length L', log: true, min: 20, max: 2000, unit: 'µm', dec: 0, get: () => S.L, set: v => S.L = v },
+  { id: 'd', g: 'geo', lab: 'Heater–core distance d', min: 0.4, max: 4.5, step: 0.01, unit: 'µm', dec: 2, get: () => S.d, set: v => S.d = v },
+  { id: 'tbox', g: 'geo', lab: 'Buried oxide (BOX) thickness', min: 0.5, max: 4, step: 0.01, unit: 'µm', dec: 2, get: () => S.tbox, set: v => S.tbox = v },
+  { id: 'wh', g: 'geo', lab: 'Heater width', min: 0.5, max: 6, step: 0.05, unit: 'µm', dec: 2, get: () => S.wh, set: v => S.wh = v },
+  { id: 'a', g: 'geo', lab: 'Trench half-spacing a', min: 1, max: 10, step: 0.05, unit: 'µm', dec: 2, get: () => S.a, set: v => { S.a = v; } },
+  { id: 's', g: 'nb', lab: 'Separation s', min: 1.5, max: 40, step: 0.1, unit: 'µm', dec: 1, get: () => S.s, set: v => S.s = v },
+  { id: 'kod', g: 'time', lab: 'Overdrive factor k', min: 1.1, max: 5, step: 0.05, unit: '×', dec: 2, get: () => S.kod, set: v => S.kod = v }
+];
+wireSeg('segPlot', v => S.plot = v);
+wireSeg('segTr', v => S.trench = v === 'on');
+wireSeg('segNb', v => S.nb = v === 'on');
+const preset = o => { Object.assign(S, o); SL.forEach(syncSlider); setSeg('segTr', S.trench ? 'on' : 'off'); dirty = true; };
+document.getElementById('pStd').onclick = () => preset({ d: 2.2, tbox: 2, wh: 2, trench: false });
+document.getElementById('pTr').onclick = () => preset({ d: 2.2, tbox: 2, wh: 2, trench: true, a: 2.5 });
+window.addEventListener('resize', () => dirty = true);
+buildSliders();
+(function loop() { if (dirty) { dirty = false; drawX(); drawPlot(); update(); SL.forEach(syncOut); } requestAnimationFrame(loop); })();
+</script>
+</body>
+</html>
