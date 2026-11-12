@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Photodetector</title>
+<title>Photodetectors</title>
 <style>
 
 :root{
@@ -77,432 +77,42 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
 
 .smat{display:inline-grid;grid-template-columns:auto auto;gap:2px 14px;padding:2px 9px;vertical-align:middle;border-left:1.5px solid #cfd8e3;border-right:1.5px solid #cfd8e3;border-radius:7px;line-height:1.7;text-align:center}
 
-#cPlot{background:var(--card2)}
+.cfgbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:4px 20px 2px;font-size:13px;color:var(--muted)}
+#frame{display:block;width:100%;height:1800px;border:0;background:var(--bg)}
 </style>
 </head>
 <body>
 <header>
   <a class="back" href="../index.html">← Component catalog</a>
-  <h1>Germanium waveguide photodetector</h1>
-  <span class="sub">Absorption, responsivity, dark current, bandwidth and noise of a vertical PIN Ge-on-Si photodiode. Part of the Programmable Photonics interactive lab.</span>
+  <h1>Photodetectors</h1>
+  <span class="sub" id="sub"></span>
 </header>
-<main>
-  <section class="card view">
-    <h2>Device (3D)</h2>
-    <canvas id="c3d"></canvas>
-  </section>
-  <section class="card view">
-    <div class="toolbar">
-      <div class="seg" id="segPlot"><button data-v="lam" class="on">Responsivity vs λ</button><button data-v="len">vs length</button><button data-v="freq">Frequency response</button><button data-v="snr">SNR vs power</button><button data-v="iv">I–V curve</button></div>
-    </div>
-    <canvas id="cPlot"></canvas>
-  </section>
-
-  <section class="card">
-    <h2>Controls</h2>
-    <div class="inline" style="margin-bottom:10px">
-      <button class="btn" id="pView">Reset 3D view</button>
-    </div>
-    <div class="groups">
-      <div class="group" data-group="geo"><h3>Geometry</h3></div>
-      <div class="group" data-group="opt"><h3>Light</h3></div>
-      <div class="group" data-group="ele"><h3>Electrical</h3></div>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>Figures of merit</h2>
-    <div class="readouts" id="ro"></div>
-  </section>
-
-  <section class="card span2">
-    <h2>Theory</h2>
-    <div class="theory">
-      <div class="th">
-        <h3>1 · Absorption in germanium</h3>
-        <p>Silicon is transparent at 1.3–1.55 µm, so light is absorbed in germanium grown on top of the silicon waveguide. The light leaks evanescently into the Ge and decays exponentially along the device:</p>
-        <div class="eq"><i class="v">P</i>(<i class="v">z</i>) = <i class="v">P</i><sub>0</sub> e<sup>−Γα<i class="v">z</i></sup>, &nbsp;&nbsp; η<sub>abs</sub> = 1 − e<sup>−Γα<i class="v">L</i></sup> <span class="live" id="lvEta"></span></div>
-        <p>Γ is the fraction of the mode inside the Ge and α its absorption coefficient. Ge on Si has a slight tensile strain that moves its direct band gap to ≈ 0.77 eV (≈ 1.6 µm), so α drops sharply above 1.55 µm. Heating shrinks the gap and extends the response to longer wavelengths.</p>
-      </div>
-      <div class="th">
-        <h3>2 · Responsivity and quantum efficiency</h3>
-        <p>Every absorbed photon creates one electron–hole pair, collected by the electric field of the PIN junction:</p>
-        <div class="eq"><i class="v">R</i> = <span class="frac"><span><i class="v">I</i><sub>ph</sub></span><span><i class="v">P</i></span></span> = η <span class="frac"><span><i class="v">q</i> λ</span><span><i class="v">h c</i></span></span> ≈ η <span class="frac"><span>λ [µm]</span><span>1.24</span></span> A/W <span class="live" id="lvR"></span></div>
-        <p>η = η<sub>c</sub> η<sub>abs</sub> includes the coupling into the detector. The ideal limit at 1.55 µm is 1.25 A/W. Longer devices absorb more, but have more capacitance and dark current.</p>
-      </div>
-      <div class="th">
-        <h3>3 · Bandwidth</h3>
-        <p>Two effects limit the speed: the carriers need time to cross the intrinsic region of thickness <i class="v">d</i>, and the junction capacitance must be charged through the series and load resistances:</p>
-        <div class="eq"><i class="v">f</i><sub>t</sub> ≈ <span class="frac"><span>0.45 <i class="v">v</i><sub>sat</sub></span><span><i class="v">d</i></span></span>, &nbsp; <i class="v">f</i><sub>RC</sub> = <span class="frac"><span>1</span><span>2π (<i class="v">R</i><sub>s</sub> + <i class="v">R</i><sub>L</sub>) <i class="v">C</i></span></span>, &nbsp; <span class="frac"><span>1</span><span><i class="v">f</i><sub>3dB</sub>²</span></span> = <span class="frac"><span>1</span><span><i class="v">f</i><sub>t</sub>²</span></span> + <span class="frac"><span>1</span><span><i class="v">f</i><sub>RC</sub>²</span></span></div>
-        <p>with <i class="v">C</i> = ε<i class="v">A</i>/<i class="v">d</i> + <i class="v">C</i><sub>pad</sub> <span class="live" id="lvF"></span>. A thin intrinsic layer is fast for transit but slow for RC: there is an optimum thickness.</p>
-      </div>
-      <div class="th">
-        <h3>4 · Dark current and noise</h3>
-        <p>Defects at the Ge/Si interface generate a dark current <i class="v">I</i><sub>d</sub> ∝ area that grows with reverse bias and temperature. The detected current fluctuates because of:</p>
-        <div class="eq">σ²<sub>shot</sub> = 2<i class="v">q</i>(<i class="v">I</i><sub>ph</sub> + <i class="v">I</i><sub>d</sub>)<i class="v">B</i>, &nbsp;&nbsp; σ²<sub>th</sub> = <span class="frac"><span>4<i class="v">k</i><sub>B</sub><i class="v">T B</i></span><span><i class="v">R</i><sub>L</sub></span></span>, &nbsp;&nbsp; SNR = <span class="frac"><span><i class="v">I</i><sub>ph</sub>²</span><span>σ²<sub>shot</sub> + σ²<sub>th</sub></span></span></div>
-        <p>At low power the thermal noise of the load dominates (SNR ∝ <i class="v">P</i>²); at high power the shot noise of the signal dominates (SNR ∝ <i class="v">P</i>). <span class="live" id="lvS"></span></p>
-      </div>
-    </div>
-  </section>
-</main>
+<nav class="cfgbar">
+  <span>Detector</span>
+  <select id="selDet" class="cfgsel">
+    <option value="pin">Photodetector · Ge-on-Si PIN photodiode</option>
+    <option value="bal">Balanced photodetector</option>
+    <option value="coh">Coherent detection with a 90° hybrid</option>
+  </select>
+</nav>
+<iframe id="frame" title="Photodetector simulation"></iframe>
 <script>
-"use strict";
-const PI = Math.PI;
-const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-let dirty = true;
-function f3(v) { const a = Math.abs(v); return !isFinite(v) ? '∞' : a >= 1000 ? v.toFixed(0) : a >= 100 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : a >= 1 ? v.toFixed(3) : v.toFixed(4); }
-const dB = p => 10 * Math.log10(Math.max(p, 1e-12));
-const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-function fitCanvas(c) {
-  const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
-  const W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
-  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
-  const ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); return { ctx, w: r.width, h: r.height };
-}
-function niceTicks(a, b, n) {
-  const span = b - a; if (!(span > 0)) return [a];
-  const s0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(s0))), q = s0 / mag;
-  const st = (q < 1.5 ? 1 : q < 3 ? 2 : q < 7 ? 5 : 10) * mag, t = [];
-  for (let v = Math.ceil(a / st - 1e-9) * st; v <= b + 1e-9; v += st) t.push(+v.toFixed(12));
-  return t;
-}
-function tickFmt(v, step) { const d = Math.max(0, Math.min(6, -Math.floor(Math.log10(step || 1) + 1e-9))); return v.toFixed(d); }
-function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
-function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
-  ctx.font = FONT; const w = ctx.measureText(text).width + 10, x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
-  ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
-  ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + 0.5);
-}
-/* colour maps: 'light' (dark → red → white, for optical intensity) and 'heat' (dark blue → red → yellow) */
-const CMAPS = {
-  light: [[0, [8, 10, 16]], [0.25, [90, 10, 40]], [0.5, [210, 40, 80]], [0.75, [255, 120, 120]], [1, [255, 235, 230]]],
-  heat: [[0, [14, 22, 48]], [0.25, [60, 30, 110]], [0.5, [180, 40, 90]], [0.75, [245, 120, 40]], [1, [255, 240, 150]]]
+const DET = {
+  pin: { src: 'pd-pin.html', sub: 'Absorption, responsivity, dark current, bandwidth and noise of a vertical PIN Ge-on-Si photodiode. Part of the Programmable Photonics interactive lab.' },
+  bal: { src: 'pd-bal.html', sub: 'Two photodiodes in series: subtraction of photocurrents, common-mode rejection, laser-noise cancellation and interferometric detection with a local oscillator. Part of the Programmable Photonics interactive lab.' },
+  coh: { src: 'pd-coh.html', sub: 'Signal and local oscillator mixed in a 2×4 hybrid and detected by two balanced photodetectors: recovering the full field (I and Q). Part of the Programmable Photonics interactive lab.' }
 };
-function cmap(name, t) {
-  const st = CMAPS[name]; t = clamp(t, 0, 1);
-  for (let i = 1; i < st.length; i++) if (t <= st[i][0]) { const u = (t - st[i - 1][0]) / (st[i][0] - st[i - 1][0]), a = st[i - 1][1], b = st[i][1]; return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u]; }
-  return st[st.length - 1][1];
+const frame = document.getElementById('frame'), sel = document.getElementById('selDet');
+function show(k) {
+  if (!DET[k]) k = 'pin';
+  sel.value = k; document.getElementById('sub').textContent = DET[k].sub;
+  frame.src = DET[k].src + '?embed=1';
+  if (location.hash.slice(1) !== k) history.replaceState(null, '', '#' + k);
 }
-/* ------------------------------------------------ sliders with editable numeric boxes */
-const LOGN = 2000;
-const toSlider = (c, v) => Math.round(LOGN * Math.log(v / c.min) / Math.log(c.max / c.min));
-const fromSlider = (c, u) => c.min * Math.pow(c.max / c.min, u / LOGN);
-const SLid = id => SL.find(c => c.id === id);
-const maxOf = c => typeof c.max === 'function' ? c.max() : c.max;
-function buildSliders() {
-  for (const c of SL) {
-    const host = document.querySelector(`[data-group="${c.g}"]`);
-    const row = document.createElement('div'); row.className = 'row'; row.id = 'row_' + c.id;
-    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val"><input type="text" inputmode="decimal" class="numin" id="n_${c.id}"><span class="unit">${c.unit ?? ''}</span><span class="extra" id="x_${c.id}"></span></span><input type="range" id="s_${c.id}">`;
-    const inl = host.querySelector('.inline.after'); if (inl) host.insertBefore(row, inl); else host.appendChild(row);
-    const s = row.querySelector('input[type=range]');
-    if (c.log) { s.min = 0; s.max = LOGN; s.step = 1; } else { s.min = c.min; s.max = maxOf(c); s.step = c.step; }
-    s.addEventListener('input', () => { c.set(c.log ? fromSlider(c, +s.value) : +s.value); if (c.after) c.after(); syncOut(c); dirty = true; });
-    const n = row.querySelector('.numin');
-    n.addEventListener('change', () => { let v = parseFloat(String(n.value).replace(',', '.')); if (isFinite(v)) { c.set(clamp(v, c.min, maxOf(c))); if (c.after) c.after(); syncSlider(c); dirty = true; } else syncOut(c); });
-    n.addEventListener('keydown', e => { if (e.key === 'Enter') n.blur(); });
-  }
-  SL.forEach(syncSlider);
-}
-function syncOut(c) {
-  const n = document.getElementById('n_' + c.id);
-  if (document.activeElement !== n) n.value = +c.get().toFixed(c.dec ?? 3);
-  document.getElementById('x_' + c.id).textContent = c.extra ? c.extra(c.get()) : '';
-}
-function syncSlider(c) {
-  const s = document.getElementById('s_' + c.id);
-  if (c.log) s.value = toSlider(c, c.get()); else { s.max = maxOf(c); s.value = c.get(); }
-  syncOut(c);
-}
-function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
-function wireSeg(id, fn) { document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { fn(b.dataset.v); setSeg(id, b.dataset.v); dirty = true; }); }
-function readouts(id, items) { document.getElementById(id).innerHTML = items.map(([k, v]) => `<div class="ro"><div class="k">${k}</div><div class="v">${v}</div></div>`).join(''); }
-const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
-/* ------------------------------------------------ generic line plot
-   o = { x0, x1, y0, y1, xlabel, ylabel, series:[{x:[], y:[], color, width, dash}], vlines:[{x, color, label, dash}],
-         legend:[{color, label, dash}], yfmt, ylog } */
-function linePlot(canvas, o) {
-  const { ctx, w, h } = fitCanvas(canvas); ctx.clearRect(0, 0, w, h);
-  const m = { l: 60, r: 16, t: 30, b: 42 }, pw = w - m.l - m.r, ph = h - m.t - m.b; if (pw < 60 || ph < 40) return;
-  const ty = v => o.ylog ? Math.log10(Math.max(v, 1e-30)) : v;
-  const Y0 = ty(o.y0), Y1 = ty(o.y1);
-  const X = v => m.l + (v - o.x0) / (o.x1 - o.x0) * pw, Y = v => m.t + (1 - (ty(v) - Y0) / (Y1 - Y0)) * ph;
-  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
-  const xt = niceTicks(o.x0, o.x1, Math.max(3, Math.round(pw / 90))), xst = xt.length > 1 ? xt[1] - xt[0] : 1;
-  let yt; if (o.ylog) { yt = []; for (let d = Math.ceil(Y0); d <= Math.floor(Y1); d++) yt.push(Math.pow(10, d)); } else yt = niceTicks(o.y0, o.y1, Math.max(3, Math.round(ph / 55)));
-  const yst = !o.ylog && yt.length > 1 ? yt[1] - yt[0] : 1;
-  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
-  for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
-  for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
-  for (const b of (o.bands || [])) { ctx.fillStyle = b.color; ctx.fillRect(X(b.x0), m.t, X(b.x1) - X(b.x0), ph); }
-  for (const v of (o.vlines || [])) {
-    if (v.x < o.x0 || v.x > o.x1) continue;
-    ctx.strokeStyle = v.color; ctx.lineWidth = 1.2; ctx.setLineDash(v.dash || [4, 4]);
-    ctx.beginPath(); ctx.moveTo(X(v.x), m.t); ctx.lineTo(X(v.x), m.t + ph); ctx.stroke(); ctx.setLineDash([]);
-    if (v.label) { ctx.font = FONT; ctx.fillStyle = v.color; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(v.label, X(v.x), m.t + 4 + (v.row || 0) * 14); }
-  }
-  for (const s of o.series) {
-    ctx.beginPath(); let pen = false;
-    for (let i = 0; i < s.x.length; i++) { const y = s.y[i]; if (!isFinite(y)) { pen = false; continue; } const px = X(s.x[i]), py = Y(y); if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py); }
-    ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 2; ctx.setLineDash(s.dash || []); ctx.lineJoin = 'round'; ctx.stroke(); ctx.setLineDash([]);
-  }
-  for (const p of (o.points || [])) { if (p.x < o.x0 || p.x > o.x1) continue; ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 5, 0, 2 * PI); ctx.fillStyle = p.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); }
-  ctx.restore();
-  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
-  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-  for (const t of xt) ctx.fillText(tickFmt(t, xst), X(t), m.t + ph + 6);
-  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-  for (const t of yt) ctx.fillText(o.yfmt ? o.yfmt(t) : (o.ylog ? (t >= 1 ? String(t) : t.toExponential(0)) : tickFmt(t, yst)), m.l - 6, Y(t));
-  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
-  ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText(o.ylabel, 0, 0); ctx.restore();
-  let lx = m.l; const ly = 14; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
-  return { X, Y, m, pw, ph };
-}
-
-const QE = 1.602e-19, KB = 1.381e-23, EPS0 = 8.854e-12;
-const S = { L: 15, W: 4, d: 0.5, Gam: 0.6, etac: 0.95, lam: 1550, P: -10, T: 300, V: -1, J0: 20, Rs: 30, RL: 50, Cp: 10, B: 25, plot: 'lam' };
-/* absorption coefficient of tensile-strained Ge on Si (cm⁻¹): direct edge (√ law, softened) + weak indirect tail */
-function alphaGe(lam, T) {
-  const E = 1239.84 / lam, sp = (x, d) => d * Math.log1p(Math.exp(x / d));
-  const Egd = 0.773 - 4.2e-4 * (T - 300), Egi = 0.655 - 4.2e-4 * (T - 300);
-  return 24400 * Math.sqrt(sp(E - Egd, 0.007)) + 1500 * sp(E - Egi, 0.01) ** 2;
-}
-function pd(o = S) {
-  const a = alphaGe(o.lam, o.T), etaAbs = 1 - Math.exp(-o.Gam * a * o.L * 1e-4), eta = o.etac * etaAbs;
-  const R = eta * (o.lam / 1000) / 1.23984, Pw = Math.pow(10, o.P / 10) * 1e-3, Iph = R * Pw;
-  const A = o.L * o.W;   // µm²
-  const fv = 0.25 + 0.75 * Math.sqrt(Math.max(0, -o.V) + 0.01) / Math.sqrt(1.01);
-  const Id = o.J0 * 1e-3 * A * 1e-8 * Math.pow(o.T / 300, 3) * Math.exp(-0.33 / 8.617e-5 * (1 / o.T - 1 / 300)) * fv;
-  const v = 6e4 * (0.55 + 0.45 * Math.tanh(Math.max(0, -o.V + 0.3) / 0.8));     // m/s
-  const ft = 0.45 * v / (o.d * 1e-6), C = 16 * EPS0 * A * 1e-12 / (o.d * 1e-6) + o.Cp * 1e-15;
-  const fRC = 1 / (2 * PI * (o.Rs + o.RL) * C), f3 = 1 / Math.sqrt(1 / ft ** 2 + 1 / fRC ** 2);
-  const B = o.B * 1e9, sShot = 2 * QE * (Iph + Id) * B, sTh = 4 * KB * o.T * B / o.RL, snr = Iph ** 2 / (sShot + sTh);
-  const nep = Math.sqrt(4 * KB * o.T / o.RL + 2 * QE * Id) / Math.max(R, 1e-9);
-  return { a, etaAbs, eta, R, Pw, Iph, Id, ft, fRC, f3, C, sShot, sTh, snr, nep, A };
-}
-/* ------------------------------------------------ plots */
-const cPlot = document.getElementById('cPlot');
-function drawPlot() {
-  const r = pd();
-  if (S.plot === 'lam') {
-    const xs = [], y1 = [], y2 = [], y3 = [];
-    for (let i = 0; i <= 300; i++) { const lam = 1250 + 450 * i / 300; xs.push(lam); y1.push(pd({ ...S, lam }).R); y2.push(pd({ ...S, lam, T: S.T + 50 }).R); y3.push((lam / 1000) / 1.23984); }
-    linePlot(cPlot, { x0: 1250, x1: 1700, y0: 0, y1: 1.45, xlabel: 'Wavelength λ (nm)', ylabel: 'Responsivity (A/W)',
-      series: [{ x: xs, y: y3, color: 'rgba(255,255,255,0.35)', dash: [5, 5], width: 1.4 }, { x: xs, y: y2, color: '#ff9548', dash: [6, 4] }, { x: xs, y: y1, color: '#4aa8ff', width: 2.4 }],
-      vlines: [{ x: S.lam, color: 'rgba(255,77,109,0.9)', label: 'λ' }], points: [{ x: S.lam, y: r.R, color: '#4aa8ff' }],
-      legend: [{ color: '#4aa8ff', label: `T = ${S.T.toFixed(0)} K` }, { color: '#ff9548', label: `T = ${(S.T + 50).toFixed(0)} K`, dash: [6, 4] }, { color: 'rgba(255,255,255,0.5)', label: 'ideal (η = 1)', dash: [5, 5] }] });
-  } else if (S.plot === 'len') {
-    const xs = [], e = [], R = [];
-    for (let i = 0; i <= 300; i++) { const L = 100 * i / 300, q = pd({ ...S, L }); xs.push(L); e.push(q.etaAbs); R.push(q.R); }
-    const L90 = Math.log(10) / (S.Gam * r.a * 1e-4);
-    linePlot(cPlot, { x0: 0, x1: 100, y0: 0, y1: 1.3, xlabel: 'Ge length L (µm)', ylabel: 'Absorbed fraction · responsivity (A/W)',
-      series: [{ x: xs, y: e, color: '#5fd38d' }, { x: xs, y: R, color: '#4aa8ff' }],
-      vlines: [{ x: S.L, color: '#ffcc66', label: 'L' }, { x: L90, color: 'rgba(95,211,141,0.7)', label: '90 % absorbed', row: 1 }],
-      points: [{ x: S.L, y: r.etaAbs, color: '#5fd38d' }, { x: S.L, y: r.R, color: '#4aa8ff' }],
-      legend: [{ color: '#5fd38d', label: 'η_abs' }, { color: '#4aa8ff', label: 'R (A/W)' }] });
-  } else if (S.plot === 'freq') {
-    const fm = Math.max(100, 2.5 * r.f3 / 1e9), xs = [], ht = [], hr = [], h = [];
-    for (let i = 0; i <= 300; i++) { const f = fm * i / 300 * 1e9; xs.push(f / 1e9); const a = 1 / (1 + (f / r.ft) ** 2), b = 1 / (1 + (f / r.fRC) ** 2); ht.push(10 * Math.log10(a)); hr.push(10 * Math.log10(b)); h.push(10 * Math.log10(a * b)); }
-    linePlot(cPlot, { x0: 0, x1: fm, y0: -12, y1: 1, xlabel: 'Frequency (GHz)', ylabel: 'Electrical response |H(f)|² (dB)',
-      series: [{ x: xs, y: ht, color: '#ff9548', dash: [6, 4] }, { x: xs, y: hr, color: '#d58cff', dash: [6, 4] }, { x: xs, y: h, color: '#4aa8ff', width: 2.4 }],
-      vlines: [{ x: r.f3 / 1e9, color: '#ffcc66', label: `f3dB = ${(r.f3 / 1e9).toFixed(1)} GHz` }],
-      legend: [{ color: '#ff9548', label: 'transit time', dash: [6, 4] }, { color: '#d58cff', label: 'RC', dash: [6, 4] }, { color: '#4aa8ff', label: 'total' }] });
-  } else if (S.plot === 'snr') {
-    const xs = [], y = [], ys = [], yt = [];
-    for (let i = 0; i <= 300; i++) { const P = -45 + 55 * i / 300, q = pd({ ...S, P }); xs.push(P); y.push(10 * Math.log10(q.snr)); ys.push(10 * Math.log10(q.Iph ** 2 / q.sShot)); yt.push(10 * Math.log10(q.Iph ** 2 / q.sTh)); }
-    linePlot(cPlot, { x0: -45, x1: 10, y0: -20, y1: 70, xlabel: 'Optical power at the detector (dBm)', ylabel: 'SNR (dB)',
-      series: [{ x: xs, y: yt, color: '#d58cff', dash: [6, 4] }, { x: xs, y: ys, color: '#ff9548', dash: [6, 4] }, { x: xs, y, color: '#4aa8ff', width: 2.4 }],
-      vlines: [{ x: S.P, color: 'rgba(255,77,109,0.9)', label: 'P' }], points: [{ x: S.P, y: 10 * Math.log10(r.snr), color: '#4aa8ff' }],
-      legend: [{ color: '#d58cff', label: 'thermal-noise limit (∝ P²)', dash: [6, 4] }, { color: '#ff9548', label: 'shot-noise limit (∝ P)', dash: [6, 4] }, { color: '#4aa8ff', label: 'total' }] });
-  } else {
-    const nVt = 1.4 * 8.617e-5 * S.T, Is = r.Id * 1e-3;
-    const I = (V, ill) => Is * Math.expm1(V / nVt) - pd({ ...S, V: Math.min(V, 0) }).Id * Math.tanh(-V / 0.05) - (ill ? r.Iph : 0);
-    const xs = [], yd = [], yl = [];
-    for (let i = 0; i <= 400; i++) { const V = -3 + 3.6 * i / 400; xs.push(V); yd.push(Math.abs(I(V, false)) * 1e3); yl.push(Math.abs(I(V, true)) * 1e3); }
-    const ymax = Math.pow(10, Math.ceil(Math.log10(Math.max(...yl, ...yd)))), ymin = Math.pow(10, Math.floor(Math.log10(Math.max(1e-9, r.Id * 1e3 * 1e-3))));
-    linePlot(cPlot, { x0: -3, x1: 0.6, y0: ymin, y1: Math.min(ymax, 100), ylog: true, xlabel: 'Bias voltage V (V)', ylabel: '|I| (mA)',
-      series: [{ x: xs, y: yd, color: '#8b98a9' }, { x: xs, y: yl, color: '#4aa8ff', width: 2.4 }],
-      vlines: [{ x: S.V, color: '#ffcc66', label: 'bias' }], points: [{ x: S.V, y: Math.abs(I(S.V, true)) * 1e3, color: '#4aa8ff' }],
-      legend: [{ color: '#8b98a9', label: 'dark' }, { color: '#4aa8ff', label: 'illuminated' }] });
-  }
-}
-const fmtA = I => I >= 1e-3 ? `${(I * 1e3).toFixed(3)} <small>mA</small>` : I >= 1e-6 ? `${(I * 1e6).toFixed(2)} <small>µA</small>` : `${(I * 1e9).toFixed(2)} <small>nA</small>`;
-function update() {
-  const r = pd(), Psnr = (() => { let lo = -60, hi = 20; for (let k = 0; k < 60; k++) { const m = (lo + hi) / 2; if (pd({ ...S, P: m }).snr < 100) lo = m; else hi = m; } return hi; })();
-  readouts('ro', [
-    ['Absorption α (Ge)', `${r.a.toFixed(0)} <small>cm⁻¹</small>`],
-    ['Absorbed fraction', `${(r.etaAbs * 100).toFixed(1)} <small>%</small>`],
-    ['Responsivity R', `${r.R.toFixed(3)} <small>A/W</small>`],
-    ['External QE', `${(r.eta * 100).toFixed(1)} <small>%</small>`],
-    ['Photocurrent', fmtA(r.Iph)],
-    ['Dark current', fmtA(r.Id)],
-    ['Capacitance', `${(r.C * 1e15).toFixed(1)} <small>fF</small>`],
-    ['f_transit · f_RC', `${(r.ft / 1e9).toFixed(0)} <small>·</small> ${(r.fRC / 1e9).toFixed(0)} <small>GHz</small>`],
-    ['Bandwidth f3dB', `${(r.f3 / 1e9).toFixed(1)} <small>GHz</small>`],
-    ['SNR', `${(10 * Math.log10(r.snr)).toFixed(1)} <small>dB</small>`],
-    ['NEP', `${(r.nep * 1e12).toFixed(2)} <small>pW/√Hz</small>`],
-    ['Power for SNR = 20 dB', `${Psnr.toFixed(1)} <small>dBm</small>`]
-  ]);
-  setTxt('lvEta', `η_abs = ${(r.etaAbs * 100).toFixed(1)} %`); setTxt('lvR', `R = ${r.R.toFixed(3)} A/W`);
-  setTxt('lvF', `C = ${(r.C * 1e15).toFixed(1)} fF, f3dB = ${(r.f3 / 1e9).toFixed(1)} GHz`);
-  setTxt('lvS', `SNR = ${(10 * Math.log10(r.snr)).toFixed(1)} dB (shot ${(100 * r.sShot / (r.sShot + r.sTh)).toFixed(0)} % of the noise)`);
-}
-/* ------------------------------------------------ 3D */
-const c3d = document.getElementById('c3d');
-const WG_W = 0.45, WG_H = 0.22, CL_H = 1.0, NSEG = 24;
-const CAM0 = { yaw: -2.1, pitch: 0.78, dist: 24 }; const cam = { ...CAM0 };
-/* ---------------- tiny painter's-algorithm 3D engine (shared with the ring pages) */
-const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const crs = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-const nrm = a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
-let LAYERS, tracks, G;
-function addBox(layer, p0, p1, w, z0, z1, mat) {
-  const dx = p1[0] - p0[0], dy = p1[1] - p0[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L * w / 2, ny = dx / L * w / 2;
-  const b = [[p0[0] - nx, p0[1] - ny], [p1[0] - nx, p1[1] - ny], [p1[0] + nx, p1[1] + ny], [p0[0] + nx, p0[1] + ny]];
-  const v = [...b.map(q => [q[0], q[1], z0]), ...b.map(q => [q[0], q[1], z1])];
-  const c = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (z0 + z1) / 2];
-  for (const f of [[4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]]) {
-    const q = f.map(i => v[i]), fc = [(q[0][0] + q[2][0]) / 2, (q[0][1] + q[2][1]) / 2, (q[0][2] + q[2][2]) / 2];
-    let n = nrm(crs(sub(q[1], q[0]), sub(q[3], q[0]))); if (dot3(n, sub(fc, c)) < 0) n = [-n[0], -n[1], -n[2]];
-    LAYERS[layer].push({ q, n, c: fc, mat });
-  }
-}
-const aabb = (layer, x0, x1, y0, y1, z0, z1, mat) => addBox(layer, [x0, (y0 + y1) / 2], [x1, (y0 + y1) / 2], y1 - y0, z0, z1, mat);
-
-function pointAt(tr, s) { let i = 1; while (i < tr.L.length - 1 && tr.L[i] < s) i++; const a = tr.pts[i - 1], b = tr.pts[i], u = (s - tr.L[i - 1]) / ((tr.L[i] - tr.L[i - 1]) || 1); return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]; }
-
-function makeCam(w, h) {
-  const cp = Math.cos(cam.pitch), ty = (G.yTop + G.yBot) / 2;
-  const pos = [cam.dist * cp * Math.cos(cam.yaw), ty + cam.dist * cp * Math.sin(cam.yaw), cam.dist * Math.sin(cam.pitch)];
-  const f = nrm(sub([0, ty, 0], pos)), r = nrm(crs(f, [0, 0, 1])), u = crs(r, f);
-  return { pos, f, r, u, F: Math.min(w * 0.95, h * 1.55), cx: w / 2, cy: h * 0.5 };
-}
-function proj(C, p) { const d = sub(p, C.pos), z = dot3(d, C.f); if (z < 0.1) return null; return [C.cx + C.F * dot3(d, C.r) / z, C.cy - C.F * dot3(d, C.u) / z, z]; }
-const LIGHT = nrm([-0.35, -0.55, 1]), GLOW = [255, 64, 104];
-const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-
-function heatColor(t) { const st = [[0, [150, 158, 170]], [0.3, [190, 70, 40]], [0.62, [255, 140, 40]], [1, [255, 236, 170]]]; for (let i = 1; i < st.length; i++) if (t <= st[i][0]) return mix(st[i - 1][1], st[i][1], (t - st[i - 1][0]) / (st[i][0] - st[i - 1][0])); return st[3][1]; }
-const bright = p => clamp(Math.sqrt(Math.max(p, 0)), 0, 1);
-
-function drawLayer(ctx, C, faces, st, translucent) {
-  const vis = [];
-  for (const f of faces) { if (dot3(f.n, sub(C.pos, f.c)) <= 0) continue; const P = f.q.map(q => proj(C, q)); if (P.some(p => !p)) continue; vis.push({ f, P, z: (P[0][2] + P[1][2] + P[2][2] + P[3][2]) / 4 }); }
-  vis.sort((a, b) => b.z - a.z);
-  for (const { f, P } of vis) {
-    ctx.beginPath(); ctx.moveTo(P[0][0], P[0][1]); for (let i = 1; i < 4; i++) ctx.lineTo(P[i][0], P[i][1]); ctx.closePath();
-    if (translucent) { ctx.fillStyle = f.n[2] > 0.5 ? 'rgba(150,195,240,0.07)' : 'rgba(150,195,240,0.1)'; ctx.fill(); ctx.strokeStyle = 'rgba(170,210,250,0.15)'; ctx.lineWidth = 0.8; ctx.stroke(); continue; }
-    const { c, e } = matColor(f.mat, st), sh = 0.42 + 0.58 * Math.max(0, dot3(f.n, LIGHT)), k = sh * (1 - e) + e;
-    ctx.fillStyle = `rgb(${c[0] * k | 0},${c[1] * k | 0},${c[2] * k | 0})`; ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 0.5; ctx.stroke();
-  }
-}
-function drawLight(ctx, C, st, time) {
-  ctx.save(); ctx.globalCompositeOperation = 'lighter';
-  const sp = 0.8, speed = 2.2;
-  for (const tr of tracks) {
-    const P = Math.max(0, st[tr.key] ?? 0), p = bright(P); if (p < 0.03) continue;
-    const boost = 1 + 0.45 * Math.log10(Math.max(1, P));
-    const mid = proj(C, [...pointAt(tr, tr.len / 2), WG_H]); if (!mid) continue;
-    const lw = C.F * 0.3 / mid[2];
-    const colA = tr.key === 'ringB' || tr.key === 'busRefl' ? '255,150,90' : '255,60,100';
-    ctx.beginPath(); tr.pts.forEach((q, i) => { const s = proj(C, [q[0], q[1], WG_H]); if (s) i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); });
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.strokeStyle = `rgba(${colA},${0.14 * p})`; ctx.lineWidth = lw * 3 * boost; ctx.stroke();
-    ctx.strokeStyle = `rgba(${colA},${0.3 * p})`; ctx.lineWidth = lw * 0.9; ctx.stroke();
-    const ph = (time * speed) % sp;
-    for (let s = ph; s < tr.len; s += sp) {
-      const q = pointAt(tr, s), Q = proj(C, [q[0], q[1], WG_H * 0.8]); if (!Q) continue;
-      const r = C.F * 0.32 * Math.min(1.6, boost) / Q[2], g = ctx.createRadialGradient(Q[0], Q[1], 0, Q[0], Q[1], r);
-      g.addColorStop(0, `rgba(255,228,236,${0.85 * p})`); g.addColorStop(0.35, `rgba(${colA},${0.5 * p})`); g.addColorStop(1, `rgba(${colA},0)`);
-      ctx.fillStyle = g; ctx.fillRect(Q[0] - r, Q[1] - r, 2 * r, 2 * r);
-    }
-  }
-  ctx.restore();
-}
-
-function label3D(ctx, C, p, text, color) { const P = proj(C, p); if (P) tag(ctx, P[0], P[1], text, color); }
-
-let drag3 = null;
-c3d.addEventListener('pointerdown', e => { drag3 = { x: e.clientX, y: e.clientY }; c3d.setPointerCapture(e.pointerId); });
-c3d.addEventListener('pointermove', e => { if (!drag3) return; cam.yaw -= (e.clientX - drag3.x) * 0.008; cam.pitch = clamp(cam.pitch + (e.clientY - drag3.y) * 0.006, 0.15, 1.5); drag3 = { x: e.clientX, y: e.clientY }; });
-c3d.addEventListener('pointerup', () => drag3 = null);
-c3d.addEventListener('wheel', e => { e.preventDefault(); cam.dist = clamp(cam.dist * Math.exp(e.deltaY * 0.001), 10, 70); }, { passive: false });
-c3d.addEventListener('dblclick', () => Object.assign(cam, CAM0));
-
-
-function matColor(mat, st) {
-  switch (mat.k) {
-    case 'sub': return { c: [34, 42, 54], e: 0 };
-    case 'slab': return { c: [58, 70, 88], e: 0 };
-    case 'wg': { const p = bright(st[mat.key]); return { c: mix([70, 84, 104], GLOW, p * 0.85), e: p * 0.55 }; }
-    case 'ge': { const p = bright(st[mat.key]); return { c: mix([92, 86, 116], [255, 120, 150], p * 0.9), e: p * 0.6 }; }
-    case 'metal': return { c: [205, 165, 80], e: 0.1 };
-    case 'laser': return { c: [210, 48, 80], e: 0.35 };
-  }
-  return { c: [128, 128, 128], e: 0 };
-}
-let sceneKey = '';
-function buildScene() {
-  LAYERS = [[], [], [], []]; tracks = [];
-  const Lh = clamp(1.4 + S.L / 9, 1.6, 7), gw = clamp(0.8 + S.W * 0.25, 1, 2.6), CX = Lh + 5;
-  G = { Lh, gw, CX, yTop: 3.4, yBot: -3.4 };
-  aabb(0, -CX - 1, CX + 1, -3.4, 3.4, -0.8, 0, { k: 'sub' });
-  const mk = (pts, key) => { const L = [0]; for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); tracks.push({ pts, key, L, len: L[L.length - 1] }); };
-  addBox(1, [-CX, 0], [-Lh - 1.2, 0], WG_W, 0, WG_H, { k: 'wg', key: 'in' });
-  for (let i = 0; i < 6; i++) { const x0 = -Lh - 1.2 + 1.2 * i / 6, x1 = -Lh - 1.2 + 1.2 * (i + 1) / 6; addBox(1, [x0, 0], [x1, 0], WG_W + (gw + 0.6 - WG_W) * (i + 0.5) / 6, 0, WG_H, { k: 'wg', key: 'in' }); }
-  mk([[-CX, 0], [-Lh, 0]], 'in');
-  aabb(1, -Lh, Lh + 0.4, -gw / 2 - 1.4, gw / 2 + 1.4, 0, 0.12, { k: 'slab' });
-  for (let i = 0; i < NSEG; i++) { const x0 = -Lh + 2 * Lh * i / NSEG, x1 = -Lh + 2 * Lh * (i + 1) / NSEG; aabb(1, x0, x1, -gw / 2, gw / 2, 0.12, 0.62, { k: 'ge', key: 'g' + i }); mk([[x0, 0], [x1, 0]], 'g' + i); }
-  // contacts: p-type slab contacts on both sides, n-type contact on top of the Ge, and GSG pads
-  for (const s of [1, -1]) aabb(3, -Lh + 0.2, Lh, s * (gw / 2 + 0.55), s * (gw / 2 + 1.1), 0.12, 0.42, { k: 'metal' });
-  aabb(3, -Lh + 0.3, Lh - 0.1, -0.18, 0.18, 0.62, 0.8, { k: 'metal' });
-  for (const [y, w] of [[-2.2, 1.1], [0, 1.1], [2.2, 1.1]]) aabb(3, Lh + 1.0, Lh + 3.2, y - w / 2, y + w / 2, 0.9, 1.05, { k: 'metal' });
-  aabb(3, Lh - 0.1, Lh + 1.0, -0.18, 0.18, 0.8, 0.95, { k: 'metal' });
-  for (const s of [1, -1]) aabb(3, Lh, Lh + 1.0, s * (gw / 2 + 0.55), s * (gw / 2 + 1.1), 0.42, 0.9, { k: 'metal' });
-  aabb(2, -CX - 1, CX + 1, -3.4, 3.4, 0, CL_H, { k: 'clad' });
-  aabb(3, -CX - 1.6, -CX - 0.2, -0.45, 0.45, -0.25, 0.55, { k: 'laser' });
-  sceneKey = [S.L.toFixed(1), S.W.toFixed(2)].join('|');
-}
-function draw3D(time) {
-  if (sceneKey !== [S.L.toFixed(1), S.W.toFixed(2)].join('|')) buildScene();
-  const { ctx, w, h } = fitCanvas(c3d); ctx.clearRect(0, 0, w, h);
-  const C = makeCam(w, h), r = pd(), st = { in: S.etac };
-  for (let i = 0; i < NSEG; i++) st['g' + i] = S.etac * Math.exp(-S.Gam * r.a * S.L * 1e-4 * (i + 0.5) / NSEG);
-  drawLayer(ctx, C, LAYERS[0], st, false); drawLayer(ctx, C, LAYERS[1], st, false); drawLight(ctx, C, st, time);
-  drawLayer(ctx, C, LAYERS[2], st, true); drawLayer(ctx, C, LAYERS[3], st, false);
-  const { Lh, gw, CX } = G;
-  label3D(ctx, C, [-CX - 0.9, 0, 1.3], `λ = ${S.lam.toFixed(0)} nm · ${S.P.toFixed(1)} dBm`, '#ff8fa8');
-  label3D(ctx, C, [0, 0, 1.9], `Ge · L = ${S.L.toFixed(1)} µm · absorbed ${(r.etaAbs * 100).toFixed(1)} %`, '#ffcc66');
-  label3D(ctx, C, [Lh + 2.1, 0, 1.9], `I = ${(r.Iph * 1e3).toFixed(3)} mA`, '#5fd38d');
-  label3D(ctx, C, [0, -gw / 2 - 1.6, 0.9], 'p contact', '#c9a75a'); label3D(ctx, C, [Lh + 2.1, 2.2, 1.5], 'GSG pads', '#c9d3de');
-  ctx.fillStyle = 'rgba(139,152,169,0.8)'; ctx.font = FONT; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('drag: rotate · wheel: zoom · double-click: reset', w - 10, 8);
-  ctx.textAlign = 'left'; ctx.fillText('vertical PIN: p-Si slab, intrinsic Ge, n+ Ge top · not to scale', 10, 8);
-}
-/* ------------------------------------------------ controls */
-const SL = [
-  { id: 'L', g: 'geo', lab: 'Ge length L', min: 2, max: 100, step: 0.1, unit: 'µm', dec: 1, get: () => S.L, set: v => S.L = v },
-  { id: 'W', g: 'geo', lab: 'Ge width W', min: 1, max: 10, step: 0.1, unit: 'µm', dec: 1, get: () => S.W, set: v => S.W = v },
-  { id: 'd', g: 'geo', lab: 'Intrinsic thickness d', min: 0.1, max: 1.5, step: 0.01, unit: 'µm', dec: 2, get: () => S.d, set: v => S.d = v },
-  { id: 'Gam', g: 'geo', lab: 'Mode confinement in Ge Γ', min: 0.05, max: 1, step: 0.01, unit: '', dec: 2, get: () => S.Gam, set: v => S.Gam = v },
-  { id: 'lam', g: 'opt', lab: 'Wavelength λ', min: 1250, max: 1700, step: 0.5, unit: 'nm', dec: 1, get: () => S.lam, set: v => S.lam = v },
-  { id: 'P', g: 'opt', lab: 'Optical power P', min: -45, max: 10, step: 0.1, unit: 'dBm', dec: 1, get: () => S.P, set: v => S.P = v, extra: v => `${(Math.pow(10, v / 10) * 1000).toPrecision(3)} µW` },
-  { id: 'etac', g: 'opt', lab: 'Coupling efficiency η_c', min: 0.3, max: 1, step: 0.01, unit: '', dec: 2, get: () => S.etac, set: v => S.etac = v },
-  { id: 'T', g: 'opt', lab: 'Temperature T', min: 250, max: 400, step: 1, unit: 'K', dec: 0, get: () => S.T, set: v => S.T = v },
-  { id: 'V', g: 'ele', lab: 'Bias voltage V', min: -3, max: 0.3, step: 0.01, unit: 'V', dec: 2, get: () => S.V, set: v => S.V = v },
-  { id: 'J0', g: 'ele', lab: 'Dark current density (−1 V, 300 K)', min: 0.1, max: 500, step: 0.1, log: true, unit: 'mA/cm²', dec: 1, get: () => S.J0, set: v => S.J0 = v },
-  { id: 'RL', g: 'ele', lab: 'Load resistance R_L', min: 10, max: 5000, step: 1, log: true, unit: 'Ω', dec: 0, get: () => S.RL, set: v => S.RL = v },
-  { id: 'Rs', g: 'ele', lab: 'Series resistance R_s', min: 1, max: 200, step: 1, unit: 'Ω', dec: 0, get: () => S.Rs, set: v => S.Rs = v },
-  { id: 'Cp', g: 'ele', lab: 'Pad capacitance', min: 0, max: 100, step: 0.5, unit: 'fF', dec: 1, get: () => S.Cp, set: v => S.Cp = v },
-  { id: 'B', g: 'ele', lab: 'Noise bandwidth B', min: 0.1, max: 100, step: 0.1, log: true, unit: 'GHz', dec: 1, get: () => S.B, set: v => S.B = v }
-];
-wireSeg('segPlot', v => S.plot = v);
-document.getElementById('pView').onclick = () => Object.assign(cam, CAM0);
-window.addEventListener('resize', () => dirty = true);
-buildSliders(); buildScene();
-let last = performance.now(), tA = 0;
-(function loop(now) { now = now || performance.now(); tA += Math.min(0.05, (now - last) / 1000); last = now; draw3D(tA); if (dirty) { dirty = false; drawPlot(); update(); SL.forEach(syncOut); } requestAnimationFrame(loop); })();
+sel.onchange = () => show(sel.value);
+window.addEventListener('message', e => { if (e.data && e.data.ppH) frame.style.height = (e.data.ppH + 4) + 'px'; });
+window.addEventListener('hashchange', () => show(location.hash.slice(1)));
+show(location.hash.slice(1));
 </script>
 </body>
 </html>

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Balanced photodetector</title>
+<script>if (/[?&]embed/.test(location.search)) document.documentElement.classList.add('embed');</script>
+<style>
+
+:root{
+  --bg:#0c1016; --card:#141a22; --card2:#10151c; --line:#243041; --text:#e6edf3; --muted:#8b98a9;
+  --thr:#4aa8ff; --refl:#d58cff; --fw:#5fd38d; --bw:#ff8f6b; --accent:#ffcc66; --laser:#ff4d6d; --warn:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:14px 20px 6px}
+header h1{font-size:19px;margin:0;font-weight:650}
+header .sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:10px 20px 20px}
+@media (max-width:1100px){main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600}
+.view{height:min(54vh,560px);min-height:380px;display:flex;flex-direction:column}
+.view canvas{flex:1;width:100%;min-height:0;display:block;border-radius:8px}
+#c3d{background:radial-gradient(ellipse at 50% 35%,#18212d 0%,#0d1218 75%);cursor:grab;touch-action:none}
+#c3d:active{cursor:grabbing}
+#cPlot{background:var(--card2);cursor:crosshair;touch-action:none}
+#cP2{background:var(--card2);height:240px;width:100%;display:block;border-radius:8px;cursor:crosshair;touch-action:none}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;color:var(--muted);border:0;padding:4px 10px;font:inherit;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:#223046;color:var(--text)}
+.toolbar label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+input[type=number]{background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;width:86px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.group{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.group h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin:7px 0}
+.row.off{opacity:.35;pointer-events:none}
+.row .lab{color:var(--muted);font-size:12.5px}
+.row .val{font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
+.row input[type=range]{grid-column:1/3;width:100%;accent-color:var(--accent);margin:2px 0 0}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0;font-size:12.5px;color:var(--muted)}
+.btn{background:#1d2735;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn:hover{background:#26344a}
+.btn.primary{border-color:#6b5a2b;background:#2d2615;color:var(--accent)}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
+.ro{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ro .k{font-size:11.5px;color:var(--muted)}
+.ro .v{font-size:15.5px;font-variant-numeric:tabular-nums;font-weight:600}
+.ro .v small{font-size:12px;color:var(--muted);font-weight:500}
+.span2{grid-column:1/-1}
+/* theory */
+.theory{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
+.th{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.th h3{margin:0 0 8px;font-size:14px;color:var(--accent)}
+.th p{margin:6px 0;color:#c9d3de;font-size:13px}
+.eq{display:block;text-align:center;line-height:2.4;margin:8px 0;font:15px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 3px}
+.frac>span:first-child{border-bottom:1px solid #cfd8e3;padding:0 4px 2px}
+.frac>span:last-child{padding:2px 4px 0}
+.live{font:600 12.5px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);background:#1f1a0e;border:1px solid #4a3d1c;border-radius:5px;padding:1px 6px;white-space:nowrap}
+table.fm{width:100%;border-collapse:collapse;font-size:13px}
+table.fm td{padding:5px 6px;border-bottom:1px solid #1f2836;color:#c9d3de;vertical-align:middle}
+table.fm td.f{font:14px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+table.fm td.f small{display:block;font:11.5px system-ui,sans-serif;color:var(--muted)}
+table.fm td:last-child{text-align:right}
+i.v{font-family:"Cambria Math","Times New Roman",serif;font-style:italic}
+a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1c;background:#1f1a0e;border-radius:8px;padding:3px 10px;margin-right:4px}a.back:hover{background:#2d2615}
+
+.row .val{display:flex;align-items:center;justify-content:flex-end;gap:4px;text-align:right}
+.numin{width:78px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font:inherit;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.numin:focus{outline:none;border-color:var(--accent)}
+.row .unit{color:var(--muted);font-size:12px;min-width:18px;text-align:left}
+.row .extra{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.cfgsel{background:#1f1a0e;color:var(--accent);border:1px solid #6b5a2b;border-radius:9px;padding:6px 10px;font:inherit;font-size:13.5px;cursor:pointer}
+
+.smat{display:inline-grid;grid-template-columns:auto auto;gap:2px 14px;padding:2px 9px;vertical-align:middle;border-left:1.5px solid #cfd8e3;border-right:1.5px solid #cfd8e3;border-radius:7px;line-height:1.7;text-align:center}
+
+html.embed header{display:none}
+html.embed .view{height:520px;min-height:0}
+html.embed main{padding-top:6px}
+html.embed .cfgbar{padding-top:8px}
+#cPlot{background:var(--card2)}
+.hide{display:none!important}
+.cfgbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:4px 20px 2px;font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../index.html">← Component catalog</a>
+  <h1>Balanced photodetector</h1>
+  <span class="sub">Two photodiodes in series: subtraction of photocurrents, common-mode rejection, laser-noise cancellation and interferometric detection with a local oscillator. Part of the Programmable Photonics interactive lab.</span>
+</header>
+<nav class="cfgbar">
+  <span>Configuration</span>
+  <select id="selMode" class="cfgsel">
+    <option value="coh">Interferometric: signal + LO through a 3 dB coupler</option>
+    <option value="ind">Two independent optical inputs</option>
+  </select>
+</nav>
+<main>
+  <section class="card view">
+    <h2>Device (3D)</h2>
+    <canvas id="c3d"></canvas>
+  </section>
+  <section class="card view">
+    <div class="toolbar">
+      <div class="seg" id="segPlot"><button data-v="time" class="on">Time traces</button><button data-v="phase">Output vs phase</button><button data-v="snr">SNR vs LO power</button><button data-v="cmrr">CMRR vs mismatch</button></div>
+    </div>
+    <canvas id="cPlot"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>Controls</h2>
+    <div class="inline" style="margin-bottom:10px">
+      <button class="btn" id="bNoise">New noise sample</button>
+      <button class="btn" id="pView">Reset 3D view</button>
+    </div>
+    <div class="groups">
+      <div class="group" data-group="opt"><h3>Optical inputs</h3></div>
+      <div class="group" data-group="imp"><h3>Detectors and imperfections</h3></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Figures of merit</h2>
+    <div class="readouts" id="ro"></div>
+  </section>
+
+  <section class="card span2">
+    <h2>Theory</h2>
+    <div class="theory">
+      <div class="th">
+        <h3>1 · Subtracting two photocurrents</h3>
+        <p>Two photodiodes are connected in series between +<i class="v">V</i> and −<i class="v">V</i>. The middle node collects the difference of their currents, which goes to a transimpedance amplifier (TIA):</p>
+        <div class="eq"><i class="v">I</i><sub>out</sub> = <i class="v">R</i><sub>1</sub><i class="v">P</i><sub>1</sub> − <i class="v">R</i><sub>2</sub><i class="v">P</i><sub>2</sub> <span class="live" id="lvI"></span></div>
+        <p>Whatever reaches both diodes equally (the <b>common mode</b>) cancels; only the difference survives. A large DC photocurrent never reaches the amplifier, so it can have high gain without saturating.</p>
+      </div>
+      <div class="th">
+        <h3>2 · Interferometric detection with a local oscillator</h3>
+        <p>A weak signal <i class="v">E</i><sub>s</sub> and a strong local oscillator <i class="v">E</i><sub>LO</sub> are mixed in a 3 dB coupler. The two outputs carry the interference term with opposite signs:</p>
+        <div class="eq"><i class="v">P</i><sub>1,2</sub> = <span class="frac"><span><i class="v">P</i><sub>s</sub> + <i class="v">P</i><sub>LO</sub></span><span>2</span></span> ± √(<i class="v">P</i><sub>s</sub><i class="v">P</i><sub>LO</sub>) cos Δφ &nbsp;⇒&nbsp; <i class="v">I</i><sub>out</sub> = 2<i class="v">R</i> √(<i class="v">P</i><sub>s</sub><i class="v">P</i><sub>LO</sub>) cos Δφ</div>
+        <p>The signal is amplified by the LO (√<i class="v">P</i><sub>LO</sub>), the phase Δφ becomes measurable, and the large DC terms cancel. Balanced detection gives twice the signal current of a single photodiode (+6 dB in electrical power).</p>
+      </div>
+      <div class="th">
+        <h3>3 · Common-mode rejection ratio</h3>
+        <p>Cancellation is perfect only if both arms are identical. With a responsivity mismatch (<i class="v">R</i><sub>1</sub> ≠ <i class="v">R</i><sub>2</sub>) or an unbalanced coupler (split 1/2 ± ε), part of the common mode leaks to the output:</p>
+        <div class="eq">CMRR = 20 log<sub>10</sub> <span class="frac"><span><i class="v">R</i><sub>1</sub><i class="v">b</i>² + <i class="v">R</i><sub>2</sub><i class="v">a</i>²</span><span>|<i class="v">R</i><sub>1</sub><i class="v">b</i>² − <i class="v">R</i><sub>2</sub><i class="v">a</i>²|</span></span>, &nbsp; <i class="v">a</i>², <i class="v">b</i>² = ½ ± ε <span class="live" id="lvC"></span></div>
+        <p>A 1 % mismatch already limits the CMRR to ≈ 46 dB.</p>
+      </div>
+      <div class="th">
+        <h3>4 · Noise: why balanced detection wins</h3>
+        <div class="eq">σ²<sub>RIN</sub> = (<i class="v">k</i><sub>cm</sub><i class="v">P</i><sub>LO</sub>)² · RIN · <i class="v">B</i>, &nbsp; σ²<sub>shot</sub> = 2<i class="v">q</i>(<i class="v">I</i><sub>1</sub> + <i class="v">I</i><sub>2</sub>)<i class="v">B</i>, &nbsp; σ²<sub>TIA</sub> = <i class="v">i</i><sub>n</sub>²<i class="v">B</i></div>
+        <p>The intensity noise of the LO (RIN) is common to both diodes and is suppressed by the CMRR (<i class="v">k</i><sub>cm</sub> = <i class="v">R</i><sub>1</sub><i class="v">b</i>² − <i class="v">R</i><sub>2</sub><i class="v">a</i>²). Shot noise is not correlated and always adds. With enough LO power a balanced receiver reaches the <b>shot-noise limit</b>, SNR = 2<i class="v">R P</i><sub>s</sub>/(<i class="v">qB</i>), whereas a single photodiode is eventually limited by RIN. <span class="live" id="lvS"></span></p>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+"use strict";
+const PI = Math.PI;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+let dirty = true;
+function f3(v) { const a = Math.abs(v); return !isFinite(v) ? '∞' : a >= 1000 ? v.toFixed(0) : a >= 100 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : a >= 1 ? v.toFixed(3) : v.toFixed(4); }
+const dB = p => 10 * Math.log10(Math.max(p, 1e-12));
+const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+function fitCanvas(c) {
+  const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  const W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); return { ctx, w: r.width, h: r.height };
+}
+function niceTicks(a, b, n) {
+  const span = b - a; if (!(span > 0)) return [a];
+  const s0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(s0))), q = s0 / mag;
+  const st = (q < 1.5 ? 1 : q < 3 ? 2 : q < 7 ? 5 : 10) * mag, t = [];
+  for (let v = Math.ceil(a / st - 1e-9) * st; v <= b + 1e-9; v += st) t.push(+v.toFixed(12));
+  return t;
+}
+function tickFmt(v, step) { const d = Math.max(0, Math.min(6, -Math.floor(Math.log10(step || 1) + 1e-9))); return v.toFixed(d); }
+function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
+  ctx.font = FONT; const w = ctx.measureText(text).width + 10, x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
+  ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
+  ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + 0.5);
+}
+/* colour maps: 'light' (dark → red → white, for optical intensity) and 'heat' (dark blue → red → yellow) */
+const CMAPS = {
+  light: [[0, [8, 10, 16]], [0.25, [90, 10, 40]], [0.5, [210, 40, 80]], [0.75, [255, 120, 120]], [1, [255, 235, 230]]],
+  heat: [[0, [14, 22, 48]], [0.25, [60, 30, 110]], [0.5, [180, 40, 90]], [0.75, [245, 120, 40]], [1, [255, 240, 150]]]
+};
+function cmap(name, t) {
+  const st = CMAPS[name]; t = clamp(t, 0, 1);
+  for (let i = 1; i < st.length; i++) if (t <= st[i][0]) { const u = (t - st[i - 1][0]) / (st[i][0] - st[i - 1][0]), a = st[i - 1][1], b = st[i][1]; return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u]; }
+  return st[st.length - 1][1];
+}
+/* ------------------------------------------------ sliders with editable numeric boxes */
+const LOGN = 2000;
+const toSlider = (c, v) => Math.round(LOGN * Math.log(v / c.min) / Math.log(c.max / c.min));
+const fromSlider = (c, u) => c.min * Math.pow(c.max / c.min, u / LOGN);
+const SLid = id => SL.find(c => c.id === id);
+const maxOf = c => typeof c.max === 'function' ? c.max() : c.max;
+function buildSliders() {
+  for (const c of SL) {
+    const host = document.querySelector(`[data-group="${c.g}"]`);
+    const row = document.createElement('div'); row.className = 'row'; row.id = 'row_' + c.id;
+    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val"><input type="text" inputmode="decimal" class="numin" id="n_${c.id}"><span class="unit">${c.unit ?? ''}</span><span class="extra" id="x_${c.id}"></span></span><input type="range" id="s_${c.id}">`;
+    const inl = host.querySelector('.inline.after'); if (inl) host.insertBefore(row, inl); else host.appendChild(row);
+    const s = row.querySelector('input[type=range]');
+    if (c.log) { s.min = 0; s.max = LOGN; s.step = 1; } else { s.min = c.min; s.max = maxOf(c); s.step = c.step; }
+    s.addEventListener('input', () => { c.set(c.log ? fromSlider(c, +s.value) : +s.value); if (c.after) c.after(); syncOut(c); dirty = true; });
+    const n = row.querySelector('.numin');
+    n.addEventListener('change', () => { let v = parseFloat(String(n.value).replace(',', '.')); if (isFinite(v)) { c.set(clamp(v, c.min, maxOf(c))); if (c.after) c.after(); syncSlider(c); dirty = true; } else syncOut(c); });
+    n.addEventListener('keydown', e => { if (e.key === 'Enter') n.blur(); });
+  }
+  SL.forEach(syncSlider);
+}
+function syncOut(c) {
+  const n = document.getElementById('n_' + c.id);
+  if (document.activeElement !== n) n.value = +c.get().toFixed(c.dec ?? 3);
+  document.getElementById('x_' + c.id).textContent = c.extra ? c.extra(c.get()) : '';
+}
+function syncSlider(c) {
+  const s = document.getElementById('s_' + c.id);
+  if (c.log) s.value = toSlider(c, c.get()); else { s.max = maxOf(c); s.value = c.get(); }
+  syncOut(c);
+}
+function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+function wireSeg(id, fn) { document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { fn(b.dataset.v); setSeg(id, b.dataset.v); dirty = true; }); }
+function readouts(id, items) { document.getElementById(id).innerHTML = items.map(([k, v]) => `<div class="ro"><div class="k">${k}</div><div class="v">${v}</div></div>`).join(''); }
+const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
+/* ------------------------------------------------ generic line plot
+   o = { x0, x1, y0, y1, xlabel, ylabel, series:[{x:[], y:[], color, width, dash}], vlines:[{x, color, label, dash}],
+         legend:[{color, label, dash}], yfmt, ylog } */
+function linePlot(canvas, o) {
+  const { ctx, w, h } = fitCanvas(canvas); ctx.clearRect(0, 0, w, h);
+  const m = { l: 60, r: 16, t: 30, b: 42 }, pw = w - m.l - m.r, ph = h - m.t - m.b; if (pw < 60 || ph < 40) return;
+  const ty = v => o.ylog ? Math.log10(Math.max(v, 1e-30)) : v;
+  const Y0 = ty(o.y0), Y1 = ty(o.y1);
+  const X = v => m.l + (v - o.x0) / (o.x1 - o.x0) * pw, Y = v => m.t + (1 - (ty(v) - Y0) / (Y1 - Y0)) * ph;
+  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  const xt = niceTicks(o.x0, o.x1, Math.max(3, Math.round(pw / 90))), xst = xt.length > 1 ? xt[1] - xt[0] : 1;
+  let yt; if (o.ylog) { yt = []; for (let d = Math.ceil(Y0); d <= Math.floor(Y1); d++) yt.push(Math.pow(10, d)); } else yt = niceTicks(o.y0, o.y1, Math.max(3, Math.round(ph / 55)));
+  const yst = !o.ylog && yt.length > 1 ? yt[1] - yt[0] : 1;
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
+  for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
+  for (const b of (o.bands || [])) { ctx.fillStyle = b.color; ctx.fillRect(X(b.x0), m.t, X(b.x1) - X(b.x0), ph); }
+  for (const v of (o.vlines || [])) {
+    if (v.x < o.x0 || v.x > o.x1) continue;
+    ctx.strokeStyle = v.color; ctx.lineWidth = 1.2; ctx.setLineDash(v.dash || [4, 4]);
+    ctx.beginPath(); ctx.moveTo(X(v.x), m.t); ctx.lineTo(X(v.x), m.t + ph); ctx.stroke(); ctx.setLineDash([]);
+    if (v.label) { ctx.font = FONT; ctx.fillStyle = v.color; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(v.label, X(v.x), m.t + 4 + (v.row || 0) * 14); }
+  }
+  for (const s of o.series) {
+    ctx.beginPath(); let pen = false;
+    for (let i = 0; i < s.x.length; i++) { const y = s.y[i]; if (!isFinite(y)) { pen = false; continue; } const px = X(s.x[i]), py = Y(y); if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py); }
+    ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 2; ctx.setLineDash(s.dash || []); ctx.lineJoin = 'round'; ctx.stroke(); ctx.setLineDash([]);
+  }
+  for (const p of (o.points || [])) { if (p.x < o.x0 || p.x > o.x1) continue; ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 5, 0, 2 * PI); ctx.fillStyle = p.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); }
+  ctx.restore();
+  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of xt) ctx.fillText(o.xfmt ? o.xfmt(t) : tickFmt(t, xst), X(t), m.t + ph + 6);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const t of yt) ctx.fillText(o.yfmt ? o.yfmt(t) : (o.ylog ? (t >= 1 ? String(t) : t.toExponential(0)) : tickFmt(t, yst)), m.l - 6, Y(t));
+  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
+  ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText(o.ylabel, 0, 0); ctx.restore();
+  let lx = m.l; const ly = 14; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
+  return { X, Y, m, pw, ph };
+}
+
+const QE = 1.602e-19;
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function gauss(r) { let u = 0; while (u === 0) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * PI * r()); }
+const S = { mode: 'coh', Ps: -20, Plo: 0, dphi: 0, P1: -10, P2: -10, R: 1.0, mis: 1, cimb: 0, rin: -135, B: 10, inoise: 15, plot: 'time', seed: 1 };
+const mW = dBm => Math.pow(10, dBm / 10);   // mW
+function bpd(o = S) {
+  const R1 = o.R * (1 + o.mis / 200), R2 = o.R * (1 - o.mis / 200), B = o.B * 1e9, rin = Math.pow(10, o.rin / 10);
+  let P1, P2, a2, b2, sig, sigSE, kcm, kSE, Pcm;
+  if (o.mode === 'coh') {
+    a2 = 0.5 + o.cimb / 100; b2 = 1 - a2; const a = Math.sqrt(a2), b = Math.sqrt(b2), Ps = mW(o.Ps), Pl = mW(o.Plo), x = Math.sqrt(Ps * Pl);
+    // coupler [[a, b], [b, −a]]: E1 = a·Es + b·E_LO, E2 = b·Es − a·E_LO
+    P1 = a2 * Ps + b2 * Pl + 2 * a * b * x * Math.cos(o.dphi); P2 = b2 * Ps + a2 * Pl - 2 * a * b * x * Math.cos(o.dphi);
+    sig = 2 * a * b * x * (R1 + R2); sigSE = 2 * a * b * x * R1; kcm = R1 * b2 - R2 * a2; kSE = R1 * b2; Pcm = Pl;
+  } else {
+    a2 = b2 = 0.5; P1 = mW(o.P1); P2 = mW(o.P2); sig = R1 * P1 + R2 * P2; sigSE = R1 * P1; kcm = (R1 - R2) / 2; kSE = R1 / 2; Pcm = P1 + P2;
+  }
+  const I1 = R1 * P1 * 1e-3, I2 = R2 * P2 * 1e-3, Iout = I1 - I2;            // A
+  const nRIN = (kcm * Pcm * 1e-3) ** 2 * rin * B, nShot = 2 * QE * (I1 + I2) * B, nTIA = (o.inoise * 1e-12) ** 2 * B;
+  const nRINse = (kSE * Pcm * 1e-3) ** 2 * rin * B, nShotSE = 2 * QE * I1 * B;
+  const snr = (sig * 1e-3) ** 2 / (nRIN + nShot + nTIA), snrSE = (sigSE * 1e-3) ** 2 / (nRINse + nShotSE + nTIA);
+  const cm = o.mode === 'coh' ? R1 * b2 + R2 * a2 : (R1 + R2) / 2, cmrr = 20 * Math.log10(cm / Math.max(Math.abs(kcm), 1e-12));
+  const snrShot = o.mode === 'coh' ? 2 * o.R * mW(o.Ps) * 1e-3 / (QE * B) : NaN;
+  return { R1, R2, P1, P2, I1, I2, Iout, sig, sigSE, nRIN, nShot, nTIA, snr, snrSE, cmrr, kcm, a2, b2, snrShot, rin, B };
+}
+/* ------------------------------------------------ plots */
+const cPlot = document.getElementById('cPlot');
+function drawPlot() {
+  const r = bpd();
+  if (S.plot === 'time') {
+    // BPSK data on the signal phase (interferometric mode) or a common laser with RIN plus a small differential tone (independent inputs)
+    const rr = rng(S.seed * 977 + 3), N = 600, sps = 30, xs = [], y1 = [], y2 = [], yo = [], R1 = r.R1, R2 = r.R2, sq = Math.sqrt(r.rin * r.B);
+    const bits = Array.from({ length: N / sps + 2 }, () => rr() < 0.5 ? 0 : PI);
+    for (let i = 0; i < N; i++) {
+      const ph = bits[Math.floor(i / sps)];
+      const rinF = 1 + sq * gauss(rr);
+      let P1, P2;
+      if (S.mode === 'coh') {
+        const a = Math.sqrt(r.a2), b = Math.sqrt(r.b2), Ps = mW(S.Ps), Pl = mW(S.Plo) * rinF, x = Math.sqrt(Ps * Pl), c = Math.cos(S.dphi + ph);
+        P1 = r.a2 * Ps + r.b2 * Pl + 2 * a * b * x * c; P2 = r.b2 * Ps + r.a2 * Pl - 2 * a * b * x * c;
+      } else { P1 = mW(S.P1) * rinF; P2 = mW(S.P2) * rinF; }
+      let I1 = R1 * P1, I2 = R2 * P2;  // mA
+      I1 += Math.sqrt(2 * QE * I1 * 1e-3 * r.B) * 1e3 * gauss(rr); I2 += Math.sqrt(2 * QE * I2 * 1e-3 * r.B) * 1e3 * gauss(rr);
+      const it = S.inoise * 1e-12 * Math.sqrt(r.B) * 1e3 * gauss(rr);
+      xs.push(i / sps); y1.push(I1); y2.push(I2); yo.push(I1 - I2 + it);
+    }
+    const all = [...y1, ...y2, ...yo], lo = Math.min(...all), hi = Math.max(...all), pad = 0.08 * (hi - lo || 1);
+    linePlot(cPlot, { x0: 0, x1: N / sps, y0: lo - pad, y1: hi + pad, xlabel: S.mode === 'coh' ? 'Time (BPSK symbols: phase 0 or π on the signal)' : 'Time (samples in the detection bandwidth)', ylabel: 'Current (mA)',
+      series: [{ x: xs, y: y1, color: '#4aa8ff', width: 1.2 }, { x: xs, y: y2, color: '#ff9548', width: 1.2 }, { x: xs, y: yo, color: '#5fd38d', width: 1.6 }],
+      legend: [{ color: '#4aa8ff', label: 'photodiode 1' }, { color: '#ff9548', label: 'photodiode 2' }, { color: '#5fd38d', label: 'balanced output I₁ − I₂' }] });
+  } else if (S.plot === 'phase') {
+    const xs = [], a = [], b = [], o = [];
+    for (let i = 0; i <= 300; i++) { const d = 2 * PI * i / 300, q = bpd({ ...S, dphi: d }); xs.push(d / PI); a.push(q.I1 * 1e3); b.push(q.I2 * 1e3); o.push(q.Iout * 1e3); }
+    const lo = Math.min(...o, 0), hi = Math.max(...a, ...b, ...o);
+    linePlot(cPlot, { x0: 0, x1: 2, y0: lo - 0.05 * (hi - lo), y1: hi + 0.08 * (hi - lo), xlabel: S.mode === 'coh' ? 'Phase difference Δφ between signal and LO (π)' : 'Δφ has no effect without interference', ylabel: 'Current (mA)',
+      series: [{ x: xs, y: a, color: '#4aa8ff' }, { x: xs, y: b, color: '#ff9548' }, { x: xs, y: o, color: '#5fd38d', width: 2.4 }],
+      vlines: [{ x: S.dphi / PI, color: '#ffcc66', label: 'Δφ' }], points: [{ x: S.dphi / PI, y: r.Iout * 1e3, color: '#5fd38d' }],
+      legend: [{ color: '#4aa8ff', label: 'I₁' }, { color: '#ff9548', label: 'I₂' }, { color: '#5fd38d', label: 'I_out = I₁ − I₂' }] });
+  } else if (S.plot === 'snr') {
+    const xs = [], yb = [], ys = [], yl = [];
+    for (let i = 0; i <= 300; i++) { const Plo = -30 + 45 * i / 300, q = bpd({ ...S, mode: 'coh', Plo }); xs.push(Plo); yb.push(10 * Math.log10(q.snr)); ys.push(10 * Math.log10(q.snrSE)); yl.push(10 * Math.log10(q.snrShot)); }
+    const all = [...yb, ...ys, ...yl], lo = Math.floor(Math.min(...all) / 10) * 10, hi = Math.ceil(Math.max(...all) / 10) * 10 + 5, q = bpd({ ...S, mode: 'coh' });
+    linePlot(cPlot, { x0: -30, x1: 15, y0: lo, y1: hi, xlabel: `LO power (dBm) · signal ${S.Ps.toFixed(1)} dBm`, ylabel: 'SNR (dB)',
+      series: [{ x: xs, y: yl, color: 'rgba(255,255,255,0.45)', dash: [5, 5], width: 1.4 }, { x: xs, y: ys, color: '#ff9548' }, { x: xs, y: yb, color: '#5fd38d', width: 2.4 }],
+      vlines: [{ x: S.Plo, color: '#ffcc66', label: 'LO' }], points: [{ x: S.Plo, y: 10 * Math.log10(q.snr), color: '#5fd38d' }, { x: S.Plo, y: 10 * Math.log10(q.snrSE), color: '#ff9548' }],
+      legend: [{ color: '#5fd38d', label: 'balanced' }, { color: '#ff9548', label: 'single photodiode' }, { color: 'rgba(255,255,255,0.6)', label: 'shot-noise limit', dash: [5, 5] }] });
+  } else {
+    const xs = [], y = [], y0 = [];
+    for (let i = 0; i <= 300; i++) { const m = Math.pow(10, -2 + 3.3 * i / 300); xs.push(m); y.push(bpd({ ...S, mis: m }).cmrr); y0.push(bpd({ ...S, mis: m, cimb: 0 }).cmrr); }
+    const lx = xs.map(Math.log10);
+    linePlot(cPlot, { x0: -2, x1: 1.3, y0: 0, y1: 90, xlabel: 'Responsivity mismatch (log₁₀ %)', ylabel: 'CMRR (dB)', yfmt: v => v.toFixed(0),
+      series: [{ x: lx, y: y0, color: 'rgba(255,255,255,0.45)', dash: [5, 5], width: 1.4 }, { x: lx, y, color: '#5fd38d', width: 2.4 }],
+      vlines: [{ x: Math.log10(Math.max(S.mis, 0.01)), color: '#ffcc66', label: `${S.mis.toFixed(2)} %` }],
+      legend: [{ color: '#5fd38d', label: S.mode === 'coh' ? `coupler imbalance ε = ${S.cimb.toFixed(2)} %` : 'independent inputs' }, { color: 'rgba(255,255,255,0.6)', label: 'perfect coupler', dash: [5, 5] }] });
+  }
+}
+const fA = I => Math.abs(I) >= 1e-3 ? `${(I * 1e3).toFixed(3)} <small>mA</small>` : `${(I * 1e6).toFixed(2)} <small>µA</small>`;
+function update() {
+  const r = bpd(), coh = S.mode === 'coh', rms = v => `${(Math.sqrt(v) * 1e6).toFixed(3)} <small>µA rms</small>`;
+  readouts('ro', [
+    ['P₁ · P₂', `${(r.P1 * 1000).toPrecision(3)} <small>·</small> ${(r.P2 * 1000).toPrecision(3)} <small>µW</small>`],
+    ['I₁ · I₂', `${(r.I1 * 1e3).toFixed(3)} <small>·</small> ${(r.I2 * 1e3).toFixed(3)} <small>mA</small>`],
+    ['Output I₁ − I₂', fA(r.Iout)],
+    [coh ? 'Signal amplitude 2R√(PsPLO)' : 'Single-PD current', `${(r.sig * (coh ? 1 : 0.5)).toFixed(4)} <small>mA</small>`],
+    ['CMRR', `${isFinite(r.cmrr) && r.cmrr < 200 ? r.cmrr.toFixed(1) : '∞'} <small>dB</small>`],
+    ['RIN noise (residual)', rms(r.nRIN)],
+    ['Shot noise', rms(r.nShot)],
+    ['TIA noise', rms(r.nTIA)],
+    ['SNR balanced', `${(10 * Math.log10(r.snr)).toFixed(1)} <small>dB</small>`],
+    ['SNR single photodiode', `${(10 * Math.log10(r.snrSE)).toFixed(1)} <small>dB</small>`],
+    ['Balanced gain', `${(10 * Math.log10(r.snr / r.snrSE)).toFixed(1)} <small>dB</small>`],
+    ['Shot-noise limit', coh ? `${(10 * Math.log10(r.snrShot)).toFixed(1)} <small>dB</small>` : '<small>n/a</small>']
+  ]);
+  setTxt('lvI', `I_out = ${(r.Iout * 1e3).toFixed(4)} mA`); setTxt('lvC', `CMRR = ${r.cmrr < 200 ? r.cmrr.toFixed(1) : '∞'} dB`);
+  setTxt('lvS', `balanced ${(10 * Math.log10(r.snr)).toFixed(1)} dB vs single ${(10 * Math.log10(r.snrSE)).toFixed(1)} dB`);
+  ['Ps', 'Plo', 'dphi', 'cimb'].forEach(id => document.getElementById('row_' + id).classList.toggle('hide', !coh));
+  ['P1', 'P2'].forEach(id => document.getElementById('row_' + id).classList.toggle('hide', coh));
+}
+/* ------------------------------------------------ 3D */
+const c3d = document.getElementById('c3d');
+const WG_W = 0.4, WG_H = 0.22, CL_H = 0.9, NSEG = 1;
+const CAM0 = { yaw: -1.95, pitch: 0.85, dist: 25 }; const cam = { ...CAM0 };
+/* ---------------- tiny painter's-algorithm 3D engine (shared with the ring pages) */
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const crs = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const nrm = a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+let LAYERS, tracks, G;
+function addBox(layer, p0, p1, w, z0, z1, mat) {
+  const dx = p1[0] - p0[0], dy = p1[1] - p0[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L * w / 2, ny = dx / L * w / 2;
+  const b = [[p0[0] - nx, p0[1] - ny], [p1[0] - nx, p1[1] - ny], [p1[0] + nx, p1[1] + ny], [p0[0] + nx, p0[1] + ny]];
+  const v = [...b.map(q => [q[0], q[1], z0]), ...b.map(q => [q[0], q[1], z1])];
+  const c = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (z0 + z1) / 2];
+  for (const f of [[4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]]) {
+    const q = f.map(i => v[i]), fc = [(q[0][0] + q[2][0]) / 2, (q[0][1] + q[2][1]) / 2, (q[0][2] + q[2][2]) / 2];
+    let n = nrm(crs(sub(q[1], q[0]), sub(q[3], q[0]))); if (dot3(n, sub(fc, c)) < 0) n = [-n[0], -n[1], -n[2]];
+    LAYERS[layer].push({ q, n, c: fc, mat });
+  }
+}
+const aabb = (layer, x0, x1, y0, y1, z0, z1, mat) => addBox(layer, [x0, (y0 + y1) / 2], [x1, (y0 + y1) / 2], y1 - y0, z0, z1, mat);
+
+function pointAt(tr, s) { let i = 1; while (i < tr.L.length - 1 && tr.L[i] < s) i++; const a = tr.pts[i - 1], b = tr.pts[i], u = (s - tr.L[i - 1]) / ((tr.L[i] - tr.L[i - 1]) || 1); return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]; }
+
+function makeCam(w, h) {
+  const cp = Math.cos(cam.pitch), ty = (G.yTop + G.yBot) / 2;
+  const pos = [cam.dist * cp * Math.cos(cam.yaw), ty + cam.dist * cp * Math.sin(cam.yaw), cam.dist * Math.sin(cam.pitch)];
+  const f = nrm(sub([0, ty, 0], pos)), r = nrm(crs(f, [0, 0, 1])), u = crs(r, f);
+  return { pos, f, r, u, F: Math.min(w * 0.95, h * 1.55), cx: w / 2, cy: h * 0.5 };
+}
+function proj(C, p) { const d = sub(p, C.pos), z = dot3(d, C.f); if (z < 0.1) return null; return [C.cx + C.F * dot3(d, C.r) / z, C.cy - C.F * dot3(d, C.u) / z, z]; }
+const LIGHT = nrm([-0.35, -0.55, 1]), GLOW = [255, 64, 104];
+const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+
+function heatColor(t) { const st = [[0, [150, 158, 170]], [0.3, [190, 70, 40]], [0.62, [255, 140, 40]], [1, [255, 236, 170]]]; for (let i = 1; i < st.length; i++) if (t <= st[i][0]) return mix(st[i - 1][1], st[i][1], (t - st[i - 1][0]) / (st[i][0] - st[i - 1][0])); return st[3][1]; }
+const bright = p => clamp(Math.sqrt(Math.max(p, 0)), 0, 1);
+
+function drawLayer(ctx, C, faces, st, translucent) {
+  const vis = [];
+  for (const f of faces) { if (dot3(f.n, sub(C.pos, f.c)) <= 0) continue; const P = f.q.map(q => proj(C, q)); if (P.some(p => !p)) continue; vis.push({ f, P, z: (P[0][2] + P[1][2] + P[2][2] + P[3][2]) / 4 }); }
+  vis.sort((a, b) => b.z - a.z);
+  for (const { f, P } of vis) {
+    ctx.beginPath(); ctx.moveTo(P[0][0], P[0][1]); for (let i = 1; i < 4; i++) ctx.lineTo(P[i][0], P[i][1]); ctx.closePath();
+    if (translucent) { ctx.fillStyle = f.n[2] > 0.5 ? 'rgba(150,195,240,0.07)' : 'rgba(150,195,240,0.1)'; ctx.fill(); ctx.strokeStyle = 'rgba(170,210,250,0.15)'; ctx.lineWidth = 0.8; ctx.stroke(); continue; }
+    const { c, e } = matColor(f.mat, st), sh = 0.42 + 0.58 * Math.max(0, dot3(f.n, LIGHT)), k = sh * (1 - e) + e;
+    ctx.fillStyle = `rgb(${c[0] * k | 0},${c[1] * k | 0},${c[2] * k | 0})`; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 0.5; ctx.stroke();
+  }
+}
+function drawLight(ctx, C, st, time) {
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const sp = 0.8, speed = 2.2;
+  for (const tr of tracks) {
+    const P = Math.max(0, st[tr.key] ?? 0), p = bright(P); if (p < 0.03) continue;
+    const boost = 1 + 0.45 * Math.log10(Math.max(1, P));
+    const mid = proj(C, [...pointAt(tr, tr.len / 2), WG_H]); if (!mid) continue;
+    const lw = C.F * 0.3 / mid[2];
+    const colA = tr.key === 'ringB' || tr.key === 'busRefl' ? '255,150,90' : '255,60,100';
+    ctx.beginPath(); tr.pts.forEach((q, i) => { const s = proj(C, [q[0], q[1], WG_H]); if (s) i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); });
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = `rgba(${colA},${0.14 * p})`; ctx.lineWidth = lw * 3 * boost; ctx.stroke();
+    ctx.strokeStyle = `rgba(${colA},${0.3 * p})`; ctx.lineWidth = lw * 0.9; ctx.stroke();
+    const ph = (time * speed) % sp;
+    for (let s = ph; s < tr.len; s += sp) {
+      const q = pointAt(tr, s), Q = proj(C, [q[0], q[1], WG_H * 0.8]); if (!Q) continue;
+      const r = C.F * 0.32 * Math.min(1.6, boost) / Q[2], g = ctx.createRadialGradient(Q[0], Q[1], 0, Q[0], Q[1], r);
+      g.addColorStop(0, `rgba(255,228,236,${0.85 * p})`); g.addColorStop(0.35, `rgba(${colA},${0.5 * p})`); g.addColorStop(1, `rgba(${colA},0)`);
+      ctx.fillStyle = g; ctx.fillRect(Q[0] - r, Q[1] - r, 2 * r, 2 * r);
+    }
+  }
+  ctx.restore();
+}
+
+function label3D(ctx, C, p, text, color) { const P = proj(C, p); if (P) tag(ctx, P[0], P[1], text, color); }
+
+let drag3 = null;
+c3d.addEventListener('pointerdown', e => { drag3 = { x: e.clientX, y: e.clientY }; c3d.setPointerCapture(e.pointerId); });
+c3d.addEventListener('pointermove', e => { if (!drag3) return; cam.yaw -= (e.clientX - drag3.x) * 0.008; cam.pitch = clamp(cam.pitch + (e.clientY - drag3.y) * 0.006, 0.15, 1.5); drag3 = { x: e.clientX, y: e.clientY }; });
+c3d.addEventListener('pointerup', () => drag3 = null);
+c3d.addEventListener('wheel', e => { e.preventDefault(); cam.dist = clamp(cam.dist * Math.exp(e.deltaY * 0.001), 10, 70); }, { passive: false });
+c3d.addEventListener('dblclick', () => Object.assign(cam, CAM0));
+
+
+function matColor(mat, st) {
+  switch (mat.k) {
+    case 'sub': return { c: [34, 42, 54], e: 0 };
+    case 'wg': { const p = bright(st[mat.key]); return { c: mix([70, 84, 104], GLOW, p * 0.85), e: p * 0.55 }; }
+    case 'ge': { const p = bright(st[mat.key]); return { c: mix([92, 86, 116], [255, 120, 150], p * 0.9), e: p * 0.6 }; }
+    case 'metal': return { c: [205, 165, 80], e: 0.1 };
+    case 'tia': return { c: [40, 48, 62], e: 0 };
+    case 'laser': return { c: [210, 48, 80], e: 0.35 };
+    case 'lo': return { c: [230, 120, 60], e: 0.35 };
+  }
+  return { c: [128, 128, 128], e: 0 };
+}
+let sceneKey = '';
+function buildScene() {
+  LAYERS = [[], [], [], []]; tracks = [];
+  const coh = S.mode === 'coh', CX = 9, yo = 1.9, xP0 = 3.4, xP1 = 6.0;
+  G = { CX, yo, xP0, xP1, yTop: 3.6, yBot: -3.6 };
+  aabb(0, -CX - 1, CX + 4.5, -3.6, 3.6, -0.8, 0, { k: 'sub' });
+  const mk = (pts, key) => { const L = [0]; for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); tracks.push({ pts, key, L, len: L[L.length - 1] }); };
+  const sb = (xa, ya, xb, yb, n = 12) => { const p = []; for (let i = 0; i <= n; i++) { const u = i / n; p.push([xa + (xb - xa) * u, ya + (yb - ya) * (1 - Math.cos(PI * u)) / 2]); } return p; };
+  const poly = (pts, key) => { for (let i = 0; i < pts.length - 1; i++) addBox(1, pts[i], pts[i + 1], WG_W, 0, WG_H, { k: 'wg', key }); mk(pts, key); };
+  if (coh) {
+    poly([[-CX, yo], ...sb(-5.5, yo, -3, 0.55)], 'sIn'); poly([[-CX, -yo], ...sb(-5.5, -yo, -3, -0.55)], 'lIn');
+    aabb(1, -3, 1.2, -1.2, 1.2, 0, WG_H, { k: 'wg', key: 'mmi' }); mk([[-3, 0], [1.2, 0]], 'mmi');
+    poly([...sb(1.2, 0.55, 3, yo), [xP0, yo]], 'o1'); poly([...sb(1.2, -0.55, 3, -yo), [xP0, -yo]], 'o2');
+  } else { poly([[-CX, yo], [xP0, yo]], 'o1'); poly([[-CX, -yo], [xP0, -yo]], 'o2'); }
+  for (const [s, k] of [[1, 'pd1'], [-1, 'pd2']]) { aabb(1, xP0, xP1, s * yo - 0.7, s * yo + 0.7, 0, 0.55, { k: 'ge', key: k }); mk([[xP0, s * yo], [xP1, s * yo]], k); }
+  // series connection: +V → PD1 → middle node → PD2 → −V; middle node → TIA
+  aabb(3, xP1 + 0.6, xP1 + 2.2, 2.6, 3.4, 0.7, 0.85, { k: 'metal' }); aabb(3, xP1 + 0.6, xP1 + 2.2, -3.4, -2.6, 0.7, 0.85, { k: 'metal' });
+  aabb(3, xP0 + 0.4, xP1 + 0.6, 2.75, 3.15, 0.55, 0.7, { k: 'metal' }); aabb(3, xP0 + 0.4, xP1 + 0.6, -3.15, -2.75, 0.55, 0.7, { k: 'metal' });
+  aabb(3, xP0 + 0.8, xP0 + 1.2, yo + 0.2, 2.75, 0.55, 0.7, { k: 'metal' }); aabb(3, xP0 + 0.8, xP0 + 1.2, -2.75, -yo - 0.2, 0.55, 0.7, { k: 'metal' });
+  aabb(3, xP1 - 0.9, xP1 - 0.5, -yo + 0.2, yo - 0.2, 0.55, 0.7, { k: 'metal' });
+  aabb(3, xP1 - 0.9, xP1 + 2.2, -0.25, 0.25, 0.55, 0.7, { k: 'metal' });
+  aabb(3, xP1 + 2.2, xP1 + 4.6, -1.0, 1.0, 0, 1.0, { k: 'tia' });
+  aabb(2, -CX - 1, xP1 + 1.8, -3.6, 3.6, 0, CL_H, { k: 'clad' });
+  aabb(3, -CX - 1.6, -CX - 0.2, yo - 0.45, yo + 0.45, -0.25, 0.55, { k: 'laser' });
+  aabb(3, -CX - 1.6, -CX - 0.2, -yo - 0.45, -yo + 0.45, -0.25, 0.55, { k: coh ? 'lo' : 'laser' });
+  sceneKey = S.mode;
+}
+function draw3D(time) {
+  if (sceneKey !== S.mode) buildScene();
+  const { ctx, w, h } = fitCanvas(c3d); ctx.clearRect(0, 0, w, h);
+  const C = makeCam(w, h), r = bpd(), coh = S.mode === 'coh';
+  const pin = coh ? [mW(S.Ps), mW(S.Plo)] : [r.P1, r.P2], mx = Math.max(r.P1, r.P2, ...pin, 1e-9);
+  const st = { sIn: pin[0] / mx, lIn: pin[1] / mx, mmi: (pin[0] + pin[1]) / 2 / mx, o1: r.P1 / mx, o2: r.P2 / mx, pd1: r.P1 / mx, pd2: r.P2 / mx };
+  drawLayer(ctx, C, LAYERS[0], st, false); drawLayer(ctx, C, LAYERS[1], st, false); drawLight(ctx, C, st, time);
+  drawLayer(ctx, C, LAYERS[2], st, true); drawLayer(ctx, C, LAYERS[3], st, false);
+  const { CX, yo, xP0, xP1 } = G;
+  label3D(ctx, C, [-CX - 0.9, yo, 1.3], coh ? `Signal ${S.Ps.toFixed(1)} dBm` : `P₁ ${S.P1.toFixed(1)} dBm`, '#ff8fa8');
+  label3D(ctx, C, [-CX - 0.9, -yo, 1.3], coh ? `LO ${S.Plo.toFixed(1)} dBm` : `P₂ ${S.P2.toFixed(1)} dBm`, coh ? '#ffb27a' : '#ff8fa8');
+  if (coh) label3D(ctx, C, [-0.9, 0, 1.2], '3 dB coupler', '#c9d3de');
+  label3D(ctx, C, [(xP0 + xP1) / 2, yo, 1.4], `PD1 · ${(r.I1 * 1e3).toFixed(3)} mA`, '#4aa8ff');
+  label3D(ctx, C, [(xP0 + xP1) / 2, -yo, 1.4], `PD2 · ${(r.I2 * 1e3).toFixed(3)} mA`, '#ff9548');
+  label3D(ctx, C, [xP1 + 1.4, 3.0, 1.3], '+V', '#c9a75a'); label3D(ctx, C, [xP1 + 1.4, -3.0, 1.3], '−V', '#c9a75a');
+  label3D(ctx, C, [xP1 + 3.4, 0, 1.7], `TIA · I₁ − I₂ = ${(r.Iout * 1e3).toFixed(3)} mA`, '#5fd38d');
+  ctx.fillStyle = 'rgba(139,152,169,0.8)'; ctx.font = FONT; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('drag: rotate · wheel: zoom · double-click: reset', w - 10, 8);
+}
+/* ------------------------------------------------ controls */
+const SL = [
+  { id: 'Ps', g: 'opt', lab: 'Signal power P_s', min: -50, max: 5, step: 0.1, unit: 'dBm', dec: 1, get: () => S.Ps, set: v => S.Ps = v },
+  { id: 'Plo', g: 'opt', lab: 'Local oscillator power P_LO', min: -30, max: 15, step: 0.1, unit: 'dBm', dec: 1, get: () => S.Plo, set: v => S.Plo = v },
+  { id: 'dphi', g: 'opt', lab: 'Phase difference Δφ', min: 0, max: 2, step: 0.001, unit: 'π', dec: 3, get: () => S.dphi / PI, set: v => S.dphi = v * PI },
+  { id: 'P1', g: 'opt', lab: 'Power on photodiode 1', min: -40, max: 10, step: 0.1, unit: 'dBm', dec: 1, get: () => S.P1, set: v => S.P1 = v },
+  { id: 'P2', g: 'opt', lab: 'Power on photodiode 2', min: -40, max: 10, step: 0.1, unit: 'dBm', dec: 1, get: () => S.P2, set: v => S.P2 = v },
+  { id: 'rin', g: 'opt', lab: 'Laser RIN', min: -160, max: -100, step: 0.5, unit: 'dB/Hz', dec: 1, get: () => S.rin, set: v => S.rin = v },
+  { id: 'R', g: 'imp', lab: 'Mean responsivity R', min: 0.3, max: 1.25, step: 0.01, unit: 'A/W', dec: 2, get: () => S.R, set: v => S.R = v },
+  { id: 'mis', g: 'imp', lab: 'Responsivity mismatch (R₁−R₂)/R', min: 0, max: 20, step: 0.01, unit: '%', dec: 2, get: () => S.mis, set: v => S.mis = v },
+  { id: 'cimb', g: 'imp', lab: 'Coupler imbalance ε', min: -10, max: 10, step: 0.01, unit: '%', dec: 2, get: () => S.cimb, set: v => S.cimb = v },
+  { id: 'B', g: 'imp', lab: 'Detection bandwidth B', min: 0.1, max: 50, step: 0.1, log: true, unit: 'GHz', dec: 1, get: () => S.B, set: v => S.B = v },
+  { id: 'inoise', g: 'imp', lab: 'TIA input noise i_n', min: 1, max: 100, step: 0.1, log: true, unit: 'pA/√Hz', dec: 1, get: () => S.inoise, set: v => S.inoise = v }
+];
+wireSeg('segPlot', v => S.plot = v);
+document.getElementById('selMode').onchange = e => { S.mode = e.target.value; dirty = true; };
+document.getElementById('bNoise').onclick = () => { S.seed++; dirty = true; };
+document.getElementById('pView').onclick = () => Object.assign(cam, CAM0);
+window.addEventListener('resize', () => dirty = true);
+buildSliders(); buildScene();
+let last = performance.now(), tA = 0;
+(function loop(now) { now = now || performance.now(); tA += Math.min(0.05, (now - last) / 1000); last = now; draw3D(tA); if (dirty) { dirty = false; drawPlot(); update(); SL.forEach(syncOut); } requestAnimationFrame(loop); })();
+if (document.documentElement.classList.contains('embed')) { const post = () => parent.postMessage({ ppH: document.documentElement.scrollHeight }, '*'); new ResizeObserver(post).observe(document.body); window.addEventListener('load', post); post(); }
+</script>
+</body>
+</html>
