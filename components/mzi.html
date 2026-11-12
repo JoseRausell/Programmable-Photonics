@@ -23,7 +23,6 @@ main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;pad
 #c3d{background:radial-gradient(ellipse at 50% 35%,#18212d 0%,#0d1218 75%);cursor:grab;touch-action:none}
 #c3d:active{cursor:grabbing}
 #cPlot{background:var(--card2);cursor:crosshair;touch-action:none}
-#cPh{background:var(--card2);height:260px;width:100%;display:block;border-radius:8px}
 .cfgbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:4px 20px 2px;font-size:13px;color:var(--muted)}
 .tabs{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
 .tabs button{background:transparent;color:var(--muted);border:0;padding:8px 16px;font:inherit;font-size:13.5px;cursor:pointer}
@@ -157,8 +156,6 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
     <h2>Operating point</h2>
     <div class="readouts" id="ro"></div>
     <div id="warn"></div>
-    <h2>Output phases</h2>
-    <canvas id="cPh"></canvas>
   </section>
 
   <!-- THEORY -->
@@ -552,34 +549,6 @@ cPlot.addEventListener('pointermove', e => { S.hover = { x: e.offsetX, y: e.offs
 cPlot.addEventListener('pointerup', () => plotDrag = false);
 cPlot.addEventListener('pointerleave', () => { S.hover = null; dirty = true; });
 
-/* ------------------------------------------------------------------ OUTPUT PHASE PLOT */
-const cPh = document.getElementById('cPh');
-function drawPh() {
-  const { ctx, w, h } = fitCanvas(cPh); ctx.clearRect(0, 0, w, h);
-  const m = { l: 56, r: 16, t: 28, b: 38 }, pw = w - m.l - m.r, ph = h - m.t - m.b; if (pw < 60 || ph < 40) return;
-  const mode = XM[S.xmode], [x0, x1] = mode.range(), y0 = -PI * 1.08, y1 = PI * 1.08;
-  const X = v => m.l + (v - x0) / (x1 - x0) * pw, Y = v => m.t + (1 - (v - y0) / (y1 - y0)) * ph;
-  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
-  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
-  for (const t of [-PI, -PI / 2, 0, PI / 2, PI]) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
-  const N = 600, xs = [], d = { o1: [], o2: [] };
-  for (let i = 0; i <= N; i++) { const xv = x0 + (x1 - x0) * i / N, P = mode.P(xv); xs.push(xv); if (!isFinite(P)) { d.o1.push(NaN); d.o2.push(NaN); continue; } const f = trans(P); d.o1.push(f.bar > 1e-8 ? f.o1 : NaN); d.o2.push(f.cross > 1e-8 ? f.o2 : NaN);  }
-  const line = (arr, col, lw, dash) => { ctx.beginPath(); let prev = NaN; arr.forEach((v, i) => { if (!isFinite(v)) { prev = NaN; return; } const px = X(xs[i]), py = Y(v); if (!isFinite(prev) || Math.abs(v - prev) > PI) ctx.moveTo(px, py); else ctx.lineTo(px, py); prev = v; }); ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []); ctx.stroke(); ctx.setLineDash([]); };
-  if (S.showCross) line(d.o2, '#ff9548', 1.8); if (S.showBar) line(d.o1, '#4aa8ff', 1.8);
-  const op = opSw(), xo = mode.x(op.P);
-  if (xo >= x0 && xo <= x1) { ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(X(xo), m.t); ctx.lineTo(X(xo), m.t + ph); ctx.stroke(); ctx.setLineDash([]); }
-  ctx.restore();
-  ctx.strokeStyle = '#3a4a60'; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
-  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-  ['−π', '−π/2', '0', 'π/2', 'π'].forEach((t, i) => ctx.fillText(t, m.l - 6, Y(-PI + i * PI / 2)));
-  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const t of niceTicks(x0, x1, Math.max(3, Math.round(pw / 90)))) ctx.fillText(tickFmt(t), X(t), m.t + ph + 5);
-  ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.textBaseline = 'middle'; ctx.fillStyle = '#c9d3de'; ctx.fillText('phase (rad)', 0, 0); ctx.restore();
-  let lx = m.l; const ly = 12; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  const leg = (c, t, dash) => { ctx.strokeStyle = c; ctx.lineWidth = 2.2; ctx.setLineDash(dash ? [6, 4] : []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(t, lx + 21, ly); lx += 30 + ctx.measureText(t).width; };
-  if (S.showBar) leg('#4aa8ff', 'Out 1: arg E₁'); if (S.showCross) leg('#ff9548', 'Out 2: arg E₂');
-}
-
 /* ------------------------------------------------------------------ THEORY (live matrices) */
 function cfmt(c) { const r = Math.hypot(c[0], c[1]); if (r < 5e-4) return '0'; return `${r.toFixed(3)}<span class="ang">∠${(Math.atan2(c[1], c[0]) * 180 / PI).toFixed(0)}°</span>`; }
 const matHTML = (M, name) => `<div class="mblk"><div class="mat">${[M[0][0], M[0][1], M[1][0], M[1][1]].map(c => `<span>${cfmt(c)}</span>`).join('')}</div><div class="mname">${name}</div></div>`;
@@ -894,7 +863,7 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now; tAnim += dt;
   if (S.playing) { const k = swKey(); S[k] += dt * S.Imax / 8; if (S[k] > S.Imax) S[k] = 0; syncSlider(SLid(k)); dirty = true; }
   draw3D(tAnim);
-  if (dirty) { drawPlot(); drawPh(); updateReadouts(); updateTheory(); dirty = false; }
+  if (dirty) { drawPlot(); updateReadouts(); updateTheory(); dirty = false; }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
