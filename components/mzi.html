@@ -1206,21 +1206,17 @@ requestAnimationFrame(frame);
     const pc = G.padCell(80), xm = (xa + xb) / 2, heaters = [];
     heaters.push({ x: xm, y: sep, name: 'θ', side: 1 });
     if (cfg === 'dual') heaters.push({ x: xm, y: -sep, name: 'θ₂', side: -1 });
-    // input / output waveguides
-    const io = 40;
-    for (const s of [1, -1]) { G.path(top, 'WG', 0.45, x1 - 10, s * po, 180, [['s', io]]); G.path(top, 'WG', 0.45, x2 + Lm + 10, s * po, 0, [['s', io]]); }
-    if (cfg === 'intext') {   // external phase shifter on the upper input or output waveguide, with its own straight section
-      const xe = S.extPos === 'in' ? x1 - 10 - io - 200 : x2 + Lm + 10 + io;
-      G.path(top, 'WG', 0.45, xe, po, 0, [['s', 200]]); G.path(top, 'WG', 0.45, x1 - 10 - io, -po, 180, [['s', S.extPos === 'in' ? 200 : 0]]);
-      if (S.extPos !== 'in') G.path(top, 'WG', 0.45, x2 + Lm + 10 + io, -po, 0, [['s', 200]]);
-      heaters.push({ x: xe + 100, y: po, name: 'φ', side: 1 });
-    }
+    // input / output waveguides fanned out to the same separation as the arms (so an external heater stays far from the other waveguide)
+    const xi = x1 - 10 - e.x, xo = x2 + Lm + 10 + e.x, io = 30, Lx = 200, extIn = cfg === 'intext' && S.extPos === 'in', extOut = cfg === 'intext' && S.extPos !== 'in';
+    for (const s of [1, -1]) { top.ref(sb, x1 - 10, s * po, 180, s > 0); top.ref(sb, x2 + Lm + 10, s * po, 0, s < 0); }
+    const xin = xi - io - (extIn ? Lx : 0), xout = xo + io + (extOut ? Lx : 0);
+    for (const s of [1, -1]) { G.path(top, 'WG', 0.45, xi, s * sep, 180, [['s', xi - xin]]); G.path(top, 'WG', 0.45, xo, s * sep, 0, [['s', xout - xo]]); }
+    if (cfg === 'intext') heaters.push({ x: extIn ? xi - Lx / 2 - 10 : xo + Lx / 2 + 10, y: sep, name: 'φ', side: 1 });
     heaters.forEach((H, i) => {
       top.ref(h, H.x, H.y);
       for (const s of [-1, 1]) { const px = H.x + s * 94, py = H.y + H.side * 90; G.route(top, 'METAL', 8, [[px, H.y], [px, py - H.side * 40]]); top.ref(pc, px, py); top.label(`${H.name}${s < 0 ? '+' : '−'}`, px, py); }
     });
-    const xin = cfg === 'intext' && S.extPos === 'in' ? x1 - 10 - io - 200 : x1 - 10 - io, xout = cfg === 'intext' && S.extPos !== 'in' ? x2 + Lm + 10 + io + 200 : x2 + Lm + 10 + io;
-    top.port('in1', xin, po, 180); top.port('in2', xin, -po, 180); top.port('out1', xout, po, 0); top.port('out2', xout, -po, 0);
+    top.port('in1', xin, sep, 180); top.port('in2', xin, -sep, 180); top.port('out1', xout, sep, 0); top.port('out2', xout, -sep, 0);
     return top;
   }
   G.mount({ card: document.querySelector('.card.view'), build, key: () => [S.cfg, S.extPos].join('|'), viewName: '3D' });
