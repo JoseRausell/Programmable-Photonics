@@ -11,6 +11,7 @@ index.html          Landing page: introduction, key concepts and component catal
 components/
   mzi.html          MZI / tunable basic unit (TBU) and thermo-optic phase shifter
   ring.html         Single-bus ring / racetrack: coupling regimes, Q, backscattering splitting, thermal tuning
+  adddrop.html      Add-drop ring / racetrack: through & drop, critical coupling, backscattering (reflection + add port), thermal tuning
 ```
 
 Each simulation is a single self-contained HTML file (3D view, plots and model, no external libraries).
@@ -32,5 +33,5 @@ Every page has a "← Component catalog" link back to `index.html`.
 
 ## Planned components
 
-Phase shifter · directional coupler · MMI · add-drop ring ·
+Phase shifter · directional coupler · MMI ·
 feed-forward meshes (Reck / Clements) · hexagonal recirculating mesh.
