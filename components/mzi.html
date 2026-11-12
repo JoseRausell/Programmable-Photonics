@@ -94,7 +94,7 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
 </header>
 <nav class="cfgbar">
   <span>Configuration</span>
-  <div class="tabs" id="segCfg"><button data-v="single" class="on">1 internal phase shifter</button><button data-v="dual">2 internal phase shifters</button><button data-v="intext">Internal + external phase shifter</button><button data-v="full">Internal + input + output phase shifters</button></div>
+  <div class="tabs" id="segCfg"><button data-v="single" class="on">1 internal phase shifter</button><button data-v="dual">2 internal phase shifters</button><button data-v="intext">Internal + external phase shifter</button><button data-v="full">Internal + input + output phase shifters</button><button data-v="u2">Internal + input + 2 output phase shifters</button></div>
   <span id="cfgNote"></span>
 </nav>
 
@@ -131,7 +131,7 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
     <div class="groups">
       <div class="group" data-group="drive"><h3>Drive</h3>
         <div class="inline"><button class="btn" id="btnPlay">▶ Sweep current</button><span>Tip: click or drag on the plot to set the operating point.</span></div>
-        <div class="inline" id="sweepWrap">Plotted / swept heater <span class="seg" id="segSw"><button data-v="1" class="on">Heater 1</button><button data-v="2">Heater 2</button><button data-v="3" id="swBtn3">Heater 3</button></span></div>
+        <div class="inline" id="sweepWrap">Plotted / swept heater <span class="seg" id="segSw"><button data-v="1" class="on">Heater 1</button><button data-v="2">Heater 2</button><button data-v="3" id="swBtn3">Heater 3</button><button data-v="4" id="swBtn4">Heater 4</button></span></div>
       </div>
       <div class="group" data-group="heater"><h3>Heaters (identical phase shifters)</h3></div>
       <div class="group" data-group="input"><h3>Optical input &amp; external phase shifter</h3>
@@ -188,6 +188,7 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
         <div class="eq">1 internal: &nbsp;<i class="v">P</i>(φ₁) = <span class="smat"><span>e<sup>jφ₁</sup></span><span>0</span><span>0</span><span>1</span></span></div>
         <div class="eq">2 internal: &nbsp;<i class="v">P</i>(φ₁, φ₂) = <span class="smat"><span>e<sup>jφ₁</sup></span><span>0</span><span>0</span><span>e<sup>jφ₂</sup></span></span> = e<sup>j(φ₁+φ₂)/2</sup><span class="smat"><span>e<sup>jΔφ/2</sup></span><span>0</span><span>0</span><span>e<sup>−jΔφ/2</sup></span></span></div>
         <div class="eq">external: &nbsp;<i class="v">P</i><sub>ext</sub>(φ<sub>ext</sub>) = <span class="smat"><span>e<sup>jφ<sub>ext</sub></sup></span><span>0</span><span>0</span><span>1</span></span>, &nbsp; input + output: &nbsp;<i class="v">P</i><sub>in</sub>(φ<sub>in</sub>), <i class="v">P</i><sub>out</sub>(φ<sub>out</sub>) of the same form</div>
+        <div class="eq">2 outputs: &nbsp;<i class="v">D</i>(φ<sub>out1</sub>, φ<sub>out2</sub>) = <span class="smat"><span>e<sup>jφ<sub>out1</sub></sup></span><span>0</span><span>0</span><span>e<sup>jφ<sub>out2</sub></sup></span></span></div>
         <p>Thermo-optic phase (all heaters identical; θ₀ is the fabrication offset of the internal upper arm):</p>
         <div class="eq">φ<sub>1</sub> = θ₀ + π<span class="frac"><span><i class="v">P</i><sub>1</sub></span><span><i class="v">P</i><sub>π</sub></span></span>, &nbsp; φ<sub>2</sub> = π<span class="frac"><span><i class="v">P</i><sub>2</sub></span><span><i class="v">P</i><sub>π</sub></span></span>, &nbsp; <i class="v">P</i> = <i class="v">I</i>²<i class="v">R</i></div>
       </div>
@@ -206,7 +207,6 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
         <p><b>Internal + external.</b> θ sets the splitting ratio and φ sets the relative phase between the ports. Together they give full control of the 2×2 element, which is what programmable meshes (Reck, Clements, recirculating meshes) need to interfere light coherently with other units.</p>
         <p><b>Internal + input + output.</b> T = P<sub>out</sub>(φ<sub>out</sub>) · M · P(θ) · M · P<sub>in</sub>(φ<sub>in</sub>) is an Euler decomposition R<sub>z</sub>·R<sub>x</sub>·R<sub>z</sub>, so it reaches every rotation of SU(2). The global phase stays tied to the three phases: every matrix of U(2) needs a fourth phase shifter, such as a second one at the output.</p>
         <p>With light in the upper port only, an external phase shifter at the input just adds a global phase, so the powers don't change. Select “Both ports” to see its effect. An external phase shifter at the output never changes the powers; it only shifts the relative phase between the outputs.</p>
-        <p><b>SU(2) vs U(2).</b> Any lossless 2×2 transformation is T = e<sup>jδ</sup>R with R ∈ SU(2) (3 parameters) and a global phase δ (1 parameter): 4 in total. Since det M<sub>MMI</sub> = 1, det T = e<sup>j(sum of all phases)</sup>. Only phase combinations whose sum is a multiple of 2π stay inside SU(2). The panel next to “Operating point” shows which part of these 4 dimensions each configuration reaches.</p>
       </div>
     </div>
   </section>
@@ -217,7 +217,7 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
 
 /* ------------------------------------------------------------------ state */
 const S = {
-  I: 0.6, I2: 0, I3: 0, cfg: 'single', grp: 'rot', sweep: 1, inp: 'one', psi: 0, extPos: 'out', Rk: 1.5, Ppi: 1.35, gamma: 0, theta0: 0, a1: 0, a2: 0,
+  I: 0.6, I2: 0, I3: 0, I4: 0, cfg: 'single', grp: 'rot', sweep: 1, inp: 'one', psi: 0, extPos: 'out', Rk: 1.5, Ppi: 1.35, gamma: 0, theta0: 0, a1: 0, a2: 0,
   Imax: 2, Vmax: 5, Paxis: 5,
   xmode: 'I', ymode: 'lin', showBar: true, showCross: true,   playing: false, hover: null
 };
@@ -242,32 +242,33 @@ const mv = (A, v) => [cadd(cmul(A[0][0], v[0]), cmul(A[0][1], v[1])), cadd(cmul(
 const diag = (p, q) => [[cexp(p), [0, 0]], [[0, 0], cexp(q)]], EYE = diag(0, 0);
 const wrapPi = x => ((x + PI) % (2 * PI) + 2 * PI) % (2 * PI) - PI;
 function mmiM(a) { const [s, c] = mmi(a); return [[[s, 0], [0, c]], [[0, c], [s, 0]]]; }
-function blocksPh(p1, p2, p3) {
+function blocksPh(p1, p2, p3, p4 = 0) {
   const M1 = mmiM(S.a1), M2 = mmiM(S.a2);
   const Pint = S.cfg === 'dual' ? diag(p1, p2) : diag(p1, 0);
-  const Pext = (S.cfg === 'intext' || S.cfg === 'full') ? diag(p2, 0) : EYE, Pout = S.cfg === 'full' ? diag(p3, 0) : EYE;
+  const Pext = (S.cfg === 'intext' || isFull()) ? diag(p2, 0) : EYE, Pout = isFull() ? diag(p3, S.cfg === 'u2' ? p4 : 0) : EYE;
   let T;
-  if (S.cfg === 'full') T = mm(Pout, mm(M2, mm(Pint, mm(M1, Pext))));
+  if (isFull()) T = mm(Pout, mm(M2, mm(Pint, mm(M1, Pext))));
   else if (S.cfg === 'intext' && S.extPos === 'in') T = mm(M2, mm(Pint, mm(M1, Pext)));
   else if (S.cfg === 'intext') T = mm(Pext, mm(M2, mm(Pint, M1)));
   else T = mm(M2, mm(Pint, M1));
-  return { M1, M2, Pint, Pext, Pout, T, p1, p2, p3 };
+  return { M1, M2, Pint, Pext, Pout, T, p1, p2, p3, p4 };
 }
-function blocks(P1, P2, P3 = 0) { return blocksPh(S.theta0 + PI * P1 / S.Ppi, PI * P2 / S.Ppi, PI * P3 / S.Ppi); }
-const extAtInput = () => S.cfg === 'full' || (S.cfg === 'intext' && S.extPos === 'in');
+function blocks(P1, P2, P3 = 0, P4 = 0) { return blocksPh(S.theta0 + PI * P1 / S.Ppi, PI * P2 / S.Ppi, PI * P3 / S.Ppi, PI * P4 / S.Ppi); }
+const isFull = () => S.cfg === 'full' || S.cfg === 'u2', nHeaters = () => ({ single: 1, dual: 2, intext: 2, full: 3, u2: 4 })[S.cfg];
+const extAtInput = () => isFull() || (S.cfg === 'intext' && S.extPos === 'in');
 function Ein() { return S.inp === 'one' ? [[1, 0], [0, 0]] : [[Math.SQRT1_2, 0], cmul([Math.SQRT1_2, 0], cexp(S.psi))]; }
-function fields(P1, P2, P3 = 0) {
-  const B = blocks(P1, P2, P3), e = Ein(), E = mv(B.T, e);
+function fields(P1, P2, P3 = 0, P4 = S.cfg === 'u2' ? opH(4).P : 0) {
+  const B = blocks(P1, P2, P3, P4), e = Ein(), E = mv(B.T, e);
   const a = mv(B.M1, extAtInput() ? mv(B.Pext, e) : e);
   return Object.assign(B, { e, E, bar: abs2(E[0]), cross: abs2(E[1]), top: abs2(a[0]), bot: abs2(a[1]), in0: abs2(e[0]), in1: abs2(e[1]), o1: carg(E[0]), o2: carg(E[1]) });
 }
 // P = electrical power of the plotted/swept heater; the other heater stays at its slider value
 function trans(P) {
-  const P1 = S.sweep === 1 ? P : opH(1).P, P2 = S.cfg === 'single' ? 0 : (S.sweep === 2 ? P : opH(2).P), P3 = S.cfg !== 'full' ? 0 : (S.sweep === 3 ? P : opH(3).P);
-  const f = fields(P1, P2, P3); f.ph = S.cfg === 'dual' ? f.p1 - f.p2 : f.p1; return f;
+  const P1 = S.sweep === 1 ? P : opH(1).P, P2 = S.cfg === 'single' ? 0 : (S.sweep === 2 ? P : opH(2).P), P3 = !isFull() ? 0 : (S.sweep === 3 ? P : opH(3).P), P4 = S.cfg !== 'u2' ? 0 : (S.sweep === 4 ? P : opH(4).P);
+  const f = fields(P1, P2, P3, P4); f.ph = S.cfg === 'dual' ? f.p1 - f.p2 : f.p1; return f;
 }
 function extinction() {   // scan the internal phase over 2π with everything else fixed
-  const P2 = S.cfg === 'single' ? 0 : opH(2).P, P3 = S.cfg === 'full' ? opH(3).P : 0; let b0 = 1e9, b1 = 0, c0 = 1e9, c1 = 0;
+  const P2 = S.cfg === 'single' ? 0 : opH(2).P, P3 = isFull() ? opH(3).P : 0; let b0 = 1e9, b1 = 0, c0 = 1e9, c1 = 0;
   for (let k = 0; k < 720; k++) { const f = fields(2 * S.Ppi * k / 720, P2, P3); b0 = Math.min(b0, f.bar); b1 = Math.max(b1, f.bar); c0 = Math.min(c0, f.cross); c1 = Math.max(c1, f.cross); }
   const er = (lo, hi) => lo < 1e-9 * hi ? Infinity : 10 * Math.log10(hi / lo);
   return { bar: er(b0, b1), cross: er(c0, c1) };
@@ -288,7 +289,7 @@ function opPoint(Iin = S.I) {
   if (!isFinite(P)) { I = Math.sqrt(0.94 / (S.gamma * S.Rk)); P = Phys.PfromI(I); limited = 'runaway'; }
   return { I, P, V: Phys.VfromP(P), R: Phys.R(P), limited };
 }
-const opH = n => opPoint(n === 3 ? S.I3 : n === 2 ? S.I2 : S.I), opSw = () => opH(S.sweep);
+const opH = n => opPoint([0, S.I, S.I2, S.I3, S.I4][n]), opSw = () => opH(S.sweep);
 const XM = {
   I:  { label: 'Heater current I (mA)', range: () => [0, S.Imax], P: x => Phys.PfromI(x), x: P => Phys.IfromP(P), d: (i, v, p) => i, unit: 'mA', pi: 'Iπ' },
   I2: { label: 'Squared current I² (mA²)', range: () => [0, S.Imax * S.Imax], P: x => Phys.PfromI(Math.sqrt(Math.max(x, 0))), x: P => Phys.IfromP(P) ** 2, d: (i, v, p) => i * i, unit: 'mA²', pi: 'Iπ²' },
@@ -312,10 +313,12 @@ const SL = [
   { id: 'a2', g: 'device', lab: 'MMI 2 imbalance α₂', min: -0.3, max: 0.3, step: 0.001, get: () => S.a2, set: v => S.a2 = v, fmt: v => split(v) },
   { id: 'I2', g: 'drive', lab: 'Heater 2 current I₂', min: 0, max: () => S.Imax, step: 0.0005, get: () => S.I2, set: v => S.I2 = v, fmt: v => v.toFixed(3) + ' mA' },
   { id: 'I3', g: 'drive', lab: 'Heater 3 current I₃ (external, upper output)', min: 0, max: () => S.Imax, step: 0.0005, get: () => S.I3, set: v => S.I3 = v, fmt: v => v.toFixed(3) + ' mA' },
+  { id: 'I4', g: 'drive', lab: 'Heater 4 current I₄ (external, lower output)', min: 0, max: () => S.Imax, step: 0.0005, get: () => S.I4, set: v => S.I4 = v, fmt: v => v.toFixed(3) + ' mA' },
   { id: 'psi', g: 'input', lab: 'Relative phase of the lower input ψ', min: -PI, max: PI, step: 0.001, get: () => S.psi, set: v => S.psi = v, fmt: v => (v / PI).toFixed(3) + 'π' }
 ];
 const SLid = id => SL.find(c => c.id === id);
-function setSw(v) { const k = S.sweep === 3 ? 'I3' : S.sweep === 2 ? 'I2' : 'I'; S[k] = v; syncSlider(SLid(k)); }
+const swKey = () => ['I', 'I', 'I2', 'I3', 'I4'][S.sweep];
+function setSw(v) { const k = swKey(); S[k] = v; syncSlider(SLid(k)); }
 function split(a) { const s = Math.sin(PI / 4 + a) ** 2 * 100; return a.toFixed(3) + ' rad · ' + s.toFixed(1) + ':' + (100 - s).toFixed(1); }
 const LOGN = 1000;
 function buildSliders() {
@@ -330,7 +333,7 @@ function buildSliders() {
     s.addEventListener('input', () => {
       const u = +s.value;
       c.set(c.log ? c.min * Math.pow(c.max / c.min, u / LOGN) : u);
-      if (c.id === 'I' || c.id === 'I2' || c.id === 'I3') S.playing = false, updPlayBtn();
+      if (/^I\d?$/.test(c.id)) S.playing = false, updPlayBtn();
       syncOut(c); dirty = true;
     });
   }
@@ -351,9 +354,9 @@ function syncUI() {
   setSeg('segX', S.xmode); setSeg('segY', S.ymode);
   setSeg('segCfg', S.cfg); setSeg('segSw', String(S.sweep)); setSeg('segIn', S.inp); setSeg('segExt', S.extPos);
   const vis = (id, on) => document.getElementById(id).classList.toggle('hide', !on);
-  vis('row_I2', S.cfg !== 'single'); vis('row_I3', S.cfg === 'full'); vis('swBtn3', S.cfg === 'full'); setSeg('segGrp', S.grp); vis('sweepWrap', S.cfg !== 'single'); vis('extWrap', S.cfg === 'intext'); vis('row_psi', S.inp === 'both');
+  vis('row_I2', S.cfg !== 'single'); vis('row_I3', isFull()); vis('swBtn3', isFull()); vis('row_I4', S.cfg === 'u2'); vis('swBtn4', S.cfg === 'u2'); setSeg('segGrp', S.grp); vis('sweepWrap', S.cfg !== 'single'); vis('extWrap', S.cfg === 'intext'); vis('row_psi', S.inp === 'both');
   document.querySelector('#row_I2 .lab').textContent = S.cfg === 'dual' ? 'Heater 2 current I₂ (internal, lower arm)' : 'Heater 2 current I₂ (external, upper ' + (extAtInput() ? 'input)' : 'output)');
-  document.getElementById('cfgNote').textContent = S.cfg === 'single' ? 'Classic MZI: one heater on the upper arm.' : S.cfg === 'dual' ? 'Dual drive: one heater per arm, only Δφ = φ₁ − φ₂ matters for the powers.' : S.cfg === 'intext' ? 'Tunable basic unit: θ (internal) sets the split, φ (external) sets the relative phase.' : 'Three phases (φ_in, θ, φ_out): an Euler decomposition that reaches every SU(2) rotation.';
+  document.getElementById('cfgNote').textContent = S.cfg === 'single' ? 'Classic MZI: one heater on the upper arm.' : S.cfg === 'dual' ? 'Dual drive: one heater per arm, only Δφ = φ₁ − φ₂ matters for the powers.' : S.cfg === 'intext' ? 'Tunable basic unit: θ (internal) sets the split, φ (external) sets the relative phase.' : S.cfg === 'full' ? 'Three phases (φ_in, θ, φ_out): an Euler decomposition that reaches every SU(2) rotation.' : 'Four phases (φ_in, θ, φ_out1, φ_out2): every 2×2 unitary of U(2), including the global phase.';
   dirty = true;
 }
 function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
@@ -538,7 +541,7 @@ cPlot.addEventListener('pointerleave', () => { S.hover = null; dirty = true; });
 /* ------------------------------------------------------------------ REACHABLE TRANSFORMATIONS: SU(2) ball / Poincaré sphere + det T circle */
 const cGrp = document.getElementById('cGrp');
 const GV = { yaw: 0.65, pitch: 0.38 }; let grpCache = { key: '' };
-function freePhases() { return S.cfg === 'single' ? 1 : S.cfg === 'full' ? 3 : 2; }
+function freePhases() { return nHeaters(); }
 function analyse(T, e) {   // → Stokes vector of T·e, rotation vector of the SU(2) part, det phase
   const E = mv(T, e), d = cadd(cmul(T[0][0], T[1][1]), cmul([-T[0][1][0], -T[0][1][1]], T[1][0])), Phi = carg(d);
   const q = cexp(-Phi / 2); let a = cmul(T[0][0], q), b = cmul(T[0][1], q);
@@ -551,11 +554,12 @@ function analyse(T, e) {   // → Stokes vector of T·e, rotation vector of the 
 function sampleReach() {
   const key = [S.cfg, S.extPos, S.inp, S.psi, S.a1, S.a2].join('|');
   if (grpCache.key === key) return grpCache;
-  const nf = freePhases(), N = nf === 1 ? 360 : nf === 2 ? 64 : 22, e = Ein(), pts = [];
+  const nf = freePhases(), N = [0, 360, 64, 22, 12][nf], e = Ein(), pts = [];
   const g = k => 2 * PI * k / N;
   if (nf === 1) for (let i = 0; i < N; i++) pts.push(analyse(blocksPh(g(i), 0, 0).T, e));
   else if (nf === 2) for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) pts.push(analyse(blocksPh(g(i), g(j), 0).T, e));
-  else for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) for (let k = 0; k < N; k++) pts.push(analyse(blocksPh(g(i), g(j), g(k)).T, e));
+  else if (nf === 3) for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) for (let k = 0; k < N; k++) pts.push(analyse(blocksPh(g(i), g(j), g(k)).T, e));
+  else for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) for (let k = 0; k < N; k++) for (let l = 0; l < N; l++) pts.push(analyse(blocksPh(g(i), g(j), g(k), g(l)).T, e));
   grpCache = { key, pts, nf }; return grpCache;
 }
 function rotP(p) { const cy = Math.cos(GV.yaw), sy = Math.sin(GV.yaw), cp = Math.cos(GV.pitch), sp = Math.sin(GV.pitch);
@@ -579,11 +583,11 @@ function drawGrp() {
   for (const [v, l] of axes) { const o = P([0, 0, 0]), q = P([v[0] * 1.18, v[1] * 1.18, v[2] * 1.18]); ctx.strokeStyle = 'rgba(200,210,225,0.35)'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(o[0], o[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#9fb0c3'; ctx.fillText(l, q[0], q[1]); }
   // reachable point cloud
   const pts = R.pts.map(r => { const q = P(rot ? r.rv : r.st); return [q[0], q[1], q[2], r.Phi]; }).sort((a, b) => b[2] - a[2]);
-  const sz = R.nf === 1 ? 2.2 : R.nf === 2 ? 1.5 : 1.3;
-  for (const q of pts) { ctx.globalAlpha = (R.nf === 3 ? 0.35 : 0.75) * (q[2] > 0 ? 0.45 : 1); ctx.fillStyle = hue(q[3]); ctx.fillRect(q[0] - sz / 2, q[1] - sz / 2, sz, sz); }
+  const sz = [0, 2.2, 1.5, 1.3, 1.2][R.nf];
+  for (const q of pts) { ctx.globalAlpha = (R.nf >= 3 ? 0.35 : 0.75) * (q[2] > 0 ? 0.45 : 1); ctx.fillStyle = hue(q[3]); ctx.fillRect(q[0] - sz / 2, q[1] - sz / 2, sz, sz); }
   ctx.globalAlpha = 1;
   // current point (+ input state)
-  const o1 = opH(1), f = fields(o1.P, S.cfg === 'single' ? 0 : opH(2).P, S.cfg === 'full' ? opH(3).P : 0), A = analyse(f.T, f.e), cur = P(rot ? A.rv : A.st);
+  const o1 = opH(1), f = fields(o1.P, S.cfg === 'single' ? 0 : opH(2).P, isFull() ? opH(3).P : 0), A = analyse(f.T, f.e), cur = P(rot ? A.rv : A.st);
   if (!rot) { const e = analyse(EYE, f.e), q = P(e.st); ctx.strokeStyle = '#5fd38d'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(q[0], q[1], 6, 0, 2 * PI); ctx.stroke(); tag(ctx, q[0] + 30, q[1] - 12, 'input', '#5fd38d'); }
   ctx.beginPath(); ctx.arc(cur[0], cur[1], 6, 0, 2 * PI); ctx.fillStyle = hue(A.Phi); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
   ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
@@ -605,7 +609,8 @@ function drawGrp() {
     single: '<b>1 phase (θ)</b> → a <b>1-D curve</b> of SU(2) rotations. The global phase is not free: every rotation comes with its own det T (the colour changes along the curve). With ideal couplers every rotation has angle π, so the curve lies on the edge of the ball; MMI imbalance pulls it inside.',
     dual: '<b>2 phases, but the powers depend only on Δφ</b> → the same 1-D curve of rotations. The common phase (φ₁ + φ₂)/2 only moves det T around the circle: the extra degree of freedom lives in the U(1) part (global phase), not in SU(2).',
     intext: '<b>2 phases (θ, φ)</b> → a <b>2-D surface</b> of SU(2): every power split and relative phase for one input (the whole Poincaré sphere, if the external phase shifter acts on the input light), but not every 2×2 transformation.',
-    full: '<b>3 phases (φ_in, θ, φ_out)</b> → Euler angles R<sub>z</sub>·R<sub>x</sub>·R<sub>z</sub>: the reachable set <b>fills the whole SU(2) ball</b>. det T is still tied to the three phases: covering all of U(2) (4 parameters) needs a fourth phase shifter.'
+    full: '<b>3 phases (φ_in, θ, φ_out)</b> → Euler angles R<sub>z</sub>·R<sub>x</sub>·R<sub>z</sub>: the reachable set <b>fills the whole SU(2) ball</b>. det T is still tied to the three phases (each rotation has one fixed colour): covering all of U(2) needs a fourth phase shifter (next tab).'
+    ,u2: '<b>4 phases (φ_in, θ, φ_out1, φ_out2)</b> → the whole SU(2) ball <b>and</b> the whole det T circle, independently: every rotation now appears with every colour. This is all of <b>U(2)</b> (4 parameters), as in the Clements decomposition: MZIs plus a diagonal phase screen at the output.'
   };
   document.getElementById('grpInfo').innerHTML = info[S.cfg] + (S.cfg === 'intext' && S.extPos === 'in' && S.inp === 'one' && !rot ? ' <i>Now the input phase shifter acts on an empty port, so the output states collapse to a single circle: select “Both ports”.</i>' : '');
 }
@@ -620,15 +625,16 @@ const matHTML = (M, name) => `<div class="mblk"><div class="mat">${[M[0][0], M[0
 const vecHTML = (v, name) => `<div class="mblk"><div class="mat vec">${v.map(c => `<span>${cfmt(c)}</span>`).join('')}</div><div class="mname">${name}</div></div>`;
 const OP = t => `<span class="mop">${t}</span>`;
 function updateTheory() {
-  const P2 = S.cfg === 'single' ? 0 : opH(2).P, f = fields(opH(1).P, P2, S.cfg === 'full' ? opH(3).P : 0);
+  const P2 = S.cfg === 'single' ? 0 : opH(2).P, f = fields(opH(1).P, P2, isFull() ? opH(3).P : 0);
   const M = n => `<i class="v">M</i><sub>MMI</sub>(α<sub>${n}</sub>)`;
   let eq, blocksL;
   if (S.cfg === 'single') { eq = `<i class="v">T</i> = ${M(2)} · <i class="v">P</i>(φ₁) · ${M(1)}`; blocksL = [[f.M2, 'M_MMI(α₂)'], [f.Pint, 'P(φ₁)'], [f.M1, 'M_MMI(α₁)']]; }
   else if (S.cfg === 'dual') { eq = `<i class="v">T</i> = ${M(2)} · <i class="v">P</i>(φ₁, φ₂) · ${M(1)}`; blocksL = [[f.M2, 'M_MMI(α₂)'], [f.Pint, 'P(φ₁, φ₂)'], [f.M1, 'M_MMI(α₁)']]; }
-  else if (S.cfg === 'full') { eq = `<i class="v">T</i> = <i class="v">P</i><sub>out</sub>(φ<sub>out</sub>) · ${M(2)} · <i class="v">P</i>(φ₁) · ${M(1)} · <i class="v">P</i><sub>in</sub>(φ<sub>in</sub>)`; blocksL = [[f.Pout, 'P_out(φ_out)'], [f.M2, 'M_MMI(α₂)'], [f.Pint, 'P(φ₁)'], [f.M1, 'M_MMI(α₁)'], [f.Pext, 'P_in(φ_in)']]; }
+  else if (S.cfg === 'u2') { eq = `<i class="v">T</i> = <i class="v">D</i>(φ<sub>out1</sub>, φ<sub>out2</sub>) · ${M(2)} · <i class="v">P</i>(φ₁) · ${M(1)} · <i class="v">P</i><sub>in</sub>(φ<sub>in</sub>)`; blocksL = [[f.Pout, 'D(φ_out1, φ_out2)'], [f.M2, 'M_MMI(α₂)'], [f.Pint, 'P(φ₁)'], [f.M1, 'M_MMI(α₁)'], [f.Pext, 'P_in(φ_in)']]; }
+  else if (isFull()) { eq = `<i class="v">T</i> = <i class="v">P</i><sub>out</sub>(φ<sub>out</sub>) · ${M(2)} · <i class="v">P</i>(φ₁) · ${M(1)} · <i class="v">P</i><sub>in</sub>(φ<sub>in</sub>)`; blocksL = [[f.Pout, 'P_out(φ_out)'], [f.M2, 'M_MMI(α₂)'], [f.Pint, 'P(φ₁)'], [f.M1, 'M_MMI(α₁)'], [f.Pext, 'P_in(φ_in)']]; }
   else if (S.extPos === 'in') { eq = `<i class="v">T</i> = ${M(2)} · <i class="v">P</i>(φ₁) · ${M(1)} · <i class="v">P</i><sub>ext</sub>(φ<sub>ext</sub>)`; blocksL = [[f.M2, 'M_MMI(α₂)'], [f.Pint, 'P(φ₁)'], [f.M1, 'M_MMI(α₁)'], [f.Pext, 'P_ext(φ_ext)']]; }
   else { eq = `<i class="v">T</i> = <i class="v">P</i><sub>ext</sub>(φ<sub>ext</sub>) · ${M(2)} · <i class="v">P</i>(φ₁) · ${M(1)}`; blocksL = [[f.Pext, 'P_ext(φ_ext)'], [f.M2, 'M_MMI(α₂)'], [f.Pint, 'P(φ₁)'], [f.M1, 'M_MMI(α₁)']]; }
-  document.getElementById('thEq').innerHTML = eq + ` &nbsp;&nbsp;<span class="live">φ₁ = ${(f.p1 / PI).toFixed(3)}π${S.cfg === 'single' ? '' : (S.cfg === 'dual' ? ' · φ₂ = ' : S.cfg === 'full' ? ' · φ_in = ' : ' · φ_ext = ') + (f.p2 / PI).toFixed(3) + 'π'}${S.cfg === 'full' ? ' · φ_out = ' + (f.p3 / PI).toFixed(3) + 'π' : ''}</span>`;
+  document.getElementById('thEq').innerHTML = eq + ` &nbsp;&nbsp;<span class="live">φ₁ = ${(f.p1 / PI).toFixed(3)}π${S.cfg === 'single' ? '' : (S.cfg === 'dual' ? ' · φ₂ = ' : isFull() ? ' · φ_in = ' : ' · φ_ext = ') + (f.p2 / PI).toFixed(3) + 'π'}${S.cfg === 'u2' ? ' · φ_out1 = ' + (f.p3 / PI).toFixed(3) + 'π · φ_out2 = ' + (f.p4 / PI).toFixed(3) + 'π' : isFull() ? ' · φ_out = ' + (f.p3 / PI).toFixed(3) + 'π' : ''}</span>`;
   document.getElementById('thNum').innerHTML = matHTML(f.T, 'T') + OP('=') + blocksL.map(([B, n]) => matHTML(B, n)).join(OP('·'));
   document.getElementById('thVec').innerHTML = vecHTML(f.E, 'E_out') + OP('=') + matHTML(f.T, 'T') + OP('·') + vecHTML(f.e, 'E_in') +
     `<span class="live">|E₁|² = ${(f.bar * 100).toFixed(1)} % · |E₂|² = ${(f.cross * 100).toFixed(1)} %</span>`;
@@ -638,18 +644,19 @@ function updateTheory() {
 
 /* ------------------------------------------------------------------ READOUTS */
 function updateReadouts() {
-  const op = opSw(), o1 = opH(1), o2 = opH(2), o3 = opH(3), P2 = S.cfg === 'single' ? 0 : o2.P, P3 = S.cfg === 'full' ? o3.P : 0, t = fields(o1.P, P2, P3), er = extinction();
+  const op = opSw(), o1 = opH(1), o2 = opH(2), o3 = opH(3), P2 = S.cfg === 'single' ? 0 : o2.P, P3 = isFull() ? o3.P : 0, t = fields(o1.P, P2, P3), er = extinction();
   const IpiNow = Phys.IfromP(S.Ppi), VpiNow = Phys.VfromP(S.Ppi);
   const alphaNb = PI * S.Rk / S.Ppi;
   const erTxt = v => isFinite(v) ? v.toFixed(1) + ' dB' : '∞';
   const hv = o => `${o.I.toFixed(3)}<small>mA</small> ${f3(o.V)}<small>V</small> ${f3(o.P)}<small>mW</small>`;
   const items = [['Heater 1: I₁ · V₁ · P₁', hv(o1)]];
   if (S.cfg !== 'single') items.push(['Heater 2: I₂ · V₂ · P₂', hv(o2)]);
-  if (S.cfg === 'full') items.push(['Heater 3: I₃ · V₃ · P₃', hv(o3)]);
+  if (isFull()) items.push(['Heater 3: I₃ · V₃ · P₃', hv(o3)]);
+  if (S.cfg === 'u2') items.push(['Heater 4: I₄ · V₄ · P₄', hv(opH(4))]);
   items.push(['Internal phase φ₁ = θ₀ + πP₁/Pπ', `${(t.p1 / PI).toFixed(3)}<small>π</small>`]);
   if (S.cfg === 'dual') items.push(['Lower-arm phase φ₂', `${(t.p2 / PI).toFixed(3)}<small>π</small>`], ['Difference Δφ = φ₁ − φ₂', `${(wrapPi(t.p1 - t.p2) / PI).toFixed(3)}<small>π</small>`]);
   if (S.cfg === 'intext') items.push(['External phase φ_ext = πP₂/Pπ', `${(t.p2 / PI).toFixed(3)}<small>π</small>`]);
-  if (S.cfg === 'full') items.push(['Input phase φ_in = πP₂/Pπ', `${(t.p2 / PI).toFixed(3)}<small>π</small>`], ['Output phase φ_out = πP₃/Pπ', `${(t.p3 / PI).toFixed(3)}<small>π</small>`]);
+  if (isFull()) items.push(['Input phase φ_in = πP₂/Pπ', `${(t.p2 / PI).toFixed(3)}<small>π</small>`], [S.cfg === 'u2' ? 'Output phases φ_out1 · φ_out2' : 'Output phase φ_out = πP₃/Pπ', S.cfg === 'u2' ? `${(t.p3 / PI).toFixed(3)}<small>π</small> · ${(t.p4 / PI).toFixed(3)}<small>π</small>` : `${(t.p3 / PI).toFixed(3)}<small>π</small>`]);
   items.push(
     ['<span style="color:var(--bar)">Out 1</span> (bar)', `${(t.bar * 100).toFixed(1)}<small>%</small> <small>${dB(t.bar).toFixed(1)} dB</small>`],
     ['<span style="color:var(--cross)">Out 2</span> (cross)', `${(t.cross * 100).toFixed(1)}<small>%</small> <small>${dB(t.cross).toFixed(1)} dB</small>`],
@@ -657,7 +664,7 @@ function updateReadouts() {
     ['Pπ / Iπ / Vπ (each heater)', `${f3(S.Ppi)}<small>mW</small> ${f3(IpiNow)}<small>mA</small> ${f3(VpiNow)}<small>V</small>`],
     ['Quadratic coeff. α = πR/Pπ', `${f3(alphaNb)} <small>rad/mA²</small>`],
     ['Extinction ratio out 1 / out 2', `${erTxt(er.bar)} <small>/</small> ${erTxt(er.cross)}`],
-    ['Total electrical power', `${f3(o1.P + P2 + P3)} <small>mW</small>`],
+    ['Total electrical power', `${f3(o1.P + P2 + P3 + (S.cfg === 'u2' ? opH(4).P : 0))} <small>mW</small>`],
     ['Max. reachable power per heater', `${f3(Preach())} <small>mW = ${(Preach() / S.Ppi).toFixed(2)} Pπ</small>`]
   );
   document.getElementById('ro').innerHTML = items.map(([k, v]) => `<div class="ro"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
@@ -722,11 +729,12 @@ function buildScene() {
     aabb(3, HX - 0.05, HX + 0.45, -3.2, -YA + 0.32, CL_H, CL_H + 0.1, { k: 'metal' });
     aabb(3, -HX - 1.2, -HX + 0.6, -4.2, -3.2, CL_H, CL_H + 0.14, { k: 'metal' });
     aabb(3, HX - 0.6, HX + 1.2, -4.2, -3.2, CL_H, CL_H + 0.14, { k: 'metal' });
-  } else if (S.cfg === 'intext' || S.cfg === 'full') {
-    const ext = (sg, h) => { const xa = sg * 8.0, xb = sg * 10.6, lo = Math.min(xa, xb), hi = Math.max(xa, xb);
-      aabb(3, lo, hi, Y0 - 0.3, Y0 + 0.3, CL_H, CL_H + 0.1, { k: 'heater', h }); HEATERS.push({ x0: lo, x1: hi, y: Y0, h });
-      for (const xe of [lo, hi]) { aabb(3, xe - 0.2, xe + 0.2, Y0 + 0.3, 1.9, CL_H, CL_H + 0.1, { k: 'metal' }); aabb(3, xe - 0.7, xe + 0.7, 1.9, 2.9, CL_H, CL_H + 0.14, { k: 'metal' }); } };
-    if (S.cfg === 'full') { ext(-1, 2); ext(1, 3); } else ext(S.extPos === 'in' ? -1 : 1, 2);
+  } else if (S.cfg === 'intext' || isFull()) {
+    const ext = (sg, h, ys = 1) => { const xa = sg * 8.0, xb = sg * 10.6, lo = Math.min(xa, xb), hi = Math.max(xa, xb), y = ys * Y0;
+      aabb(3, lo, hi, y - 0.3, y + 0.3, CL_H, CL_H + 0.1, { k: 'heater', h }); HEATERS.push({ x0: lo, x1: hi, y, h });
+      for (const xe of [lo, hi]) { if (ys > 0) { aabb(3, xe - 0.2, xe + 0.2, y + 0.3, 1.9, CL_H, CL_H + 0.1, { k: 'metal' }); aabb(3, xe - 0.7, xe + 0.7, 1.9, 2.9, CL_H, CL_H + 0.14, { k: 'metal' }); }
+        else { aabb(3, xe - 0.2, xe + 0.2, -1.9, y - 0.3, CL_H, CL_H + 0.1, { k: 'metal' }); aabb(3, xe - 0.7, xe + 0.7, -2.9, -1.9, CL_H, CL_H + 0.14, { k: 'metal' }); } } };
+    if (isFull()) { ext(-1, 2); ext(1, 3); if (S.cfg === 'u2') ext(1, 4, -1); } else ext(S.extPos === 'in' ? -1 : 1, 2);
   }
   aabb(3, -HX - 0.45, -HX + 0.05, YA - 0.32, 3.2, CL_H, CL_H + 0.1, { k: 'metal' });
   aabb(3, HX - 0.05, HX + 0.45, YA - 0.32, 3.2, CL_H, CL_H + 0.1, { k: 'metal' });
@@ -774,7 +782,7 @@ function matColor(mat, st) {
   switch (mat.k) {
     case 'sub': return { c: [34, 42, 54], e: 0 };
     case 'wg': { const p = Math.sqrt(clamp(st[mat.key], 0, 1)); return { c: mix([70, 84, 104], GLOW, p * 0.85), e: p * 0.55 }; }
-    case 'heater': { const hh = mat.h === 3 ? st.heat3 : mat.h === 2 ? st.heat2 : st.heat; return { c: heatColor(hh), e: hh * 0.7 }; }
+    case 'heater': { const hh = mat.h === 4 ? st.heat4 : mat.h === 3 ? st.heat3 : mat.h === 2 ? st.heat2 : st.heat; return { c: heatColor(hh), e: hh * 0.7 }; }
     case 'metal': return { c: [205, 168, 82], e: 0 };
     case 'laser': return { c: [210, 48, 80], e: 0.35 };
     case 'pd': { const p = Math.sqrt(clamp(st[mat.key], 0, 1)); return { c: mix([48, 56, 70], GLOW, p * 0.75), e: p * 0.5 }; }
@@ -824,7 +832,7 @@ function drawLight(ctx, C, st, time) {
 function drawHeat(ctx, C, st, time) {
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
   for (const H of HEATERS) {
-    const heat = H.h === 3 ? st.heat3 : H.h === 2 ? st.heat2 : st.heat; if (heat < 0.01) continue;
+    const heat = H.h === 4 ? st.heat4 : H.h === 3 ? st.heat3 : H.h === 2 ? st.heat2 : st.heat; if (heat < 0.01) continue;
     const a = proj(C, [H.x0, H.y, CL_H + 0.12]), b = proj(C, [H.x1, H.y, CL_H + 0.12]); if (!a || !b) continue;
     const lw = C.F * 0.9 / ((a[2] + b[2]) / 2), fl = 0.85 + 0.15 * Math.sin(time * 9 + H.h), col = heatColor(heat);
     ctx.strokeStyle = `rgba(${col[0] | 0},${col[1] * 0.6 | 0},30,${0.22 * heat * fl})`; ctx.lineWidth = lw * 2.2;
@@ -837,13 +845,13 @@ function label3D(ctx, C, p, text, color, bg) { const P = proj(C, p); if (P) tag(
 function draw3D(time) {
   if (builtKey !== sceneKey()) buildScene();
   const { ctx, w, h } = fitCanvas(c3d); ctx.clearRect(0, 0, w, h);
-  const C = makeCam(w, h), o1 = opH(1), o2 = opH(2), o3 = opH(3), P2 = S.cfg === 'single' ? 0 : o2.P, P3 = S.cfg === 'full' ? o3.P : 0, t = fields(o1.P, P2, P3);
+  const C = makeCam(w, h), o1 = opH(1), o2 = opH(2), o3 = opH(3), P2 = S.cfg === 'single' ? 0 : o2.P, P3 = isFull() ? o3.P : 0, t = fields(o1.P, P2, P3);
   const tph = S.cfg === 'dual' ? t.p1 - t.p2 : t.p1;
   const st = {
     in0: t.in0, in1: t.in1, mmi1: 0.6, mmi2: 0.6, top: t.top, bot: t.bot, bar: t.bar, cross: t.cross,
     mmiTop: t.top * t.in0, mmiBot: t.bot * t.in0, mmiX1: t.bot * t.in1, mmiX2: t.top * t.in1,
     mmi2a: t.top * 0.5, mmi2b: t.bot * 0.5, mmi2c: t.top * 0.5, mmi2d: t.bot * 0.5,
-    heat: clamp(o1.P / (3 * S.Ppi), 0, 1), heat2: clamp(P2 / (3 * S.Ppi), 0, 1), heat3: clamp(P3 / (3 * S.Ppi), 0, 1)
+    heat: clamp(o1.P / (3 * S.Ppi), 0, 1), heat2: clamp(P2 / (3 * S.Ppi), 0, 1), heat3: clamp(P3 / (3 * S.Ppi), 0, 1), heat4: clamp((S.cfg === 'u2' ? opH(4).P : 0) / (3 * S.Ppi), 0, 1)
   };
   drawLayer(ctx, C, LAYERS[0], st, false);
   drawLayer(ctx, C, LAYERS[1], st, false);
@@ -860,7 +868,8 @@ function draw3D(time) {
   label3D(ctx, C, [0, 3.7, 1.15], `Heater 1 · I₁ = ${o1.I.toFixed(3)} mA · P₁ = ${f3(o1.P)} mW`, '#ffcc66');
   if (S.cfg === 'dual') label3D(ctx, C, [0, -3.7, 1.15], `Heater 2 · I₂ = ${o2.I.toFixed(3)} mA · P₂ = ${f3(o2.P)} mW`, '#ffcc66');
   if (S.cfg === 'intext') label3D(ctx, C, [(S.extPos === 'in' ? -1 : 1) * 9.3, 3.4, 1.15], `External · I₂ = ${o2.I.toFixed(3)} mA`, '#ffcc66');
-  if (S.cfg === 'full') { label3D(ctx, C, [-9.3, 3.4, 1.15], `Input · I₂ = ${o2.I.toFixed(3)} mA`, '#ffcc66'); label3D(ctx, C, [9.3, 3.4, 1.15], `Output · I₃ = ${o3.I.toFixed(3)} mA`, '#ffcc66'); }
+  if (isFull()) { label3D(ctx, C, [-9.3, 3.4, 1.15], `Input · I₂ = ${o2.I.toFixed(3)} mA`, '#ffcc66'); label3D(ctx, C, [9.3, 3.4, 1.15], `Output · I₃ = ${o3.I.toFixed(3)} mA`, '#ffcc66'); }
+  if (S.cfg === 'u2') label3D(ctx, C, [9.3, -3.4, 1.15], `Output 2 · I₄ = ${opH(4).I.toFixed(3)} mA`, '#ffcc66');
   label3D(ctx, C, [12.65, Y0, 1.25], `OUT 1 ${(t.bar * 100).toFixed(1)} %`, '#4aa8ff');
   label3D(ctx, C, [12.65, -Y0, 1.25], `OUT 2 ${(t.cross * 100).toFixed(1)} %`, '#ff9548');
   // phase dial
@@ -874,7 +883,7 @@ function draw3D(time) {
   ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillText(S.cfg === 'dual' ? `Δφ = φ₁ − φ₂ = ${(tph / PI).toFixed(2)}π` : `φ₁ = θ₀ + πP₁/Pπ = ${(tph / PI).toFixed(2)}π`, cx + R + 18, cy - 8);
   ctx.fillStyle = '#8b98a9';
-  ctx.fillText(S.cfg === 'full' ? `φ_in = ${(t.p2 / PI).toFixed(2)}π · φ_out = ${(t.p3 / PI).toFixed(2)}π` : S.cfg === 'intext' ? `external φ_ext = ${(t.p2 / PI).toFixed(2)}π` : S.cfg === 'dual' ? `φ₁ = ${(t.p1 / PI).toFixed(2)}π · φ₂ = ${(t.p2 / PI).toFixed(2)}π` : `heater adds ${(o1.P / S.Ppi).toFixed(2)}π`, cx + R + 18, cy + 10);
+  ctx.fillText(S.cfg === 'u2' ? `φ_in ${(t.p2 / PI).toFixed(2)}π · φ_out ${(t.p3 / PI).toFixed(2)}π, ${(t.p4 / PI).toFixed(2)}π` : isFull() ? `φ_in = ${(t.p2 / PI).toFixed(2)}π · φ_out = ${(t.p3 / PI).toFixed(2)}π` : S.cfg === 'intext' ? `external φ_ext = ${(t.p2 / PI).toFixed(2)}π` : S.cfg === 'dual' ? `φ₁ = ${(t.p1 / PI).toFixed(2)}π · φ₂ = ${(t.p2 / PI).toFixed(2)}π` : `heater adds ${(o1.P / S.Ppi).toFixed(2)}π`, cx + R + 18, cy + 10);
   ctx.fillStyle = 'rgba(139,152,169,0.8)'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
   ctx.fillText('drag: rotate · wheel: zoom · double-click: reset', w - 10, 8);
 }
@@ -897,11 +906,11 @@ document.querySelectorAll('#segX button').forEach(b => b.onclick = () => { S.xmo
 document.querySelectorAll('#segY button').forEach(b => b.onclick = () => { S.ymode = b.dataset.v; setSeg('segY', S.ymode); dirty = true; });
 document.getElementById('chkBar').onchange = e => { S.showBar = e.target.checked; dirty = true; };
 document.getElementById('chkCross').onchange = e => { S.showCross = e.target.checked; dirty = true; };
-const segs2 = { segGrp: v => S.grp = v, segCfg: v => { S.cfg = v; if (v === 'single' || (v !== 'full' && S.sweep === 3)) S.sweep = 1; }, segSw: v => S.sweep = +v, segIn: v => S.inp = v, segExt: v => S.extPos = v };
+const segs2 = { segGrp: v => S.grp = v, segCfg: v => { S.cfg = v; if (S.sweep > nHeaters()) S.sweep = 1; }, segSw: v => S.sweep = +v, segIn: v => S.inp = v, segExt: v => S.extPos = v };
 for (const id in segs2) document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { segs2[id](b.dataset.v); syncUI(); });
 const num = (id, key, min) => document.getElementById(id).addEventListener('change', e => {
   const v = parseFloat(e.target.value); if (isFinite(v) && v >= min) S[key] = v; else e.target.value = S[key];
-  if (key === 'Imax') { S.I = Math.min(S.I, S.Imax); S.I2 = Math.min(S.I2, S.Imax); S.I3 = Math.min(S.I3, S.Imax); }
+  if (key === 'Imax') { S.I = Math.min(S.I, S.Imax); S.I2 = Math.min(S.I2, S.Imax); S.I3 = Math.min(S.I3, S.Imax); S.I4 = Math.min(S.I4, S.Imax); }
   syncUI();
 });
 num('nImax', 'Imax', 0.05); num('nVmax', 'Vmax', 0.05); num('nPax', 'Paxis', 0.05);
@@ -921,7 +930,7 @@ buildSliders(); buildScene();
 let last = performance.now(), tAnim = 0;
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now; tAnim += dt;
-  if (S.playing) { const k = S.sweep === 3 ? 'I3' : S.sweep === 2 ? 'I2' : 'I'; S[k] += dt * S.Imax / 8; if (S[k] > S.Imax) S[k] = 0; syncSlider(SLid(k)); dirty = true; }
+  if (S.playing) { const k = swKey(); S[k] += dt * S.Imax / 8; if (S[k] > S.Imax) S[k] = 0; syncSlider(SLid(k)); dirty = true; }
   draw3D(tAnim);
   if (dirty) { drawPlot(); drawGrp(); updateReadouts(); updateTheory(); dirty = false; }
   requestAnimationFrame(frame);
