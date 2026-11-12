@@ -168,7 +168,7 @@ input.ni{width:56px}
   <section class="card span2">
     <div class="toolbar">
       <span id="meshTitle" style="color:var(--text);font-weight:600"></span>
-      <span>Click an MZI to edit it · colour = state (blue bar · orange cross) · waveguide glow = optical power</span>
+      <span>Hover an MZI to see its phases, click it to edit · heater glow = applied phase · waveguide glow = optical power</span>
     </div>
     <canvas id="cMesh"></canvas>
   </section>
@@ -179,9 +179,10 @@ input.ni{width:56px}
       <div class="group" data-group="prog"><h3>Programming</h3>
         <div class="inline">Target <select id="selTarget" class="sm">
           <option value="dft">DFT (N×N splitter)</option><option value="rand">Random unitary (Haar)</option><option value="id">Identity</option>
-          <option value="rev">Reverse order (swap)</option><option value="shift">Cyclic shift</option><option value="route">Route port i → j</option><option value="had">Hadamard (N = 2, 4, 8)</option>
+          <option value="rev">Reverse order (swap)</option><option value="shift">Cyclic shift</option><option value="route">Route port i → j</option><option value="had">Hadamard (N = 4, 8)</option>
         </select></div>
         <div class="inline" id="routeWrap">i <input type="number" id="nRi" class="ni" min="1" value="1"> → j <input type="number" id="nRj" class="ni" min="1" value="4"></div>
+        <div class="inline">Ports N <span class="seg" id="segN"><button data-v="4">4</button><button data-v="6" class="on">6</button><button data-v="8">8</button></span></div>
         <div class="inline"><button class="btn primary" id="bProg">Program mesh</button><button class="btn" id="bRand">New random</button></div>
         <div class="inline after">Light input <select id="selIn" class="sm"></select></div>
       </div>
@@ -443,57 +444,93 @@ const recompute = () => { Timp = meshMatrix(mesh, err); dirty = true; };
 /* ------------------------------------------------ propagation for display: power in every waveguide after each column */
 function propagate() {
   const N = mesh.N; let E = Array.from({ length: N }, (_, k) => S.inp < 0 ? cx(1 / Math.sqrt(N)) : cx(k === S.inp ? 1 : 0));
-  const cols = [E.map(cabs2)], byCol = Array.from({ length: mesh.depth }, () => []);
+  const cols = [E.map(cabs2)], arms = [], byCol = Array.from({ length: mesh.depth }, () => []);
   mesh.ops.forEach((o, i) => byCol[o.col].push(i));
   for (let c = 0; c < mesh.depth; c++) {
-    for (const i of byCol[c]) { const o = mesh.ops[i], e = err.ops[i], T = Treal(o.th + e.dth, o.ph + e.dph, e.a1, e.a2, e.eta); const a = E[o.m], b = E[o.m + 1]; E[o.m] = cadd(cmul(T[0][0], a), cmul(T[0][1], b)); E[o.m + 1] = cadd(cmul(T[1][0], a), cmul(T[1][1], b)); }
+    for (const i of byCol[c]) {
+      const o = mesh.ops[i], e = err.ops[i], T = Treal(o.th + e.dth, o.ph + e.dph, e.a1, e.a2, e.eta), a = E[o.m], b = E[o.m + 1];
+      // power in the two arms (after the external phase shifter and the first coupler)
+      const ap = cmul(a, cexpj(o.ph + e.dph)), s1 = Math.sin(PI / 4 + e.a1), c1 = Math.cos(PI / 4 + e.a1);
+      arms[i] = [cabs2(cadd(cscale(ap, s1), cmul(cx(0, c1), b))), cabs2(cadd(cmul(cx(0, c1), ap), cscale(b, s1)))];
+      E[o.m] = cadd(cmul(T[0][0], a), cmul(T[0][1], b)); E[o.m + 1] = cadd(cmul(T[1][0], a), cmul(T[1][1], b));
+    }
     cols.push(E.map(cabs2));
   }
-  return cols;
+  return { cols, arms };
 }
 /* ------------------------------------------------ mesh drawing (used for the simulation and the theory schematics) */
 const glowCol = p => { const t = Math.sqrt(clamp(p, 0, 1)); return `rgb(${60 + 195 * t | 0},${76 - 20 * t | 0},${98 + 6 * t | 0})`; };
-function stateCol(th, a = 1) { const b = Math.sin(th / 2) ** 2; return `rgba(${255 * (1 - b) + 74 * b | 0},${149 * (1 - b) + 168 * b | 0},${72 * (1 - b) + 255 * b | 0},${a})`; }
+function wgStroke(ctx, path, p, lit, t) {
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = lit ? glowCol(p) : '#46546a'; ctx.lineWidth = lit ? 2.4 + 3 * Math.sqrt(clamp(p, 0, 1)) : 2.4; path(); ctx.stroke();
+  if (lit && p > 0.01) { ctx.save(); ctx.strokeStyle = `rgba(255,225,232,${0.55 * Math.sqrt(p)})`; ctx.lineWidth = 1.5; ctx.setLineDash([5, 12]); ctx.lineDashOffset = -t * 40; path(); ctx.stroke(); ctx.restore(); }
+}
+function heater(ctx, x0, x1, y, level, lit) {   // level 0..1 (phase / 2π) sets the glow
+  const g = lit ? 0.35 + 0.65 * level : 0.5;
+  if (lit && level > 0.02) { ctx.save(); ctx.shadowColor = `rgba(255,150,60,${0.8 * level})`; ctx.shadowBlur = 10 * level; }
+  ctx.fillStyle = `rgba(255,${150 + 60 * g | 0},${60 + 30 * g | 0},${g})`; roundRect(ctx, x0, y - 5.5, x1 - x0, 3.5, 1.5); ctx.fill();
+  if (lit && level > 0.02) ctx.restore();
+}
+function drawPD(ctx, x, y, p, pmax) {   // photodetector: metallic body, glowing sensor (relative to the brightest output) and level bar
+  const bw = 34, bh = 26, x0 = x, y0 = y - bh / 2, gr = ctx.createLinearGradient(x0, y0, x0, y0 + bh);
+  gr.addColorStop(0, '#3a475d'); gr.addColorStop(0.5, '#232c3a'); gr.addColorStop(1, '#151b24');
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 2; ctx.fillStyle = gr; roundRect(ctx, x0, y0, bw, bh, 7); ctx.fill(); ctx.restore();
+  ctx.strokeStyle = 'rgba(160,180,210,0.55)'; ctx.lineWidth = 1; roundRect(ctx, x0 + 0.5, y0 + 0.5, bw - 1, bh - 1, 7); ctx.stroke();
+  ctx.fillStyle = '#ffcc66'; ctx.fillRect(x0 + bw - 6, y0 + 4, 2.5, 2.5); ctx.fillRect(x0 + bw - 6, y0 + bh - 6.5, 2.5, 2.5);   // bond pads
+  const t = Math.sqrt(clamp(p / Math.max(pmax, 1e-9), 0, 1)) * Math.min(1, 0.35 + 3 * Math.sqrt(p)), cxp = x0 + bw / 2 - 2;
+  ctx.fillStyle = '#0b0f15'; ctx.beginPath(); ctx.arc(cxp, y, 8.5, 0, 2 * PI); ctx.fill();
+  const rg = ctx.createRadialGradient(cxp, y, 0, cxp, y, 11);
+  rg.addColorStop(0, `rgba(255,${215 + 40 * t | 0},${225 + 30 * t | 0},${0.15 + 0.85 * t})`); rg.addColorStop(0.5, `rgba(255,70,110,${0.1 + 0.8 * t})`); rg.addColorStop(1, 'rgba(255,40,90,0)');
+  ctx.save(); if (t > 0.05) { ctx.shadowColor = `rgba(255,77,109,${t})`; ctx.shadowBlur = 18 * t; }
+  ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(cxp, y, 11, 0, 2 * PI); ctx.fill(); ctx.restore();
+  ctx.strokeStyle = 'rgba(200,215,240,0.7)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(cxp, y, 8.5, 0, 2 * PI); ctx.stroke();
+  const bx = x0 + bw + 8, bl = 46;
+  ctx.fillStyle = '#1a212c'; roundRect(ctx, bx, y - 3.5, bl, 7, 3.5); ctx.fill();
+  if (p > 0.002) { const lg = ctx.createLinearGradient(bx, 0, bx + bl, 0); lg.addColorStop(0, '#ff4d6d'); lg.addColorStop(1, '#ffc2cf'); ctx.fillStyle = lg; roundRect(ctx, bx, y - 3.5, Math.max(5, bl * clamp(p, 0, 1)), 7, 3.5); ctx.fill(); }
+  ctx.fillStyle = p > 0.005 ? '#e6edf3' : '#5c6c84'; ctx.font = '600 11.5px system-ui,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(`${(p * 100).toFixed(1)}%`, bx + bl + 6, y);
+}
 function drawMesh(cv, ms, opt) {
   const { ctx, w, h } = fitCanvas(cv); ctx.clearRect(0, 0, w, h);
-  const N = ms.N, m = { l: opt.light ? 74 : 26, r: opt.light ? 112 : 26, t: 26, b: 22 };
+  const N = ms.N, lit = !!opt.light, m = { l: lit ? 70 : 20, r: lit ? 156 : 20, t: 26, b: 22 };
   const yk = k => m.t + (k + 0.5) * (h - m.t - m.b) / N, dy = (h - m.t - m.b) / N;
-  const xD = w - m.r + 10, x0 = m.l, cw = (xD - 30 - x0) / ms.depth, xc = c => x0 + (c + 0.5) * cw;
-  const bw = Math.min(cw * 0.6, 54), cols = opt.light ? propagate() : null;
-  // waveguides, coloured by the power after each column
+  const xEnd = w - m.r, xD = xEnd - 14, x0 = m.l, cw = (xD - 26 - x0) / ms.depth, xc = c => x0 + (c + 0.5) * cw;
+  const pr = lit ? propagate() : null, cols = pr ? pr.cols : null;
+  const at = Array.from({ length: ms.depth }, () => Array(N).fill(-1));   // which MZI occupies (column, row)
+  ms.ops.forEach((o, i) => { at[o.col][o.m] = i; at[o.col][o.m + 1] = i; });
+  // straight waveguide sections between MZIs
   for (let k = 0; k < N; k++) for (let c = 0; c <= ms.depth; c++) {
-    const xa = c === 0 ? 8 : xc(c - 1), xb = c === ms.depth ? (opt.light ? xD : w - 8) : xc(c), p = cols ? cols[c][k] : 0;
-    ctx.strokeStyle = cols ? glowCol(p) : '#46546a'; ctx.lineWidth = cols ? 2.5 + 3 * Math.sqrt(p) : 2.5; ctx.beginPath(); ctx.moveTo(xa, yk(k)); ctx.lineTo(xb, yk(k)); ctx.stroke();
-    if (cols && p > 0.01) { ctx.save(); ctx.strokeStyle = `rgba(255,220,230,${0.55 * Math.sqrt(p)})`; ctx.lineWidth = 1.6; ctx.setLineDash([5, 12]); ctx.lineDashOffset = -opt.t * 40; ctx.beginPath(); ctx.moveTo(xa, yk(k)); ctx.lineTo(xb, yk(k)); ctx.stroke(); ctx.restore(); }
+    const xa = c === 0 ? 8 : (at[c - 1][k] >= 0 ? xc(c - 1) + cw / 2 : xc(c - 1)), xb = c === ms.depth ? (lit ? xEnd + 6 : w - 8) : (at[c][k] >= 0 ? xc(c) - cw / 2 : xc(c));
+    const p = cols ? cols[c][k] : 0; wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(xa, yk(k)); ctx.lineTo(xb, yk(k)); }, p, lit, opt.t || 0);
   }
-  // MZIs
+  // MZIs drawn as real interferometers: external PS → coupler → two arms (internal PS on top) → coupler
   boxes = [];
   ms.ops.forEach((o, i) => {
-    const x = xc(o.col), y0 = yk(o.m) - Math.min(12, dy * 0.3), y1 = yk(o.m + 1) + Math.min(12, dy * 0.3);
-    ctx.fillStyle = '#141b25'; roundRect(ctx, x - bw / 2, y0, bw, y1 - y0, 6); ctx.fill();
-    ctx.fillStyle = stateCol(o.th, 0.28); ctx.fill();
-    ctx.strokeStyle = i === opt.sel ? '#ffffff' : i === opt.hover ? '#ffcc66' : stateCol(o.th, 0.95); ctx.lineWidth = i === opt.sel ? 2.6 : 1.6; ctx.stroke();
-    // inside the box: two couplers, two arms and the heater on the upper arm
-    const ya = yk(o.m), yb = yk(o.m + 1), xl = x - bw / 2 + 7, xr = x + bw / 2 - 7, ua = ya + (yb - ya) * 0.2, ub = yb - (yb - ya) * 0.2;
-    ctx.fillStyle = 'rgba(200,210,225,0.3)'; ctx.fillRect(xl - 2, ya - 2, 4, yb - ya + 4); ctx.fillRect(xr - 2, ya - 2, 4, yb - ya + 4);
-    ctx.strokeStyle = 'rgba(200,210,225,0.5)'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(xl, ua); ctx.lineTo(xr, ua); ctx.moveTo(xl, ub); ctx.lineTo(xr, ub); ctx.stroke();
-    ctx.fillStyle = '#ffb347'; ctx.fillRect(x - bw / 5, ua - 4.5, 2 * bw / 5, 3);
-    if (opt.labels && bw > 32 && dy > 30) { ctx.fillStyle = '#e6edf3'; ctx.font = '11px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(`θ ${(o.th / PI).toFixed(2)}π`, x, (ya + yb) / 2); }
-    boxes.push({ i, x0: x - bw / 2, x1: x + bw / 2, y0, y1 });
-  });
-  // output phase screen and labels
-  if (opt.light) {
-    ctx.font = FONT; ctx.textBaseline = 'middle';
-    for (let k = 0; k < N; k++) {
-      ctx.fillStyle = '#1d2735'; ctx.fillRect(xD - 9, yk(k) - 8, 18, 16); ctx.strokeStyle = '#5c6c84'; ctx.strokeRect(xD - 9, yk(k) - 8, 18, 16);
-      ctx.fillStyle = '#ffb347'; ctx.fillRect(xD - 6, yk(k) - 6, 12, 2.5);
-      const pin = cols[0][k], pout = cols[ms.depth][k];
-      ctx.textAlign = 'right'; ctx.fillStyle = pin > 0.001 ? '#ff8fa8' : '#5c6c84'; ctx.fillText(`in ${k + 1}${pin > 0.001 ? ` ${(pin * 100).toFixed(0)}%` : ''}`, m.l - 18, yk(k) - 10);
-      ctx.textAlign = 'left'; ctx.fillStyle = pout > 0.005 ? '#4aa8ff' : '#5c6c84'; ctx.fillText(`out ${k + 1}: ${(pout * 100).toFixed(1)}%`, xD + 16, yk(k));
+    const x = xc(o.col), L = x - cw / 2, R = x + cw / 2, ya = yk(o.m), yb = yk(o.m + 1), ym = (ya + yb) / 2, g = 3.2;
+    const f = u => L + u * cw, pin = cols ? [cols[o.col][o.m], cols[o.col][o.m + 1]] : [0, 0], pout = cols ? [cols[o.col + 1][o.m], cols[o.col + 1][o.m + 1]] : [0, 0], pa = pr ? pr.arms[i] : [0, 0];
+    const sb = (xa, y1, xb, y2) => ctx.bezierCurveTo((xa + xb) / 2, y1, (xa + xb) / 2, y2, xb, y2);
+    for (const [y, sgn, k] of [[ya, 1, 0], [yb, -1, 1]]) {
+      const yc = ym - sgn * g;
+      wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(f(0.15), y); sb(f(0.15), y, f(0.25), yc); ctx.lineTo(f(0.31), yc); }, pin[k], lit, opt.t || 0);
+      wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(f(0.31), yc); sb(f(0.31), yc, f(0.41), y); ctx.lineTo(f(0.59), y); sb(f(0.59), y, f(0.69), yc); }, pa[k], lit, opt.t || 0);
+      wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(f(0.69), yc); ctx.lineTo(f(0.75), yc); sb(f(0.75), yc, f(0.85), y); ctx.lineTo(R, y); }, pout[k], lit, opt.t || 0);
     }
-    ctx.fillStyle = '#8b98a9'; ctx.textAlign = 'center'; ctx.fillText('D', xD, m.t - 12);
-    if (opt.hover >= 0 && opt.hover < ms.ops.length) { const o = ms.ops[opt.hover], b = boxes[opt.hover]; tag(ctx, (b.x0 + b.x1) / 2, b.y0 - 12, `MZI ${opt.hover + 1} · θ = ${(o.th / PI).toFixed(3)}π · φ = ${(o.ph / PI).toFixed(3)}π · bar ${(Math.sin(o.th / 2) ** 2 * 100).toFixed(0)} %`, '#fff', 'rgba(8,11,16,0.92)'); }
+    heater(ctx, f(0.02), f(0.13), ya, o.ph / (2 * PI), lit);    // external phase shifter (φ)
+    heater(ctx, f(0.43), f(0.57), ya, o.th / (2 * PI), lit);    // internal phase shifter (θ)
+    const bx0 = f(0.0), bx1 = f(1.0), by0 = ya - 14, by1 = yb + 10;
+    if (i === opt.sel || i === opt.hover) { ctx.save(); ctx.strokeStyle = i === opt.sel ? 'rgba(255,255,255,0.85)' : 'rgba(255,204,102,0.7)'; ctx.lineWidth = 1.4; ctx.setLineDash(i === opt.sel ? [] : [4, 3]); roundRect(ctx, bx0 + 2, by0, bx1 - bx0 - 4, by1 - by0, 8); ctx.stroke(); ctx.restore(); }
+    boxes.push({ i, x0: bx0 + 2, x1: bx1 - 2, y0: by0, y1: by1 });
+  });
+  if (!lit) return;
+  // output phase screen (D), photodetectors and input labels
+  ctx.font = FONT; ctx.textBaseline = 'middle';
+  for (let k = 0; k < N; k++) {
+    heater(ctx, xD - 9, xD + 9, yk(k), ms.D[k] / (2 * PI), true);
+    drawPD(ctx, xEnd + 6, yk(k), cols[ms.depth][k], Math.max(...cols[ms.depth]));
+    const pin = cols[0][k]; ctx.textAlign = 'right'; ctx.fillStyle = pin > 0.001 ? '#ff8fa8' : '#5c6c84'; ctx.fillText(`in ${k + 1}${pin > 0.001 ? ` · ${(pin * 100).toFixed(0)}%` : ''}`, m.l - 12, yk(k) - 11);
   }
+  ctx.fillStyle = '#8b98a9'; ctx.textAlign = 'center'; ctx.fillText('D', xD, m.t - 12); ctx.fillText('photodetectors', xEnd + 52, m.t - 12);
+  if (opt.hover >= 0 && opt.hover < ms.ops.length) { const o = ms.ops[opt.hover], b = boxes[opt.hover]; tag(ctx, clamp((b.x0 + b.x1) / 2, 180, w - 180), b.y0 - 12, `MZI ${opt.hover + 1} · θ = ${(o.th / PI).toFixed(3)}π · φ = ${(o.ph / PI).toFixed(3)}π · bar ${(Math.sin(o.th / 2) ** 2 * 100).toFixed(0)} %`, '#fff', 'rgba(8,11,16,0.92)'); }
 }
 /* ------------------------------------------------ matrices */
 function drawMatrices() {
@@ -566,7 +603,6 @@ function update() {
 }
 /* ------------------------------------------------ controls */
 const SL = [
-  { id: 'N', g: 'prog', lab: 'Number of ports N', min: 2, max: 8, step: 1, unit: '', dec: 0, get: () => S.N, set: v => S.N = Math.round(v), after: () => { buildInputs(); program(); } },
   { id: 'sph', g: 'err', lab: 'Phase error σ (θ, φ, output)', min: 0, max: 0.3, step: 0.001, unit: 'rad', dec: 3, get: () => S.sph, set: v => S.sph = v, after: refreshErr },
   { id: 'sal', g: 'err', lab: 'MMI imbalance σ_α', min: 0, max: 0.15, step: 0.001, unit: 'rad', dec: 3, get: () => S.sal, set: v => S.sal = v, after: refreshErr },
   { id: 'loss', g: 'err', lab: 'Loss per MZI', min: 0, max: 1, step: 0.01, unit: 'dB', dec: 2, get: () => S.loss, set: v => S.loss = v, after: refreshErr },
@@ -584,6 +620,7 @@ document.getElementById('bRand').onclick = () => { S.randSeed++; S.target = 'ran
 document.getElementById('bSeed').onclick = () => { S.seed++; refreshErr(); };
 document.getElementById('bDesel').onclick = () => { S.sel = -1; dirty = true; };
 wireSeg('segPlot', v => S.plot = v);
+wireSeg('segN', v => { S.N = +v; buildInputs(); program(); });
 const cMesh = document.getElementById('cMesh');
 const hit = e => { for (const b of boxes) if (e.offsetX >= b.x0 && e.offsetX <= b.x1 && e.offsetY >= b.y0 && e.offsetY <= b.y1) return b.i; return -1; };
 cMesh.addEventListener('pointermove', e => { hoverBox = hit(e); });
