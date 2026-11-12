@@ -635,24 +635,28 @@ if (document.documentElement.classList.contains('embed')) { const post = () => p
   }
   /* ---------------------------------------------------------------- flatten with transforms */
   const xf = (p, r) => { let x = p[0], y = r.mx ? -p[1] : p[1]; const c = Math.round(Math.cos(r.rot * Math.PI / 180) * 1e9) / 1e9, s = Math.round(Math.sin(r.rot * Math.PI / 180) * 1e9) / 1e9; return [r.x + x * c - y * s, r.y + x * s + y * c]; };
+  /* each cell is flattened once in its own coordinates (memoized), instances only transform the cached geometry */
+  function lflat(c) {
+    if (c._f) return c._f;
+    const polys = [], labels = [];
+    for (const P of c.polys) polys.push({ layer: P.layer, pts: P.pts, cell: c.name });
+    for (const L of c.labels) labels.push(L);
+    for (const r of c.refs) { const f = lflat(r.cell); for (const q of f.polys) polys.push({ layer: q.layer, pts: q.pts.map(p => xf(p, r)), cell: q.cell }); for (const L of f.labels) { const t = xf([L.x, L.y], r); labels.push({ layer: L.layer, text: L.text, x: t[0], y: t[1] }); } }
+    let bb = [1e18, 1e18, -1e18, -1e18]; for (const q of polys) for (const p of q.pts) { if (p[0] < bb[0]) bb[0] = p[0]; if (p[1] < bb[1]) bb[1] = p[1]; if (p[0] > bb[2]) bb[2] = p[0]; if (p[1] > bb[3]) bb[3] = p[1]; }
+    if (bb[0] > bb[2]) bb = [0, 0, 0, 0];
+    return c._f = { polys, labels, bb };
+  }
   function flatten(top) {
-    const polys = [], labels = [], inst = [];
-    (function rec(cell, T, path) {
-      const tp = p => T.reduceRight((q, r) => xf(q, r), p);
-      for (const P of cell.polys) polys.push({ layer: P.layer, pts: P.pts.map(tp), cell: cell.name, path });
-      for (const L of cell.labels) { const q = tp([L.x, L.y]); labels.push({ layer: L.layer, text: L.text, x: q[0], y: q[1] }); }
-      for (const r of cell.refs) { const sub = T.concat([r]); const bb = bboxCell(r.cell); const cs = [[bb[0], bb[1]], [bb[2], bb[1]], [bb[2], bb[3]], [bb[0], bb[3]]].map(p => sub.reduceRight((q, rr) => xf(q, rr), p)); inst.push({ cell: r.cell.name, pts: cs }); rec(r.cell, sub, path + '/' + r.cell.name); }
-    })(top, [], top.name);
-    return { polys, labels, inst };
+    top._f = null; const f = lflat(top), inst = [];
+    const polys = f.polys.map(q => { let b = [1e18, 1e18, -1e18, -1e18]; for (const p of q.pts) { if (p[0] < b[0]) b[0] = p[0]; if (p[1] < b[1]) b[1] = p[1]; if (p[0] > b[2]) b[2] = p[0]; if (p[1] > b[3]) b[3] = p[1]; } return { layer: q.layer, pts: q.pts, cell: q.cell, bb: b }; });
+    (function rec(cell, T) { for (const r of cell.refs) { const sub = T.concat([r]), bb = lflat(r.cell).bb; inst.push({ cell: r.cell.name, pts: [[bb[0], bb[1]], [bb[2], bb[1]], [bb[2], bb[3]], [bb[0], bb[3]]].map(p => sub.reduceRight((q, rr) => xf(q, rr), p)) }); if (inst.length < 20000) rec(r.cell, sub); } })(top, []);
+    // first-level instances as contiguous polygon ranges (for level-of-detail drawing of big layouts)
+    const groups = []; let k = top.polys.length; groups.push({ s: 0, e: k, bb: null });
+    for (const r of top.refs) { const n = lflat(r.cell).polys.length, bb = lflat(r.cell).bb, cs = [[bb[0], bb[1]], [bb[2], bb[1]], [bb[2], bb[3]], [bb[0], bb[3]]].map(p => xf(p, r));
+      groups.push({ s: k, e: k + n, bb: [Math.min(...cs.map(c => c[0])), Math.min(...cs.map(c => c[1])), Math.max(...cs.map(c => c[0])), Math.max(...cs.map(c => c[1]))] }); k += n; }
+    return { polys, labels: f.labels, inst, groups };
   }
-  function bboxCell(cell) {
-    let x0 = 1e18, y0 = 1e18, x1 = -1e18, y1 = -1e18;
-    (function rec(c, T) {
-      for (const P of c.polys) for (const p of P.pts) { const q = T.reduceRight((qq, r) => xf(qq, r), p); x0 = Math.min(x0, q[0]); y0 = Math.min(y0, q[1]); x1 = Math.max(x1, q[0]); y1 = Math.max(y1, q[1]); }
-      for (const r of c.refs) rec(r.cell, T.concat([r]));
-    })(cell, []);
-    return x0 > x1 ? [0, 0, 0, 0] : [x0, y0, x1, y1];
-  }
+  function bboxCell(cell) { return lflat(cell).bb; }
   function cellList(top) { const out = [], seen = new Set(); (function rec(c) { for (const r of c.refs) rec(r.cell); if (!seen.has(c.name)) { seen.add(c.name); out.push(c); } })(top); return out; }   // children first
   /* ---------------------------------------------------------------- GDSII writer */
   function real8(v) {
@@ -725,12 +729,13 @@ if (document.documentElement.classList.contains('embed')) { const post = () => p
 
   function mount(o) {
     if (!cssDone) { const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st); cssDone = true; }
-    const card = o.card, h2 = card.querySelector('h2'), head = document.createElement('div'); head.className = 'gdshead';
+    const card = o.card, head = document.createElement('div'); head.className = 'gdshead';
+    let h2 = [...card.children].find(e => e.tagName === 'H2'); if (!h2) { h2 = document.createElement('h2'); h2.textContent = o.title || 'Schematic'; card.insertBefore(h2, card.firstChild); }
     h2.parentNode.insertBefore(head, h2); head.appendChild(h2);
     const label0 = h2.textContent, seg = document.createElement('div'); seg.className = 'gdsseg';
     seg.innerHTML = `<button data-v="0" class="on">${o.viewName || '3D'}</button><button data-v="1">GDS layout</button>`; head.appendChild(seg);
     const others = [...card.children].filter(e => e !== head);
-    const wrap = document.createElement('div'); wrap.className = 'gdswrap'; wrap.style.display = 'none';
+    const wrap = document.createElement('div'); wrap.className = 'gdswrap'; wrap.style.display = 'none'; if (o.height) wrap.style.height = o.height + 'px';
     wrap.innerHTML = `<div class="gdstool"><button data-a="fit">Zoom fit</button><button data-a="ruler">Ruler</button><button data-a="grid" class="on">Grid</button><button data-a="fill" class="on">Fill</button><button data-a="lbl" class="on">Labels</button><button data-a="dl">Download .gds</button><span class="co">x = —  y = —</span></div>
       <div class="gdsmain"><canvas class="gdscv"></canvas><div class="gdsside"><h4>Layers</h4><div class="ll"></div><h4 style="margin-top:10px">Cells</h4><div class="ct"></div></div></div>`;
     card.appendChild(wrap);
@@ -738,20 +743,20 @@ if (document.documentElement.classList.contains('embed')) { const post = () => p
     const V = { on: false, top: null, flat: null, key: '', view: null, hidden: new Set(), grid: true, fill: true, lbl: true, ruler: false, rul: null, hover: null, selCell: null, mouse: null };
     seg.querySelectorAll('button').forEach(b => b.onclick = () => {
       V.on = b.dataset.v === '1'; seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-      others.forEach(e => e.style.display = V.on ? 'none' : ''); wrap.style.display = V.on ? '' : 'none';
+      others.forEach(e => e.style.display = V.on ? 'none' : ''); wrap.style.display = V.on ? 'flex' : 'none'; V.dirty = true;
       h2.textContent = V.on ? (o.gdsTitle || 'GDS layout') : label0; if (V.on) { V.key = ''; V.view = null; V.user = false; } else window.dispatchEvent(new Event('resize'));
     });
     const usedLayers = () => LAYERS.filter(L => V.flat.polys.some(p => p.layer === L.k) || V.flat.labels.some(t => t.layer === L.k));
     function buildPanels() {
       ll.innerHTML = ''; for (const L of usedLayers()) {
         const d = document.createElement('div'); d.className = 'gdsl' + (V.hidden.has(L.k) ? ' off' : ''); d.title = L.desc; d.appendChild(swatch(L));
-        d.insertAdjacentHTML('beforeend', `<span>${L.name}</span><small>${L.l}/${L.d}</small>`); d.onclick = () => { V.hidden.has(L.k) ? V.hidden.delete(L.k) : V.hidden.add(L.k); d.classList.toggle('off'); };
+        d.insertAdjacentHTML('beforeend', `<span>${L.name}</span><small>${L.l}/${L.d}</small>`); d.onclick = () => { V.hidden.has(L.k) ? V.hidden.delete(L.k) : V.hidden.add(L.k); d.classList.toggle('off'); V.dirty = true; };
         ll.appendChild(d);
       }
       ct.innerHTML = '';
       (function rec(c, depth, count) {
         const d = document.createElement('div'); d.className = 'gdsc' + (V.selCell === c.name ? ' sel' : ''); d.style.paddingLeft = (2 + depth * 12) + 'px';
-        d.innerHTML = `${depth ? '└ ' : '▣ '}${c.name}${count > 1 ? ` <small>×${count}</small>` : ''}`; d.onclick = () => { V.selCell = V.selCell === c.name ? null : c.name; buildPanels(); };
+        d.innerHTML = `${depth ? '└ ' : '▣ '}${c.name}${count > 1 ? ` <small>×${count}</small>` : ''}`; d.onclick = () => { V.selCell = V.selCell === c.name ? null : c.name; buildPanels(); V.dirty = true; };
         ct.appendChild(d);
         const kids = new Map(); for (const r of c.refs) kids.set(r.cell, (kids.get(r.cell) || 0) + 1);
         for (const [k, n] of kids) rec(k, depth + 1, n);
@@ -764,11 +769,15 @@ if (document.documentElement.classList.contains('embed')) { const post = () => p
     const fmt = v => Math.abs(v) >= 100 ? v.toFixed(1) : Math.abs(v) >= 10 ? v.toFixed(2) : v.toFixed(3);
     function draw() {
       if (!V.on) return;
-      const k = o.key(); if (k !== V.key) { V.key = k; V.top = o.build(); V.flat = flatten(V.top); buildPanels(); if (!V.user) V.view = null; }
+      const k = o.key(); if (k !== V.key) { V.key = k; V.top = o.build(); V.flat = flatten(V.top); buildPanels(); if (!V.user) V.view = null; V.dirty = true; }
       const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1, W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
-      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
-      const ctx = cv.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); const w = r.width, h = r.height; ctx.fillStyle = '#050608'; ctx.fillRect(0, 0, w, h);
-      if (!V.view) fit(w, h);
+      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; V.dirty = true; }
+      if (!V.dirty) return; V.dirty = false;
+      const w = r.width, h = r.height; if (!V.view) fit(w, h);
+      const bk = [V.key, V.view.s, V.view.cx, V.view.cy, W, H, [...V.hidden].join(','), V.grid, V.fill, V.lbl].join('|');
+      if (!V.base) V.base = document.createElement('canvas');
+      let ctx;
+      if (bk !== V.bk) { V.bk = bk; V.base.width = W; V.base.height = H; ctx = V.base.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); ctx.fillStyle = '#050608'; ctx.fillRect(0, 0, w, h);
       if (V.grid) {   // dotted grid + major lines
         const st = niceStep(40), a = toW(0, h, w, h), b = toW(w, 0, w, h);
         ctx.fillStyle = 'rgba(140,160,190,0.35)';
@@ -779,12 +788,17 @@ if (document.documentElement.classList.contains('embed')) { const post = () => p
       for (const key of order) {
         if (V.hidden.has(key)) continue; const L = LK[key];
         ctx.beginPath(); let any = false;
-        for (const P of V.flat.polys) { if (P.layer !== key) continue; any = true; P.pts.forEach((q, i) => { const s = toS(q, w, h); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); }); ctx.closePath(); }
+        const vb0 = toW(0, h, w, h), vb1 = toW(w, 0, w, h);
+        for (const g of V.flat.groups) { if (g.bb && (g.bb[2] < vb0[0] || g.bb[0] > vb1[0] || g.bb[3] < vb0[1] || g.bb[1] > vb1[1])) continue;
+          if (g.bb && Math.max(g.bb[2] - g.bb[0], g.bb[3] - g.bb[1]) * V.view.s < 14) { if (key === 'WG') { const s0 = toS([g.bb[0], g.bb[3]], w, h); ctx.rect(s0[0], s0[1], (g.bb[2] - g.bb[0]) * V.view.s, (g.bb[3] - g.bb[1]) * V.view.s); any = true; } continue; }
+          for (let gi = g.s; gi < g.e; gi++) { const P = V.flat.polys[gi]; if (P.layer !== key || P.bb[2] < vb0[0] || P.bb[0] > vb1[0] || P.bb[3] < vb0[1] || P.bb[1] > vb1[1]) continue; any = true; if ((P.bb[2] - P.bb[0]) * V.view.s < 2.5 && (P.bb[3] - P.bb[1]) * V.view.s < 2.5) { const s0 = toS([P.bb[0], P.bb[3]], w, h); ctx.rect(s0[0], s0[1], Math.max(0.8, (P.bb[2] - P.bb[0]) * V.view.s), Math.max(0.8, (P.bb[3] - P.bb[1]) * V.view.s)); continue; } let f0; P.pts.forEach((q, i) => { const s = toS(q, w, h); if (i) ctx.lineTo(s[0], s[1]); else { ctx.moveTo(s[0], s[1]); f0 = s; } }); ctx.lineTo(f0[0], f0[1]); } }
         if (!any) continue;
         if (V.fill && L.pat !== 'o') { ctx.save(); ctx.globalAlpha = 0.85; ctx.fillStyle = pattern(ctx, L); ctx.fill('evenodd'); ctx.globalAlpha = 0.12; ctx.fillStyle = L.c; ctx.fill('evenodd'); ctx.restore(); }
         ctx.strokeStyle = L.c; ctx.lineWidth = key === 'DEVREC' ? 1 : 1.1; if (key === 'DEVREC') ctx.setLineDash([6, 4]); ctx.stroke(); ctx.setLineDash([]);
       }
-      if (V.lbl) { ctx.font = '11px ui-monospace,Consolas,monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; for (const t of V.flat.labels) { if (V.hidden.has(t.layer)) continue; const s = toS([t.x, t.y], w, h); ctx.fillStyle = LK[t.layer].c; ctx.fillText(t.text, s[0], s[1]); } }
+      if (V.lbl && (V.flat.labels.length < 600 || V.view.s > 0.8)) { ctx.font = '11px ui-monospace,Consolas,monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; for (const t of V.flat.labels) { if (V.hidden.has(t.layer) || (t.layer === 'TEXT' && V.view.s < 0.6 && V.flat.labels.length > 30)) continue; const s = toS([t.x, t.y], w, h); ctx.fillStyle = LK[t.layer].c; ctx.fillText(t.text, s[0], s[1]); } }
+      }
+      ctx = cv.getContext('2d'); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(V.base, 0, 0); ctx.setTransform(d, 0, 0, d, 0, 0);
       if (V.selCell) { ctx.strokeStyle = '#ffcc66'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 3]); for (const I of V.flat.inst) if (I.cell === V.selCell) { ctx.beginPath(); I.pts.forEach((q, i) => { const s = toS(q, w, h); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); }); ctx.closePath(); ctx.stroke(); } ctx.setLineDash([]); }
       if (V.hover) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); V.hover.pts.forEach((q, i) => { const s = toS(q, w, h); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); }); ctx.closePath(); ctx.stroke(); }
       // scale bar
@@ -801,26 +815,27 @@ if (document.documentElement.classList.contains('embed')) { const post = () => p
         const x = Math.min(V.mouse[0] + 12, w - tw - 4), y = Math.max(14, V.mouse[1] - 16); ctx.fillStyle = 'rgba(8,11,16,0.94)'; ctx.fillRect(x, y - 10, tw, 20); ctx.strokeStyle = L.c; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y - 9.5, tw - 1, 19); ctx.fillStyle = '#e6edf3'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t, x + 6, y); }
     }
     let drag = null;
-    cv.addEventListener('pointerdown', e => { const r = cv.getBoundingClientRect(); if (V.ruler) { const p = toW(e.offsetX, e.offsetY, r.width, r.height); V.rul = [p, p]; drag = { ruler: true }; } else drag = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener('pointerdown', e => { V.dirty = true; const r = cv.getBoundingClientRect(); if (V.ruler) { const p = toW(e.offsetX, e.offsetY, r.width, r.height); V.rul = [p, p]; drag = { ruler: true }; } else drag = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); });
     cv.addEventListener('pointermove', e => {
-      const r = cv.getBoundingClientRect(); if (!V.view) return; const p = toW(e.offsetX, e.offsetY, r.width, r.height); V.mouse = [e.offsetX, e.offsetY];
+      const r = cv.getBoundingClientRect(); if (!V.view) return; const p = toW(e.offsetX, e.offsetY, r.width, r.height); V.mouse = [e.offsetX, e.offsetY]; V.dirty = true;
       co.textContent = `x = ${fmt(p[0])}  y = ${fmt(p[1])} µm`;
       if (drag && drag.ruler) { V.rul[1] = p; return; }
       if (drag) { V.user = true; V.view.cx -= (e.clientX - drag.x) / V.view.s; V.view.cy += (e.clientY - drag.y) / V.view.s; drag = { x: e.clientX, y: e.clientY }; return; }
       V.hover = null; const order = LAYERS.map(L => L.k).reverse();
-      outer: for (const key of order) { if (V.hidden.has(key) || key === 'DEVREC') continue; for (let i = V.flat.polys.length - 1; i >= 0; i--) { const P = V.flat.polys[i]; if (P.layer === key && pip(p, P.pts)) { V.hover = P; break outer; } } }
+      outer: for (const key of order) { if (V.hidden.has(key) || key === 'DEVREC') continue; for (let i = V.flat.polys.length - 1; i >= 0; i--) { const P = V.flat.polys[i]; if (P.layer === key && p[0] >= P.bb[0] && p[0] <= P.bb[2] && p[1] >= P.bb[1] && p[1] <= P.bb[3] && pip(p, P.pts)) { V.hover = P; break outer; } } }
     });
     cv.addEventListener('pointerup', () => drag = null);
-    cv.addEventListener('pointerleave', () => { V.hover = null; V.mouse = null; });
-    cv.addEventListener('wheel', e => { e.preventDefault(); const r = cv.getBoundingClientRect(), p = toW(e.offsetX, e.offsetY, r.width, r.height), f = Math.exp(-e.deltaY * 0.0015); V.user = true; V.view.s *= f; const q = toW(e.offsetX, e.offsetY, r.width, r.height); V.view.cx += p[0] - q[0]; V.view.cy += p[1] - q[1]; }, { passive: false });
-    cv.addEventListener('dblclick', () => { V.view = null; V.user = false; });
+    cv.addEventListener('pointerleave', () => { V.hover = null; V.mouse = null; V.dirty = true; });
+    cv.addEventListener('wheel', e => { e.preventDefault(); V.dirty = true; const r = cv.getBoundingClientRect(), p = toW(e.offsetX, e.offsetY, r.width, r.height), f = Math.exp(-e.deltaY * 0.0015); V.user = true; V.view.s *= f; const q = toW(e.offsetX, e.offsetY, r.width, r.height); V.view.cx += p[0] - q[0]; V.view.cy += p[1] - q[1]; }, { passive: false });
+    cv.addEventListener('dblclick', () => { V.view = null; V.user = false; V.dirty = true; });
     wrap.querySelectorAll('.gdstool button').forEach(b => b.onclick = () => {
-      const a = b.dataset.a;
+      const a = b.dataset.a; V.dirty = true;
       if (a === 'fit') { V.view = null; V.user = false; }
       if (a === 'ruler') { V.ruler = !V.ruler; b.classList.toggle('on', V.ruler); if (!V.ruler) V.rul = null; cv.style.cursor = V.ruler ? 'cell' : 'crosshair'; }
       if (a === 'grid' || a === 'fill' || a === 'lbl') { V[a] = !V[a]; b.classList.toggle('on', V[a]); }
       if (a === 'dl') { const data = writeGDS(V.top), url = URL.createObjectURL(new Blob([data], { type: 'application/octet-stream' })), el = document.createElement('a'); el.href = url; el.download = V.top.name + '.gds'; document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000); }
     });
+    window.__gds = { o, V, flatten };
     (function loop() { draw(); requestAnimationFrame(loop); })();
     return V;
   }
@@ -860,7 +875,51 @@ if (document.documentElement.classList.contains('embed')) { const post = () => p
     c.rect('DEVREC', -lt, -W / 2 - 1, L + lt, W / 2 + 1);
     return c;
   }
-  window.GDS = { geCell: (L, W, n) => { const r = geCell(L, W, n); r.L = L; return r; }, bpdPair, padCell, mmiCell, LAYERS, Cell, path, sector, disk, pad, vias, route, flatten, bboxCell, writeGDS, mount, cellList };
+
+  /* ---------------------------------------------------------------- cells for programmable circuits */
+  const cache = new Map(); const once = (key, f) => { if (!cache.has(key)) cache.set(key, f()); return cache.get(key); };
+  function heaterCell(L) {   // heater along x on a waveguide at y = 0; contacts bend down (−y) into the free space between the arms
+    return once('htr' + L, () => { const c = new Cell(`HTR_L${L}`); c.rect('HEATER', 0, -1, L, 1);
+      for (const x of [0, L]) { c.rect('HEATER', x - 2, -12, x + 2, 1); c.box('HEATER', x, -16, 10, 10); c.box('METAL', x, -16, 12, 12); vias(c, x - 4, -20, x + 4, -12); }
+      return c; });
+  }
+  function sbendCell(dx, dy, R) { return once(`sb${dx}_${dy}_${R}`, () => { const c = new Cell(`SBEND_${dy > 0 ? 'UP' : 'DN'}${Math.abs(dy)}_R${R}`); c.e = path(c, 'WG', 0.45, 0, 0, 0, [['sb', dx, dy, R]]); return c; }); }
+  /* 2×2 MZI (TBU) with ports TL (0,0), BL (0,−P), TR (L,0), BR (L,−P); internal heater on the upper arm, optional external heater on the upper input */
+  function mziCell(P, ext, Lh = 100) {
+    return once(`mzi${P}_${ext}_${Lh}`, () => {
+      const c = new Cell(ext ? `TBU_MZI_EXT_P${P}` : `SW_MZI_P${P}`), R = 10, Wm = 6, Lm = 52, mmi = mmiCell(`MMI_2X2_W${Wm}_L${Lm}`, Wm, Lm, [1, -1], [1, -1], 1.4, 10);
+      const dn = sbendCell(2 * R + 4, -(P / 2 - 1), R), up = sbendCell(2 * R + 4, P / 2 - 1, R), ex = dn.e.x, h = heaterCell(Lh);
+      let x = 0;
+      if (ext) { const Le = Lh + 20; path(c, 'WG', 0.45, 0, 0, 0, [['s', Le]]); path(c, 'WG', 0.45, 0, -P, 0, [['s', Le]]); c.ref(h, 10, 0); c.label('φ', 10 + Lh / 2, 6); x = Le; }
+      const stage = () => { c.ref(dn, x, 0); c.ref(up, x, -P); x += ex; c.ref(mmi, x + 10, -P / 2); x += Lm + 20; c.ref(up, x, -P / 2 - 1); c.ref(dn, x, -P / 2 + 1); x += ex; };
+      stage(); const La = Lh + 20; path(c, 'WG', 0.45, x, 0, 0, [['s', La]]); path(c, 'WG', 0.45, x, -P, 0, [['s', La]]); c.ref(h, x + 10, 0); c.label('θ', x + 10 + Lh / 2, 6); x += La; stage();
+      c.L = x; c.rect('DEVREC', 0, -P - 2, x, 8); return c;
+    });
+  }
+  /* tapered crossing centred at the origin, arms along ±x and ±y; extent e from the centre */
+  function crossCell(Wc = 1.8, Lt = 6) {
+    return once('xing' + Wc + Lt, () => { const c = new Cell(`CROSSING_W${Wc}_LT${Lt}`), arm = new Cell(`XARM_W${Wc}_LT${Lt}`), ext = 1;
+      path(arm, 'WG', 0.45, Wc / 2 + Lt + ext, 0, 180, [['s', ext], ['t', Lt, Wc]]); [0, 90, 180, 270].forEach(r => c.ref(arm, 0, 0, r)); c.box('WG', 0, 0, Wc, Wc);
+      c.e = Wc / 2 + Lt + ext; return c; });
+  }
+  /* exchange of two neighbouring rows (pitch P): two 45° S-bends forming an X with a crossing in the centre */
+  function xswapCell(P, R = 10) {
+    return once('xs' + P + R, () => {
+      const c = new Cell(`XSWAP_P${P}`), xc = crossCell(), e = xc.e, s45 = Math.SQRT1_2, d = (P - 2 * R * (1 - s45)) / s45, dx = 2 * R * s45 + d * s45, cx = dx / 2, cy = -P / 2, hl = d / 2 - e;
+      path(c, 'WG', 0.45, 0, 0, 0, [['R', R, 45], ['s', hl]]); path(c, 'WG', 0.45, cx + e * s45, cy - e * s45, -45, [['s', hl], ['L', R, 45]]);
+      path(c, 'WG', 0.45, 0, -P, 0, [['L', R, 45], ['s', hl]]); path(c, 'WG', 0.45, cx + e * s45, cy + e * s45, 45, [['s', hl], ['R', R, 45]]);
+      c.ref(xc, cx, cy, 45); c.L = dx; return c;
+    });
+  }
+  /* waveguide permutation (row i → row p[i]) as columns of neighbour exchanges (odd–even transposition sort): every inversion is one crossing */
+  function permRoute(top, x0, p, P, rowY) {
+    const N = p.length, lab = p.slice(), xs = xswapCell(P), cols = [];
+    for (let ph = 0, idle = 0; idle < 2 && ph < 2 * N + 2; ph++) { const sw = []; for (let a = ph % 2; a + 1 < N; a += 2) if (lab[a] > lab[a + 1]) { sw.push(a); [lab[a], lab[a + 1]] = [lab[a + 1], lab[a]]; } if (sw.length) { cols.push(sw); idle = 0; } else idle++; }
+    let x = x0;
+    for (const sw of cols) { const used = new Set(); sw.forEach(a => { top.ref(xs, x, rowY(a)); used.add(a); used.add(a + 1); }); for (let k = 0; k < N; k++) if (!used.has(k)) path(top, 'WG', 0.45, x, rowY(k), 0, [['s', xs.L]]); x += xs.L; }
+    return { x, crossings: cols.reduce((s, c) => s + c.length, 0) };
+  }
+  window.GDS = { heaterCell, sbendCell, mziCell, crossCell, xswapCell, permRoute, clearCache: () => cache.clear(), geCell: (L, W, n) => { const r = geCell(L, W, n); r.L = L; return r; }, bpdPair, padCell, mmiCell, LAYERS, Cell, path, sector, disk, pad, vias, route, flatten, bboxCell, writeGDS, mount, cellList };
 })();
 
 (function () {
