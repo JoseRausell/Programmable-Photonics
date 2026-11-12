@@ -524,7 +524,16 @@ function drawP2() {
   ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
   let y0, y1, yt, ylab;
   if (S.p2 === 'pow') { let mx = 0; for (let i = 0; i < Pf.length; i++) mx = Math.max(mx, Pf[i], Pb[i]); y0 = 0; y1 = Math.max(1, mx, f.B) * 1.08; yt = niceTicks(0, y1, 4); ylab = 'P_ring / P_in'; }
-  else { y0 = -PI * 1.05; y1 = PI * 1.05; yt = [-PI, -PI / 2, 0, PI / 2, PI]; ylab = 'arg t (rad)'; }
+  let U = null;
+  if (S.p2 !== 'pow') {   // unwrap the phase so it is continuous (no jumps from π to −π)
+    U = new Float64Array(Ph.length); let off = 0, mn = Infinity, mx = -Infinity; U[0] = Ph[0];
+    for (let i = 1; i < Ph.length; i++) { const d = Ph[i] - Ph[i - 1]; if (d > PI) off -= 2 * PI; else if (d < -PI) off += 2 * PI; U[i] = Ph[i] + off; }
+    for (let i = 0; i < U.length; i++) { if (U[i] < mn) mn = U[i]; if (U[i] > mx) mx = U[i]; }
+    const pad = Math.max(0.12 * (mx - mn), 0.25); y0 = mn - pad; y1 = mx + pad;
+    const nPi = (y1 - y0) / PI, st = nPi > 10 ? Math.ceil(nPi / 8) * PI : nPi > 2.5 ? PI : nPi > 1 ? PI / 2 : (() => { const t = niceTicks(y0 / PI, y1 / PI, 4); return (t.length > 1 ? t[1] - t[0] : 0.1) * PI; })();
+    yt = []; for (let k = Math.ceil(y0 / st); k * st <= y1 + 1e-9; k++) yt.push(k * st);
+    ylab = 'arg t, unwrapped (rad)';
+  }
   const Y = v => m.t + (1 - (v - y0) / (y1 - y0)) * ph;
   ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
   ctx.strokeStyle = 'rgba(255,255,255,0.06)'; for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
@@ -533,15 +542,7 @@ function drawP2() {
     trace(ctx, xs, Pf, X, Y, '#5fd38d', 2, v => v);
     const bmax = f.B; ctx.strokeStyle = 'rgba(95,211,141,0.5)'; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(m.l, Y(bmax)); ctx.lineTo(m.l + pw, Y(bmax)); ctx.stroke(); ctx.setLineDash([]);
   } else {
-    // phase with jumps broken
-    ctx.beginPath(); let col = null, prev = null;
-    for (let i = 0; i < xs.length; i++) {
-      const px = X(xs[i]), v = Ph[i];
-      if (prev !== null && Math.abs(v - prev) > PI) { ctx.moveTo(px, Y(v)); }
-      else if (prev === null) ctx.moveTo(px, Y(v)); else if (px - col >= 0.5 || Math.abs(v - prev) > 0.02) ctx.lineTo(px, Y(v)); else continue;
-      col = px; prev = v;
-    }
-    ctx.strokeStyle = '#4aa8ff'; ctx.lineWidth = 2; ctx.stroke();
+    trace(ctx, xs, U, X, Y, '#4aa8ff', 2, v => v);
   }
   // op line
   const xo = sw.kind === 'lam' ? S.lam0 : (S.xI === 'I' ? S.I : Pel(S.I));
@@ -549,8 +550,8 @@ function drawP2() {
   ctx.restore();
   ctx.strokeStyle = '#3a4a60'; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
   ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-  const pil = ['−π', '−π/2', '0', 'π/2', 'π'];
-  yt.forEach((t, i) => ctx.fillText(S.p2 === 'pow' ? tickFmt(t, yt.length > 1 ? yt[1] - yt[0] : 1) : pil[i], m.l - 6, Y(t)));
+  const piLab = v => { if (Math.abs(2 * v / PI - Math.round(2 * v / PI)) > 1e-6) return (v / PI).toFixed(2).replace('-', '−') + 'π'; const h = Math.round(2 * v / PI); if (h === 0) return '0'; if (h % 2 === 0) { const n = h / 2; return n === 1 ? 'π' : n === -1 ? '−π' : (n < 0 ? '−' : '') + Math.abs(n) + 'π'; } return (h < 0 ? '−' : '') + (Math.abs(h) === 1 ? '' : Math.abs(h)) + 'π/2'; };
+  yt.forEach(t => ctx.fillText(S.p2 === 'pow' ? tickFmt(t, yt.length > 1 ? yt[1] - yt[0] : 1) : piLab(t), m.l - 6, Y(t)));
   const xt = niceTicks(sw.x0, sw.x1, Math.max(3, Math.round(pw / 95))), xs2 = xt.length > 1 ? xt[1] - xt[0] : 1;
   ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const t of xt) ctx.fillText(tickFmt(t, xs2), X(t), m.t + ph + 5);
   ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.textBaseline = 'middle'; ctx.fillStyle = '#c9d3de'; ctx.fillText(ylab, 0, 0); ctx.restore();
@@ -588,7 +589,7 @@ function updateReadouts() {
   set('lvReg', `${f.reg} (r = ${S.r.toFixed(5)}, a = ${f.a.toFixed(5)})`);
   set('lvSp', S.rho > 0 ? `${fLen(f.split)} vs FWHM ${fLen(f.FW)}` : 'ρ = 0 → no splitting');
   set('lvTun', `${fLen(f.tun)}/mW`);
-  document.getElementById('p2note').textContent = S.p2 === 'pow' ? 'Power circulating in the ring, relative to the input' : 'Over-coupled: full 2π jump · under-coupled: small wobble';
+  document.getElementById('p2note').textContent = S.p2 === 'pow' ? 'Power circulating in the ring, relative to the input' : 'Unwrapped phase: over-coupled → a 2π step per resonance · under-coupled → a small wobble';
 }
 
 /* ================================================================ 3D ENGINE */
