@@ -80,6 +80,8 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
 #cSch{width:100%;height:400px;display:block;border-radius:8px;background:#0b0f15}
 #cPlot{width:100%;height:340px;display:block;border-radius:8px;background:var(--card2)}
 .hide{display:none!important}
+.cfgbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:4px 20px 2px;font-size:13px;color:var(--muted)}
+.cfgbar .seg button{padding:5px 14px;font-size:13.5px}
 .theory p, .theory li{color:#c9d3de;font-size:13px}
 .chgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
 </style>
@@ -90,6 +92,11 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
   <h1>Microring weight bank</h1>
   <span class="sub">WDM dot product in photonics: input values encoded by all-pass ring modulators, weights set by add-drop rings, summation by balanced photodetection. Part of the Programmable Photonics interactive lab.</span>
 </header>
+<nav class="cfgbar">
+  <span>Channels (inputs) N</span>
+  <span class="seg" id="segM"><button data-v="2">2</button><button data-v="4" class="on">4</button><button data-v="8">8</button></span>
+  <span>one wavelength, one input modulator and one weight ring per channel</span>
+</nav>
 <main>
   <section class="card span2">
     <div class="toolbar">
@@ -110,7 +117,6 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
   <section class="card">
     <h2>Controls</h2>
     <div class="inline" style="margin-bottom:8px">
-      Channels M <span class="seg" id="segM"><button data-v="2">2</button><button data-v="4" class="on">4</button><button data-v="8">8</button></span>
       Calibration <span class="seg" id="segCal"><button data-v="none" class="on">independent rings</button><button data-v="comp">crosstalk-compensated</button></span>
     </div>
     <div class="inline" style="margin-bottom:10px">
@@ -365,7 +371,7 @@ function drawSch(t) {
   for (let k = 0; k < M; k++) {
     const x = xm0 + (k + 0.5) * sp, y = yB - R - gap, rem = (1 - Tap(phiOf(g.lam[k] + sl.din[k], g.lam[k], g.FSR), S.rin));
     ring(ctx, x, y, R, chCol(k, M), rem, clamp(sl.din[k] / (g.fwhmIn * 4), 0, 1));
-    ctx.fillStyle = chCol(k, M); ctx.font = '600 11.5px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(`x${k + 1}=${sl.xr[k].toFixed(2)}`, x, yB + 10);
+    ctx.fillStyle = chCol(k, M); ctx.font = '600 11.5px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(`x${k + 1}=${sl.xr[k].toFixed(2)}`, x, yB + 10 + (sp < 72 && k % 2 ? 15 : 0));
   }
   ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('input modulators (all-pass)', xm0 + M * sp / 2, yD - 26);
   // weight bank
@@ -377,7 +383,7 @@ function drawSch(t) {
   for (let k = 0; k < M; k++) {
     const x = xw0 + (k + 0.5) * sp, y = (yB + yD) / 2, q = adddrop(phiOf(g.lam[k] + sl.dw[k], g.lam[k], g.FSR), S.r, g.a);
     ring(ctx, x, y, R, chCol(k, M), q.D, clamp(sl.dw[k] / (g.fwhm * 4), 0, 1));
-    ctx.fillStyle = chCol(k, M); ctx.font = '600 11.5px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(`w${k + 1}=${sl.wr[k] >= 0 ? '+' : ''}${sl.wr[k].toFixed(2)}`, x, yB + 10);
+    ctx.fillStyle = chCol(k, M); ctx.font = '600 11.5px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(`w${k + 1}=${sl.wr[k] >= 0 ? '+' : ''}${sl.wr[k].toFixed(2)}`, x, yB + 10 + (sp < 72 && k % 2 ? 15 : 0));
   }
   ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('weight bank (add-drop)', xw0 + M * sp / 2, yD - 26);
   // balanced photodetector
@@ -447,7 +453,7 @@ function update() {
     ['RMS error w · x', `${sl.werr.toFixed(4)} <small>·</small> ${sl.xerr.toFixed(4)}`]
   ]);
   setTxt('lvY', `y = ${sl.yR.toFixed(3)} (target ${sl.yT.toFixed(3)})`); setTxt('lvW', `range ${sl.wlo.toFixed(2)} … +${sl.whi.toFixed(2)}`); setTxt('lvF', `𝓕 = ${g.F.toFixed(0)}, FWHM = ${(g.fwhm * 1000).toFixed(0)} pm`);
-  setTxt('schTitle', `${S.M} channels · spacing ${S.dl.toFixed(2)} nm · ring radius ${S.R} µm`);
+  setTxt('schTitle', `N = ${S.M} channels · spacing ${S.dl.toFixed(2)} nm · ring radius ${S.R} µm`);
 }
 /* ------------------------------------------------ controls (per-channel sliders are rebuilt when M changes) */
 const DEV = [
