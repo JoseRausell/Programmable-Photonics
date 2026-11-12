@@ -247,7 +247,15 @@ function render() {
     const ns = 'http://www.w3.org/2000/svg';
     for (let i = 0; i < 5; i++) { const p = document.createElementNS(ns, 'path'); p.setAttribute('d', `M10 ${15 + i * 20} H230`); p.setAttribute('stroke', '#46546a'); p.setAttribute('stroke-width', 3); s.appendChild(p); }
     for (let col = 0; col < 7; col++) for (let r = (col % 2); r < 4; r += 2) { const x = 40 + col * 27, y = 15 + r * 20; const m = document.createElementNS(ns, 'rect'); m.setAttribute('x', x - 8); m.setAttribute('y', y - 3); m.setAttribute('width', 16); m.setAttribute('height', 26); m.setAttribute('rx', 2); m.setAttribute('fill', '#2a3546'); m.setAttribute('stroke', '#5c6c84'); s.appendChild(m); }
-    const p = document.createElementNS(ns, 'path'); p.setAttribute('d', 'M10 35 H230'); p.setAttribute('stroke', '#ff4d6d'); p.setAttribute('stroke-width', 2.5); p.setAttribute('class', 'flow'); p.setAttribute('fill', 'none'); s.appendChild(p);
+    // light path routed through the mesh: enters waveguide 0 and is switched down one waveguide at each
+    // MZI set to the cross state until it reaches waveguide 3; the remaining MZIs on its way are in bar state
+    let r = 0, d = 'M10 15'; const target = 3;
+    for (let col = 0; col < 7; col++) {
+      const x = 40 + col * 27, top = (col % 2 === r % 2) ? r : r - 1;   // the MZI in this column that touches row r covers rows top, top+1
+      if (r < target && top === r) { d += ` H${x - 8} L${x + 8} ${15 + (r + 1) * 20}`; r++; }
+    }
+    d += ' H230';
+    const p = document.createElementNS(ns, 'path'); p.setAttribute('d', d); p.setAttribute('stroke', '#ff4d6d'); p.setAttribute('stroke-width', 2.5); p.setAttribute('stroke-linejoin', 'round'); p.setAttribute('class', 'flow'); p.setAttribute('fill', 'none'); s.appendChild(p);
   });
   document.getElementById('empty').hidden = list.length > 0;
 }
