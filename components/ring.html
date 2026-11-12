@@ -817,5 +817,378 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 </script>
+<!--GDS--><script>
+/* ======================================================================
+   GDS emulator: Manhattan layout primitives, cell hierarchy, a KLayout-like
+   viewer (layers, cell tree, pan/zoom, ruler, hover info) and a GDSII writer.
+   Exposes window.GDS. Units: µm (database unit 1 nm).
+   ====================================================================== */
+(function () {
+  const TAU = 2 * Math.PI;
+  /* ---------------------------------------------------------------- layer table (generic SOI process) */
+  const LAYERS = [
+    { k: 'WG', l: 1, d: 0, name: 'WG', desc: 'Si core (220 nm, full etch)', c: '#ff6f91', pat: 'f' },
+    { k: 'SLAB', l: 2, d: 0, name: 'SLAB', desc: 'Si slab (90 nm, shallow etch)', c: '#a78bfa', pat: 'b' },
+    { k: 'P', l: 10, d: 0, name: 'P', desc: 'p implant', c: '#f6ad55', pat: 'd' },
+    { k: 'PPP', l: 11, d: 0, name: 'P++', desc: 'p++ contact implant', c: '#ed8936', pat: 'x' },
+    { k: 'N', l: 12, d: 0, name: 'N', desc: 'n implant', c: '#63b3ed', pat: 'd' },
+    { k: 'NPP', l: 13, d: 0, name: 'N++', desc: 'n++ contact implant', c: '#4299e1', pat: 'x' },
+    { k: 'GE', l: 20, d: 0, name: 'GE', desc: 'Germanium epitaxy', c: '#48d1a0', pat: 'b' },
+    { k: 'HEATER', l: 30, d: 0, name: 'HEATER', desc: 'TiN heater', c: '#ffc53d', pat: 'f' },
+    { k: 'VIA', l: 40, d: 0, name: 'VIA', desc: 'contact / via', c: '#f0f4f8', pat: 'x' },
+    { k: 'METAL', l: 41, d: 0, name: 'METAL', desc: 'Al routing', c: '#4fd1ff', pat: 'b' },
+    { k: 'PAD', l: 42, d: 0, name: 'PAD', desc: 'pad opening', c: '#e6c56a', pat: 'x' },
+    { k: 'TRENCH', l: 50, d: 0, name: 'TRENCH', desc: 'deep isolation trench', c: '#9aa7b8', pat: 'd' },
+    { k: 'DEVREC', l: 68, d: 0, name: 'DEVREC', desc: 'device boundary', c: '#5fd38d', pat: 'o' },
+    { k: 'PIN', l: 1, d: 10, name: 'PINREC', desc: 'optical / electrical ports', c: '#ff4d6d', pat: 'o' },
+    { k: 'TEXT', l: 66, d: 0, name: 'TEXT', desc: 'labels', c: '#c9d3de', pat: 'o' }
+  ];
+  const LK = Object.fromEntries(LAYERS.map(L => [L.k, L]));
+  /* ---------------------------------------------------------------- cells */
+  class Cell {
+    constructor(name) { this.name = name; this.polys = []; this.refs = []; this.labels = []; }
+    poly(layer, pts) { if (pts.length >= 3) this.polys.push({ layer, pts }); return this; }
+    rect(layer, x0, y0, x1, y1) { return this.poly(layer, [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]); }
+    box(layer, cx, cy, w, h) { return this.rect(layer, cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2); }
+    ref(cell, x = 0, y = 0, rot = 0, mx = false) { this.refs.push({ cell, x, y, rot: ((rot % 360) + 360) % 360, mx }); return this; }
+    label(text, x, y, layer = 'TEXT') { this.labels.push({ layer, text, x, y }); return this; }
+    port(name, x, y, dir, w = 0.5) {   // PINREC box across the waveguide end + text
+      const a = dir * Math.PI / 180, ux = Math.cos(a), uy = Math.sin(a), L = 0.2;
+      const px = -uy * w / 2, py = ux * w / 2;
+      this.poly('PIN', [[x - px - ux * L, y - py - uy * L], [x + px - ux * L, y + py - uy * L], [x + px + ux * L, y + py + uy * L], [x - px + ux * L, y - py + uy * L]]);
+      return this.label(name, x + ux * 1.2, y + uy * 1.2, 'PIN');
+    }
+  }
+  /* ---------------------------------------------------------------- waveguide geometry */
+  function arcPts(cx, cy, r, a0, a1, n) { const p = []; for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return p; }
+  const nArc = (r, da) => Math.max(6, Math.ceil(Math.abs(da) * Math.sqrt(Math.max(r, 0.5)) * 6));
+  /* annular sector (simple polygon); full rings are split in two halves (GDS boundaries cannot have holes) */
+  function sector(cell, layer, cx, cy, r, w, a0, a1) {
+    if (Math.abs(a1 - a0) >= TAU - 1e-9) { sector(cell, layer, cx, cy, r, w, a0, a0 + Math.PI); sector(cell, layer, cx, cy, r, w, a0 + Math.PI, a0 + TAU); return; }
+    const n = nArc(r, a1 - a0), o = arcPts(cx, cy, r + w / 2, a0, a1, n), i = arcPts(cx, cy, Math.max(0, r - w / 2), a1, a0, n);
+    cell.poly(layer, o.concat(i));
+  }
+  function disk(cell, layer, cx, cy, r) { cell.poly(layer, arcPts(cx, cy, r, 0, TAU, nArc(r, TAU)).slice(0, -1)); }
+  /* path builder: start at (x, y) heading dir (deg). segments:
+     ['s', L]  straight · ['l', R] / ['r', R] 90° left / right bend · ['L', R, deg] / ['R', R, deg] bend of any angle
+     ['t', L, w2] linear taper to width w2 · ['sb', dx, dy, R] S-bend made of two opposite arcs */
+  function path(cell, layer, w, x, y, dir, segs) {
+    let a = dir * Math.PI / 180;
+    const step = (s) => {
+      const t = s[0], ux = Math.cos(a), uy = Math.sin(a), nx = -uy, ny = ux;
+      if (t === 's' || t === 't') {
+        const L = s[1], w2 = t === 't' ? s[2] : w, x2 = x + ux * L, y2 = y + uy * L;
+        if (L > 1e-9) cell.poly(layer, [[x + nx * w / 2, y + ny * w / 2], [x2 + nx * w2 / 2, y2 + ny * w2 / 2], [x2 - nx * w2 / 2, y2 - ny * w2 / 2], [x - nx * w / 2, y - ny * w / 2]]);
+        x = x2; y = y2; w = w2; return;
+      }
+      if (t === 'sb') {   // S-bend in local frame: advance dx, shift dy (two arcs of radius R, angle θ)
+        const dx = s[1], dy = s[2], R0 = s[3] || 5, sg = Math.sign(dy) || 1, ady = Math.abs(dy);
+        let th, R = R0; if (ady >= 2 * R) th = Math.PI / 2; else th = Math.acos(1 - ady / (2 * R));
+        const straightV = Math.max(0, ady - 2 * R * (1 - Math.cos(th))), used = 2 * R * Math.sin(th);
+        const pre = Math.max(0, (dx - used) / 2);
+        step(['s', pre]); step([sg > 0 ? 'L' : 'R', R, th * 180 / Math.PI]); if (straightV > 1e-6) step(['s', straightV / Math.sin(th)]); step([sg > 0 ? 'R' : 'L', R, th * 180 / Math.PI]); step(['s', pre]);
+        return;
+      }
+      const left = t === 'l' || t === 'L', R = s[1], da = (t === 'l' || t === 'r' ? 90 : s[2]) * Math.PI / 180;
+      const cx = x + (left ? nx : -nx) * R, cy = y + (left ? ny : -ny) * R, a0 = Math.atan2(y - cy, x - cx), a1 = a0 + (left ? da : -da);
+      const n = nArc(R, da), o = arcPts(cx, cy, R + w / 2, a0, a1, n), i = arcPts(cx, cy, R - w / 2, a1, a0, n);
+      cell.poly(layer, o.concat(i));
+      x = cx + R * Math.cos(a1); y = cy + R * Math.sin(a1); a += left ? da : -da;
+    };
+    for (const s of segs) step(s);
+    return { x, y, dir: ((a * 180 / Math.PI) % 360 + 360) % 360, w };
+  }
+  /* pad with metal, opening and a via array */
+  function pad(cell, cx, cy, s = 80, name) {
+    cell.box('METAL', cx, cy, s, s); cell.box('PAD', cx, cy, s - 8, s - 8);
+    if (name) cell.label(name, cx, cy);
+  }
+  function vias(cell, x0, y0, x1, y1, p = 1.2, s = 0.6) {
+    const nx = Math.max(1, Math.floor((x1 - x0) / p)), ny = Math.max(1, Math.floor((y1 - y0) / p));
+    const ox = (x1 - x0 - (nx - 1) * p) / 2, oy = (y1 - y0 - (ny - 1) * p) / 2;
+    for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) cell.box('VIA', x0 + ox + i * p, y0 + oy + j * p, s, s);
+  }
+  /* manhattan metal route (list of points), width w */
+  function route(cell, layer, w, pts) {
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [a, b] = [pts[i], pts[i + 1]], x0 = Math.min(a[0], b[0]) - w / 2, x1 = Math.max(a[0], b[0]) + w / 2, y0 = Math.min(a[1], b[1]) - w / 2, y1 = Math.max(a[1], b[1]) + w / 2;
+      cell.rect(layer, x0, y0, x1, y1);
+    }
+  }
+  /* ---------------------------------------------------------------- flatten with transforms */
+  const xf = (p, r) => { let x = p[0], y = r.mx ? -p[1] : p[1]; const c = Math.round(Math.cos(r.rot * Math.PI / 180) * 1e9) / 1e9, s = Math.round(Math.sin(r.rot * Math.PI / 180) * 1e9) / 1e9; return [r.x + x * c - y * s, r.y + x * s + y * c]; };
+  function flatten(top) {
+    const polys = [], labels = [], inst = [];
+    (function rec(cell, T, path) {
+      const tp = p => T.reduceRight((q, r) => xf(q, r), p);
+      for (const P of cell.polys) polys.push({ layer: P.layer, pts: P.pts.map(tp), cell: cell.name, path });
+      for (const L of cell.labels) { const q = tp([L.x, L.y]); labels.push({ layer: L.layer, text: L.text, x: q[0], y: q[1] }); }
+      for (const r of cell.refs) { const sub = T.concat([r]); const bb = bboxCell(r.cell); const cs = [[bb[0], bb[1]], [bb[2], bb[1]], [bb[2], bb[3]], [bb[0], bb[3]]].map(p => sub.reduceRight((q, rr) => xf(q, rr), p)); inst.push({ cell: r.cell.name, pts: cs }); rec(r.cell, sub, path + '/' + r.cell.name); }
+    })(top, [], top.name);
+    return { polys, labels, inst };
+  }
+  function bboxCell(cell) {
+    let x0 = 1e18, y0 = 1e18, x1 = -1e18, y1 = -1e18;
+    (function rec(c, T) {
+      for (const P of c.polys) for (const p of P.pts) { const q = T.reduceRight((qq, r) => xf(qq, r), p); x0 = Math.min(x0, q[0]); y0 = Math.min(y0, q[1]); x1 = Math.max(x1, q[0]); y1 = Math.max(y1, q[1]); }
+      for (const r of c.refs) rec(r.cell, T.concat([r]));
+    })(cell, []);
+    return x0 > x1 ? [0, 0, 0, 0] : [x0, y0, x1, y1];
+  }
+  function cellList(top) { const out = [], seen = new Set(); (function rec(c) { for (const r of c.refs) rec(r.cell); if (!seen.has(c.name)) { seen.add(c.name); out.push(c); } })(top); return out; }   // children first
+  /* ---------------------------------------------------------------- GDSII writer */
+  function real8(v) {
+    const b = new Uint8Array(8); if (v === 0) return b;
+    let s = 0; if (v < 0) { s = 0x80; v = -v; }
+    let e = 64; while (v >= 1) { v /= 16; e++; } while (v < 1 / 16) { v *= 16; e--; }
+    let m = BigInt(Math.round(v * 2 ** 56)); b[0] = s | e;
+    for (let i = 7; i >= 1; i--) { b[i] = Number(m & 0xffn); m >>= 8n; }
+    return b;
+  }
+  function writeGDS(top, libname = 'PP_LIB') {
+    const out = []; let n = 0;
+    const rec = (type, dt, data) => { const len = 4 + (data ? data.length : 0), h = new Uint8Array(4); h[0] = len >> 8; h[1] = len & 255; h[2] = type; h[3] = dt; out.push(h); if (data) out.push(data); n += len; };
+    const i2 = arr => { const b = new Uint8Array(arr.length * 2), dv = new DataView(b.buffer); arr.forEach((v, i) => dv.setInt16(i * 2, v)); return b; };
+    const i4 = arr => { const b = new Uint8Array(arr.length * 4), dv = new DataView(b.buffer); arr.forEach((v, i) => dv.setInt32(i * 4, v)); return b; };
+    const str = s => { let t = s.replace(/[^\x20-\x7e]/g, '_'); if (t.length % 2) t += '\0'; return new TextEncoder().encode(t); };
+    const now = new Date(), dt = [now.getFullYear(), now.getMonth() + 1, now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds()];
+    const nm = v => Math.round(v * 1000);
+    rec(0x00, 0x02, i2([600])); rec(0x01, 0x02, i2(dt.concat(dt))); rec(0x02, 0x06, str(libname));
+    const u = new Uint8Array(16); u.set(real8(1e-3), 0); u.set(real8(1e-9), 8); rec(0x03, 0x05, u);
+    for (const c of cellList(top)) {
+      rec(0x05, 0x02, i2(dt.concat(dt))); rec(0x06, 0x06, str(c.name));
+      for (const P of c.polys) {
+        const L = LK[P.layer]; rec(0x08, 0x00); rec(0x0D, 0x02, i2([L.l])); rec(0x0E, 0x02, i2([L.d]));
+        const xy = []; for (const p of P.pts) xy.push(nm(p[0]), nm(p[1])); xy.push(nm(P.pts[0][0]), nm(P.pts[0][1])); rec(0x10, 0x03, i4(xy)); rec(0x11, 0x00);
+      }
+      for (const T of c.labels) { const L = LK[T.layer]; rec(0x0C, 0x00); rec(0x0D, 0x02, i2([L.l])); rec(0x16, 0x02, i2([L.d])); rec(0x10, 0x03, i4([nm(T.x), nm(T.y)])); rec(0x19, 0x06, str(T.text)); rec(0x11, 0x00); }
+      for (const r of c.refs) {
+        rec(0x0A, 0x00); rec(0x12, 0x06, str(r.cell.name));
+        if (r.mx || r.rot) { rec(0x1A, 0x01, i2([r.mx ? -32768 : 0])); if (r.rot) rec(0x1C, 0x05, real8(r.rot)); }
+        rec(0x10, 0x03, i4([nm(r.x), nm(r.y)])); rec(0x11, 0x00);
+      }
+      rec(0x07, 0x00);
+    }
+    rec(0x04, 0x00);
+    const buf = new Uint8Array(n); let o = 0; for (const a of out) { buf.set(a, o); o += a.length; } return buf;
+  }
+  /* ---------------------------------------------------------------- viewer */
+  const CSS = `
+  .gdshead{display:flex;align-items:center;gap:10px;margin:0 0 8px}.gdshead h2{margin:0!important}
+  .gdsseg{display:inline-flex;border:1px solid var(--line,#243041);border-radius:8px;overflow:hidden;margin-left:auto}
+  .gdsseg button{background:transparent;color:var(--muted,#8b98a9);border:0;padding:3px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+  .gdsseg button+button{border-left:1px solid var(--line,#243041)}.gdsseg button.on{background:#223046;color:var(--text,#e6edf3)}
+  .gdswrap{flex:1;display:flex;flex-direction:column;min-height:0}
+  .gdstool{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:#8b98a9;margin-bottom:6px}
+  .gdstool button{background:#1d2735;color:#e6edf3;border:1px solid #243041;border-radius:6px;padding:2px 9px;font:inherit;font-size:12px;cursor:pointer}
+  .gdstool button.on{background:#2d2615;border-color:#6b5a2b;color:#ffcc66}.gdstool .co{margin-left:auto;font:12px ui-monospace,Consolas,monospace;color:#c9d3de}
+  .gdsmain{flex:1;display:flex;gap:8px;min-height:0}
+  .gdscv{flex:1;min-width:0;width:100%;height:100%;display:block;border-radius:6px;background:#050608;cursor:crosshair;touch-action:none}
+  .gdsside{width:178px;flex:none;overflow:auto;background:#0e131a;border:1px solid #243041;border-radius:6px;padding:6px 8px;font-size:11.5px;color:#c9d3de}
+  .gdsside h4{margin:4px 0 4px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8b98a9;font-weight:600}
+  .gdsl{display:flex;align-items:center;gap:6px;padding:2px 2px;border-radius:4px;cursor:pointer;user-select:none}.gdsl:hover{background:#18202b}
+  .gdsl.off{opacity:.35}.gdsl canvas{width:22px;height:13px;border-radius:2px;flex:none}.gdsl small{color:#6f7d90;margin-left:auto}
+  .gdsc{padding:1px 2px;cursor:pointer;border-radius:4px;white-space:nowrap}.gdsc:hover,.gdsc.sel{background:#2d2615;color:#ffcc66}
+  .gdsc small{color:#6f7d90}`;
+  let cssDone = false;
+  const patCache = {};
+  function pattern(ctx, L) {
+    const key = L.k; if (patCache[key]) return patCache[key];
+    const c = document.createElement('canvas'), s = 8; c.width = c.height = s; const g = c.getContext('2d');
+    g.strokeStyle = L.c; g.globalAlpha = 0.9; g.lineWidth = 1;
+    if (L.pat === 'f') { g.beginPath(); g.moveTo(0, s); g.lineTo(s, 0); g.stroke(); }
+    else if (L.pat === 'b') { g.beginPath(); g.moveTo(0, 0); g.lineTo(s, s); g.stroke(); }
+    else if (L.pat === 'x') { g.beginPath(); g.moveTo(0, 0); g.lineTo(s, s); g.moveTo(0, s); g.lineTo(s, 0); g.stroke(); }
+    else if (L.pat === 'd') { g.fillStyle = L.c; g.fillRect(1, 1, 1.4, 1.4); g.fillRect(5, 5, 1.4, 1.4); }
+    return patCache[key] = ctx.createPattern(c, 'repeat');
+  }
+  function swatch(L) { const c = document.createElement('canvas'); c.width = 44; c.height = 26; const g = c.getContext('2d'); g.scale(2, 2); g.fillStyle = '#050608'; g.fillRect(0, 0, 22, 13); if (L.pat !== 'o') { g.fillStyle = pattern(g, L); g.fillRect(0, 0, 22, 13); delete patCache[L.k]; } g.strokeStyle = L.c; g.lineWidth = 1.2; g.strokeRect(1, 1, 20, 11); return c; }
+  function pip(pt, poly) { let ins = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const a = poly[i], b = poly[j]; if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0]) ins = !ins; } return ins; }
+
+  function mount(o) {
+    if (!cssDone) { const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st); cssDone = true; }
+    const card = o.card, h2 = card.querySelector('h2'), head = document.createElement('div'); head.className = 'gdshead';
+    h2.parentNode.insertBefore(head, h2); head.appendChild(h2);
+    const label0 = h2.textContent, seg = document.createElement('div'); seg.className = 'gdsseg';
+    seg.innerHTML = `<button data-v="0" class="on">${o.viewName || '3D'}</button><button data-v="1">GDS layout</button>`; head.appendChild(seg);
+    const others = [...card.children].filter(e => e !== head);
+    const wrap = document.createElement('div'); wrap.className = 'gdswrap'; wrap.style.display = 'none';
+    wrap.innerHTML = `<div class="gdstool"><button data-a="fit">Zoom fit</button><button data-a="ruler">Ruler</button><button data-a="grid" class="on">Grid</button><button data-a="fill" class="on">Fill</button><button data-a="lbl" class="on">Labels</button><button data-a="dl">Download .gds</button><span class="co">x = —  y = —</span></div>
+      <div class="gdsmain"><canvas class="gdscv"></canvas><div class="gdsside"><h4>Layers</h4><div class="ll"></div><h4 style="margin-top:10px">Cells</h4><div class="ct"></div></div></div>`;
+    card.appendChild(wrap);
+    const cv = wrap.querySelector('.gdscv'), co = wrap.querySelector('.co'), ll = wrap.querySelector('.ll'), ct = wrap.querySelector('.ct');
+    const V = { on: false, top: null, flat: null, key: '', view: null, hidden: new Set(), grid: true, fill: true, lbl: true, ruler: false, rul: null, hover: null, selCell: null, mouse: null };
+    seg.querySelectorAll('button').forEach(b => b.onclick = () => {
+      V.on = b.dataset.v === '1'; seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+      others.forEach(e => e.style.display = V.on ? 'none' : ''); wrap.style.display = V.on ? '' : 'none';
+      h2.textContent = V.on ? (o.gdsTitle || 'GDS layout') : label0; if (V.on) { V.key = ''; V.view = null; V.user = false; } else window.dispatchEvent(new Event('resize'));
+    });
+    const usedLayers = () => LAYERS.filter(L => V.flat.polys.some(p => p.layer === L.k) || V.flat.labels.some(t => t.layer === L.k));
+    function buildPanels() {
+      ll.innerHTML = ''; for (const L of usedLayers()) {
+        const d = document.createElement('div'); d.className = 'gdsl' + (V.hidden.has(L.k) ? ' off' : ''); d.title = L.desc; d.appendChild(swatch(L));
+        d.insertAdjacentHTML('beforeend', `<span>${L.name}</span><small>${L.l}/${L.d}</small>`); d.onclick = () => { V.hidden.has(L.k) ? V.hidden.delete(L.k) : V.hidden.add(L.k); d.classList.toggle('off'); };
+        ll.appendChild(d);
+      }
+      ct.innerHTML = '';
+      (function rec(c, depth, count) {
+        const d = document.createElement('div'); d.className = 'gdsc' + (V.selCell === c.name ? ' sel' : ''); d.style.paddingLeft = (2 + depth * 12) + 'px';
+        d.innerHTML = `${depth ? '└ ' : '▣ '}${c.name}${count > 1 ? ` <small>×${count}</small>` : ''}`; d.onclick = () => { V.selCell = V.selCell === c.name ? null : c.name; buildPanels(); };
+        ct.appendChild(d);
+        const kids = new Map(); for (const r of c.refs) kids.set(r.cell, (kids.get(r.cell) || 0) + 1);
+        for (const [k, n] of kids) rec(k, depth + 1, n);
+      })(V.top, 0, 1);
+    }
+    function fit(w, h) { const bb = bboxCell(V.top), pw = bb[2] - bb[0] || 1, ph = bb[3] - bb[1] || 1, s = 0.88 * Math.min(w / pw, h / ph); V.view = { s, cx: (bb[0] + bb[2]) / 2, cy: (bb[1] + bb[3]) / 2 }; }
+    const toS = (p, w, h) => [w / 2 + (p[0] - V.view.cx) * V.view.s, h / 2 - (p[1] - V.view.cy) * V.view.s];
+    const toW = (x, y, w, h) => [V.view.cx + (x - w / 2) / V.view.s, V.view.cy - (y - h / 2) / V.view.s];
+    function niceStep(px) { const raw = px / V.view.s, m = Math.pow(10, Math.floor(Math.log10(raw))), q = raw / m; return (q < 2 ? 2 : q < 5 ? 5 : 10) * m; }
+    const fmt = v => Math.abs(v) >= 100 ? v.toFixed(1) : Math.abs(v) >= 10 ? v.toFixed(2) : v.toFixed(3);
+    function draw() {
+      if (!V.on) return;
+      const k = o.key(); if (k !== V.key) { V.key = k; V.top = o.build(); V.flat = flatten(V.top); buildPanels(); if (!V.user) V.view = null; }
+      const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1, W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
+      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+      const ctx = cv.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); const w = r.width, h = r.height; ctx.fillStyle = '#050608'; ctx.fillRect(0, 0, w, h);
+      if (!V.view) fit(w, h);
+      if (V.grid) {   // dotted grid + major lines
+        const st = niceStep(40), a = toW(0, h, w, h), b = toW(w, 0, w, h);
+        ctx.fillStyle = 'rgba(140,160,190,0.35)';
+        for (let x = Math.ceil(a[0] / st) * st; x <= b[0]; x += st) for (let y = Math.ceil(a[1] / st) * st; y <= b[1]; y += st) { const p = toS([x, y], w, h); ctx.fillRect(p[0] - 0.6, p[1] - 0.6, 1.2, 1.2); }
+        const o0 = toS([0, 0], w, h); ctx.strokeStyle = 'rgba(140,160,190,0.25)'; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(o0[0], 0); ctx.lineTo(o0[0], h); ctx.moveTo(0, o0[1]); ctx.lineTo(w, o0[1]); ctx.stroke(); ctx.setLineDash([]);
+      }
+      const order = LAYERS.map(L => L.k);
+      for (const key of order) {
+        if (V.hidden.has(key)) continue; const L = LK[key];
+        ctx.beginPath(); let any = false;
+        for (const P of V.flat.polys) { if (P.layer !== key) continue; any = true; P.pts.forEach((q, i) => { const s = toS(q, w, h); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); }); ctx.closePath(); }
+        if (!any) continue;
+        if (V.fill && L.pat !== 'o') { ctx.save(); ctx.globalAlpha = 0.85; ctx.fillStyle = pattern(ctx, L); ctx.fill('evenodd'); ctx.globalAlpha = 0.12; ctx.fillStyle = L.c; ctx.fill('evenodd'); ctx.restore(); }
+        ctx.strokeStyle = L.c; ctx.lineWidth = key === 'DEVREC' ? 1 : 1.1; if (key === 'DEVREC') ctx.setLineDash([6, 4]); ctx.stroke(); ctx.setLineDash([]);
+      }
+      if (V.lbl) { ctx.font = '11px ui-monospace,Consolas,monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; for (const t of V.flat.labels) { if (V.hidden.has(t.layer)) continue; const s = toS([t.x, t.y], w, h); ctx.fillStyle = LK[t.layer].c; ctx.fillText(t.text, s[0], s[1]); } }
+      if (V.selCell) { ctx.strokeStyle = '#ffcc66'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 3]); for (const I of V.flat.inst) if (I.cell === V.selCell) { ctx.beginPath(); I.pts.forEach((q, i) => { const s = toS(q, w, h); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); }); ctx.closePath(); ctx.stroke(); } ctx.setLineDash([]); }
+      if (V.hover) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); V.hover.pts.forEach((q, i) => { const s = toS(q, w, h); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); }); ctx.closePath(); ctx.stroke(); }
+      // scale bar
+      const sb = niceStep(110); ctx.strokeStyle = '#c9d3de'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(14, h - 16); ctx.lineTo(14 + sb * V.view.s, h - 16); ctx.moveTo(14, h - 21); ctx.lineTo(14, h - 11); ctx.moveTo(14 + sb * V.view.s, h - 21); ctx.lineTo(14 + sb * V.view.s, h - 11); ctx.stroke();
+      ctx.fillStyle = '#c9d3de'; ctx.font = '11.5px system-ui,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText(`${sb >= 1 ? sb : sb.toPrecision(2)} µm`, 14, h - 24);
+      ctx.textAlign = 'right'; ctx.fillStyle = '#6f7d90'; ctx.fillText(`top cell: ${V.top.name}`, w - 10, h - 8);
+      if (V.rul) { const a = toS(V.rul[0], w, h), b = toS(V.rul[1], w, h), dx = V.rul[1][0] - V.rul[0][0], dy = V.rul[1][1] - V.rul[0][1];
+        ctx.strokeStyle = '#ffcc66'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+        for (const p of [a, b]) { ctx.beginPath(); ctx.arc(p[0], p[1], 3, 0, TAU); ctx.fillStyle = '#ffcc66'; ctx.fill(); }
+        const t = `${fmt(Math.hypot(dx, dy))} µm  (Δx ${fmt(dx)}, Δy ${fmt(dy)})`; ctx.font = '12px system-ui,sans-serif'; const tw = ctx.measureText(t).width + 10, mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2 - 14;
+        ctx.fillStyle = 'rgba(8,11,16,0.92)'; ctx.fillRect(mx - tw / 2, my - 9, tw, 18); ctx.fillStyle = '#ffcc66'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, mx, my); }
+      if (V.hover && V.mouse) { const L = LK[V.hover.layer], bb = V.hover.pts.reduce((b, p) => [Math.min(b[0], p[0]), Math.min(b[1], p[1]), Math.max(b[2], p[0]), Math.max(b[3], p[1])], [1e9, 1e9, -1e9, -1e9]);
+        const t = `${L.name} ${L.l}/${L.d} · ${L.desc} · cell ${V.hover.cell} · ${fmt(bb[2] - bb[0])} × ${fmt(bb[3] - bb[1])} µm`; ctx.font = '12px system-ui,sans-serif'; const tw = ctx.measureText(t).width + 12;
+        const x = Math.min(V.mouse[0] + 12, w - tw - 4), y = Math.max(14, V.mouse[1] - 16); ctx.fillStyle = 'rgba(8,11,16,0.94)'; ctx.fillRect(x, y - 10, tw, 20); ctx.strokeStyle = L.c; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y - 9.5, tw - 1, 19); ctx.fillStyle = '#e6edf3'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t, x + 6, y); }
+    }
+    let drag = null;
+    cv.addEventListener('pointerdown', e => { const r = cv.getBoundingClientRect(); if (V.ruler) { const p = toW(e.offsetX, e.offsetY, r.width, r.height); V.rul = [p, p]; drag = { ruler: true }; } else drag = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener('pointermove', e => {
+      const r = cv.getBoundingClientRect(); if (!V.view) return; const p = toW(e.offsetX, e.offsetY, r.width, r.height); V.mouse = [e.offsetX, e.offsetY];
+      co.textContent = `x = ${fmt(p[0])}  y = ${fmt(p[1])} µm`;
+      if (drag && drag.ruler) { V.rul[1] = p; return; }
+      if (drag) { V.user = true; V.view.cx -= (e.clientX - drag.x) / V.view.s; V.view.cy += (e.clientY - drag.y) / V.view.s; drag = { x: e.clientX, y: e.clientY }; return; }
+      V.hover = null; const order = LAYERS.map(L => L.k).reverse();
+      outer: for (const key of order) { if (V.hidden.has(key) || key === 'DEVREC') continue; for (let i = V.flat.polys.length - 1; i >= 0; i--) { const P = V.flat.polys[i]; if (P.layer === key && pip(p, P.pts)) { V.hover = P; break outer; } } }
+    });
+    cv.addEventListener('pointerup', () => drag = null);
+    cv.addEventListener('pointerleave', () => { V.hover = null; V.mouse = null; });
+    cv.addEventListener('wheel', e => { e.preventDefault(); const r = cv.getBoundingClientRect(), p = toW(e.offsetX, e.offsetY, r.width, r.height), f = Math.exp(-e.deltaY * 0.0015); V.user = true; V.view.s *= f; const q = toW(e.offsetX, e.offsetY, r.width, r.height); V.view.cx += p[0] - q[0]; V.view.cy += p[1] - q[1]; }, { passive: false });
+    cv.addEventListener('dblclick', () => { V.view = null; V.user = false; });
+    wrap.querySelectorAll('.gdstool button').forEach(b => b.onclick = () => {
+      const a = b.dataset.a;
+      if (a === 'fit') { V.view = null; V.user = false; }
+      if (a === 'ruler') { V.ruler = !V.ruler; b.classList.toggle('on', V.ruler); if (!V.ruler) V.rul = null; cv.style.cursor = V.ruler ? 'cell' : 'crosshair'; }
+      if (a === 'grid' || a === 'fill' || a === 'lbl') { V[a] = !V[a]; b.classList.toggle('on', V[a]); }
+      if (a === 'dl') { const data = writeGDS(V.top), url = URL.createObjectURL(new Blob([data], { type: 'application/octet-stream' })), el = document.createElement('a'); el.href = url; el.download = V.top.name + '.gds'; document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000); }
+    });
+    (function loop() { draw(); requestAnimationFrame(loop); })();
+    return V;
+  }
+
+  /* ---------------------------------------------------------------- shared device cells */
+  /* Ge vertical PIN photodiode: optical port o1 at (−24, 0); electrical ports k (n++, y = 0) and a (p++, y = +ya) at x = L + 12 */
+  function geCell(L, W, name) {
+    const c = new Cell(name || `GE_PD_L${Math.round(L)}_W${W.toFixed(1)}`), wg = 0.45, hw = W / 2, sy = hw + 6, ya = hw + 4.25;
+    path(c, 'WG', wg, -24, 0, 0, [['s', 12], ['t', 12, W + 1]]);
+    c.rect('SLAB', 0, -sy, L + 4, sy); c.rect('P', -1, -sy - 1, L + 5, sy + 1);
+    for (const s of [1, -1]) { c.rect('PPP', 0.5, s > 0 ? hw + 3 : -hw - 5.5, L + 3.5, s > 0 ? hw + 5.5 : -hw - 3); vias(c, 1, s > 0 ? hw + 3.5 : -hw - 5, L + 3, s > 0 ? hw + 5 : -hw - 3.5); }
+    c.rect('GE', 2, -hw, L + 2, hw); c.rect('NPP', 3, -0.8, L + 1, 0.8); vias(c, 3.5, -0.5, L + 0.5, 0.5);
+    c.rect('METAL', 0.5, hw + 3, L + 12, hw + 5.5); c.rect('METAL', 0.5, -hw - 5.5, L + 3.5, -hw - 3); c.rect('METAL', -3, -hw - 5.5, 0.5, hw + 5.5);   // anode: both p++ strips joined on the left
+    c.rect('METAL', 3, -1, L + 12, 1);   // cathode strip to the right
+    c.port('o1', -24, 0, 180, wg); c.port('k', L + 12, 0, 0, 2); c.port('a', L + 12, ya, 0, 2.5);
+    c.rect('DEVREC', -24, -sy - 2, L + 12, sy + 2);
+    return { cell: c, ya };
+  }
+  /* balanced pair: two mirrored photodiodes at (x, yc ± Y); series connection +V → PD1 → OUT → PD2 → −V; pads at x = xp */
+  function bpdPair(top, pd, x, yc, Y, xp, names, padCell) {
+    top.ref(pd.cell, x, yc + Y, 0, true); top.ref(pd.cell, x, yc - Y, 0, true);
+    const L = pd.L, xe = x + L + 12, x0 = xe + 14, x1 = xe + 34, w = 4, pyH = yc + Y + 70, pyL = yc - Y - 70;
+    route(top, 'METAL', w, [[xe, yc + Y], [x0, yc + Y], [x0, pyH], [xp, pyH]]);            // PD1 cathode → +V
+    route(top, 'METAL', w, [[xe, yc + Y - pd.ya], [x1, yc + Y - pd.ya], [x1, yc], [xp, yc]]); // PD1 anode → OUT
+    route(top, 'METAL', w, [[xe, yc - Y], [x1, yc - Y], [x1, yc]]);                          // PD2 cathode → OUT
+    route(top, 'METAL', w, [[xe, yc - Y - pd.ya], [x0, yc - Y - pd.ya], [x0, pyL], [xp, pyL]]); // PD2 anode → −V
+    for (const [y, n] of [[pyH, names[0]], [yc, names[1]], [pyL, names[2]]]) { top.ref(padCell, xp + 40, y); top.label(n, xp + 40, y); }
+  }
+  function padCell(s = 80) { const c = new Cell(`PAD_${s}`); pad(c, 0, 0, s); return c; }
+  /* generic M×N MMI with tapered access ports; ports listed as y positions */
+  function mmiCell(name, W, L, ins, outs, wa = 1.4, lt = 10) {
+    const c = new Cell(name), t = new Cell(`TAPER_${wa.toFixed(2)}_${lt}`);
+    path(t, 'WG', wa, 0, 0, 0, [['t', lt, 0.45]]);
+    c.rect('WG', 0, -W / 2, L, W / 2);
+    ins.forEach((y, i) => { c.ref(t, 0, y, 180); c.port('i' + (i + 1), -lt, y, 180); });
+    outs.forEach((y, i) => { c.ref(t, L, y, 0); c.port('o' + (i + 1), L + lt, y, 0); });
+    c.rect('DEVREC', -lt, -W / 2 - 1, L + lt, W / 2 + 1);
+    return c;
+  }
+  window.GDS = { geCell: (L, W, n) => { const r = geCell(L, W, n); r.L = L; return r; }, bpdPair, padCell, mmiCell, LAYERS, Cell, path, sector, disk, pad, vias, route, flatten, bboxCell, writeGDS, mount, cellList };
+})();
+
+(function () {
+  const G = GDS, w = 0.45;
+  const gapOf = r => Math.min(1.5, Math.max(0.08, 0.2 + 0.055 * Math.log(0.04 / Math.max(1e-6, 1 - r * r))));
+  function resonator(c, cx, cy, R, Lc) {   // ring or racetrack centred at (cx, cy)
+    if (Lc < 1e-6) { G.sector(c, 'WG', cx, cy, R, w, 0, 2 * Math.PI); return; }
+    G.path(c, 'WG', w, cx - Lc / 2, cy - R, 0, [['s', Lc], ['l', R], ['l', R], ['s', Lc], ['l', R], ['l', R]]);
+  }
+  function heaterArc(c, cx, cy, R, Lc, a0, a1, rh, wh) {   // heater following the resonator between angles a0..a1 (deg, measured on the arcs)
+    if (Lc < 1e-6) { G.sector(c, 'HEATER', cx, cy, rh, wh, a0 * Math.PI / 180, a1 * Math.PI / 180); return; }
+    const a = a0 * Math.PI / 180, x0 = cx + Lc / 2 + rh * Math.cos(a), y0 = cy + rh * Math.sin(a);
+    G.path(c, 'HEATER', wh, x0, y0, a0 + 90, [['L', rh, 90 - a0], ['s', Lc], ['L', rh, a1 - 90]]);
+  }
+  function stub(c, cx, cy, a, r0, r1, wh) { const u = [Math.cos(a), Math.sin(a)], n = [-u[1] * wh / 2, u[0] * wh / 2], P = r => [cx + u[0] * r, cy + u[1] * r], A = P(r0), B = P(r1);
+    c.poly('HEATER', [[A[0] + n[0], A[1] + n[1]], [B[0] + n[0], B[1] + n[1]], [B[0] - n[0], B[1] - n[1]], [A[0] - n[0], A[1] - n[1]]]); return B; }
+  function contacts(top, pc, pts, py) {
+    pts.forEach(([x, y], i) => { top.box('HEATER', x, y, 6, 6); top.box('METAL', x, y, 6, 6); G.vias(top, x - 2.5, y - 2.5, x + 2.5, y + 2.5);
+      const px = (i ? 1 : -1) * 55 + (pts[0][0] + pts[1][0]) / 2; G.route(top, 'METAL', 5, [[x, y], [x, py - 50], [px, py - 50], [px, py]]); top.ref(pc, px, py); top.label(i ? 'HTR−' : 'HTR+', px, py); });
+  }
+  function build() {
+    const race = S.shape === 'race', R = S.R, Lc = race ? S.Lc : 0, add = typeof S.r1 === 'number';
+    const g1 = gapOf(add ? S.r1 : S.r), g2 = add ? gapOf(S.r2) : 0;
+    const top = new G.Cell(`${add ? 'ADDDROP' : 'ALLPASS'}_${race ? 'RACE' : 'RING'}_R${R}${race ? '_Lc' + Lc : ''}`);
+    const cell = new G.Cell(`${race ? 'RACETRACK' : 'RING'}_R${R}${race ? '_Lc' + Lc : ''}`); resonator(cell, 0, 0, R, Lc); top.ref(cell, 0, 0);
+    const half = Lc / 2 + R + 60, yb = -(R + g1 + w);
+    G.path(top, 'WG', w, -half, yb, 0, [['s', 2 * half]]); top.port('in', -half, yb, 180); top.port('through', half, yb, 0);
+    top.label(`gap ≈ ${Math.round(g1 * 1000)} nm`, 0, yb - 4);
+    const pc = G.padCell(80);
+    if (add) {
+      const yd = R + g2 + w; G.path(top, 'WG', w, half, yd, 180, [['s', 2 * half]]); top.port('drop', -half, yd, 180); top.port('add', half, yd, 0); top.label(`gap ≈ ${Math.round(g2 * 1000)} nm`, 0, yd + 4);
+      // side-wall heater outside the left arc of the resonator
+      const rh = R + 1.6, cxl = -Lc / 2, A = [125, 235].map(d => d * Math.PI / 180);
+      G.sector(top, 'HEATER', cxl, 0, rh, 1.2, A[0], A[1]);
+      A.forEach((a, i) => { const p = stub(top, cxl, 0, a, rh, rh + 7, 1.2); top.box('HEATER', p[0], p[1], 5, 5); top.box('METAL', p[0], p[1], 5, 5); G.vias(top, p[0] - 2, p[1] - 2, p[0] + 2, p[1] + 2);
+        const py = (i ? -1 : 1) * (R + 120), px = cxl - R - 60; G.route(top, 'METAL', 5, [p, [px, p[1]], [px, py]]); top.ref(pc, px, py); top.label(i ? 'HTR−' : 'HTR+', px, py); });
+    } else {
+      const rh = R, a0 = 25, a1 = 155; heaterArc(top, 0, 0, rh, Lc, a0, a1, rh, 1.6);
+      const q = a => stub(top, (a < 90 ? 1 : -1) * Lc / 2, 0, a * Math.PI / 180, rh, rh + 8, 1.6);
+      contacts(top, pc, [q(a0), q(a1)], R + 130);
+    }
+    return top;
+  }
+  G.mount({ card: document.querySelector('.card.view'), build, key: () => [S.shape, S.R, S.Lc, S.r, S.r1, S.r2].join('|'), viewName: '3D' });
+})();
+
+</script><!--/GDS-->
 </body>
 </html>

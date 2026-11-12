@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Waveguide crossing</title>
+<style>
+
+:root{
+  --bg:#0c1016; --card:#141a22; --card2:#10151c; --line:#243041; --text:#e6edf3; --muted:#8b98a9;
+  --thr:#4aa8ff; --refl:#d58cff; --fw:#5fd38d; --bw:#ff8f6b; --accent:#ffcc66; --laser:#ff4d6d; --warn:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:14px 20px 6px}
+header h1{font-size:19px;margin:0;font-weight:650}
+header .sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:10px 20px 20px}
+@media (max-width:1100px){main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600}
+.view{height:min(54vh,560px);min-height:380px;display:flex;flex-direction:column}
+.view canvas{flex:1;width:100%;min-height:0;display:block;border-radius:8px}
+#c3d{background:radial-gradient(ellipse at 50% 35%,#18212d 0%,#0d1218 75%);cursor:grab;touch-action:none}
+#c3d:active{cursor:grabbing}
+#cPlot{background:var(--card2);cursor:crosshair;touch-action:none}
+#cP2{background:var(--card2);height:240px;width:100%;display:block;border-radius:8px;cursor:crosshair;touch-action:none}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;color:var(--muted);border:0;padding:4px 10px;font:inherit;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:#223046;color:var(--text)}
+.toolbar label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+input[type=number]{background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;width:86px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.group{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.group h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin:7px 0}
+.row.off{opacity:.35;pointer-events:none}
+.row .lab{color:var(--muted);font-size:12.5px}
+.row .val{font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
+.row input[type=range]{grid-column:1/3;width:100%;accent-color:var(--accent);margin:2px 0 0}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0;font-size:12.5px;color:var(--muted)}
+.btn{background:#1d2735;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn:hover{background:#26344a}
+.btn.primary{border-color:#6b5a2b;background:#2d2615;color:var(--accent)}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
+.ro{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ro .k{font-size:11.5px;color:var(--muted)}
+.ro .v{font-size:15.5px;font-variant-numeric:tabular-nums;font-weight:600}
+.ro .v small{font-size:12px;color:var(--muted);font-weight:500}
+.span2{grid-column:1/-1}
+/* theory */
+.theory{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
+.th{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.th h3{margin:0 0 8px;font-size:14px;color:var(--accent)}
+.th p{margin:6px 0;color:#c9d3de;font-size:13px}
+.eq{display:block;text-align:center;line-height:2.4;margin:8px 0;font:15px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 3px}
+.frac>span:first-child{border-bottom:1px solid #cfd8e3;padding:0 4px 2px}
+.frac>span:last-child{padding:2px 4px 0}
+.live{font:600 12.5px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);background:#1f1a0e;border:1px solid #4a3d1c;border-radius:5px;padding:1px 6px;white-space:nowrap}
+table.fm{width:100%;border-collapse:collapse;font-size:13px}
+table.fm td{padding:5px 6px;border-bottom:1px solid #1f2836;color:#c9d3de;vertical-align:middle}
+table.fm td.f{font:14px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+table.fm td.f small{display:block;font:11.5px system-ui,sans-serif;color:var(--muted)}
+table.fm td:last-child{text-align:right}
+i.v{font-family:"Cambria Math","Times New Roman",serif;font-style:italic}
+a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1c;background:#1f1a0e;border-radius:8px;padding:3px 10px;margin-right:4px}a.back:hover{background:#2d2615}
+
+.row .val{display:flex;align-items:center;justify-content:flex-end;gap:4px;text-align:right}
+.numin{width:78px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font:inherit;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.numin:focus{outline:none;border-color:var(--accent)}
+.row .unit{color:var(--muted);font-size:12px;min-width:18px;text-align:left}
+.row .extra{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.cfgsel{background:#1f1a0e;color:var(--accent);border:1px solid #6b5a2b;border-radius:9px;padding:6px 10px;font:inherit;font-size:13.5px;cursor:pointer}
+
+.smat{display:inline-grid;grid-template-columns:auto auto;gap:2px 14px;padding:2px 9px;vertical-align:middle;border-left:1.5px solid #cfd8e3;border-right:1.5px solid #cfd8e3;border-radius:7px;line-height:1.7;text-align:center}
+
+#cPlot{background:var(--card2)}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../index.html">← Component catalog</a>
+  <h1>Waveguide crossing</h1>
+  <span class="sub">Two waveguides crossing at 90°: diffraction in the intersection, tapered (MMI-like) crossings, insertion loss, crosstalk and cascades of crossings. Part of the Programmable Photonics interactive lab.</span>
+</header>
+<main>
+  <section class="card view">
+    <h2>Device (3D)</h2>
+    <canvas id="c3d"></canvas>
+  </section>
+  <section class="card view">
+    <div class="toolbar">
+      <div class="seg" id="segPlot"><button data-v="il" class="on">Loss vs centre width</button><button data-v="xt">Crosstalk vs centre width</button><button data-v="lam">vs wavelength</button><button data-v="casc">Cascade of N crossings</button></div>
+    </div>
+    <canvas id="cPlot"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>Controls</h2>
+    <div class="inline" style="margin-bottom:10px">
+      <span>Type:</span>
+      <span class="seg" id="segType"><button data-v="bare">Bare crossing</button><button data-v="taper" class="on">Tapered (MMI-like)</button></span>
+      <button class="btn primary" id="bOpt">Optimum centre width</button>
+      <button class="btn" id="pView">Reset 3D view</button>
+    </div>
+    <div class="groups">
+      <div class="group" data-group="geo"><h3>Geometry</h3></div>
+      <div class="group" data-group="opt"><h3>Optics</h3></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Figures of merit</h2>
+    <div class="readouts" id="ro"></div>
+  </section>
+
+  <section class="card span2">
+    <h2>Theory</h2>
+    <div class="theory">
+      <div class="th">
+        <h3>1 · Why crossings matter</h3>
+        <p>Photonic circuits are planar: whenever two optical paths must exchange sides, the waveguides cross. Switch fabrics such as Beneš or crossbar networks, and many routing layers, need tens or hundreds of crossings in series, so each one must have a very low insertion loss and crosstalk.</p>
+        <p>In the intersection the light loses its lateral confinement over a length equal to the width of the other waveguide. There it diffracts like a free beam, and part of it is scattered into the perpendicular waveguide (crosstalk).</p>
+      </div>
+      <div class="th">
+        <h3>2 · Diffraction across the intersection</h3>
+        <p>Modelling the mode as a Gaussian beam of waist <i class="v">w</i> ≈ 0.42 <i class="v">W</i> crossing an unguided length <i class="v">z</i> ≈ <i class="v">W</i>, the field that couples back into the output waveguide is</p>
+        <div class="eq">η<sub>d</sub> = [1 + (<i class="v">z</i> / 2<i class="v">z</i><sub>R</sub>)²]<sup>−1/2</sup>, &nbsp;&nbsp; <i class="v">z</i><sub>R</sub> = <span class="frac"><span>π <i class="v">n</i> <i class="v">w</i>²</span><span>λ</span></span> <span class="live" id="lvD"></span></div>
+        <p>A narrow (bare) waveguide diffracts strongly. Widening the waveguide at the centre makes the beam larger and almost collimated, so it crosses with very little loss.</p>
+      </div>
+      <div class="th">
+        <h3>3 · Tapered (MMI-like) crossings</h3>
+        <p>The waveguide is widened from <i class="v">w</i><sub>0</sub> to <i class="v">W</i><sub>c</sub> by tapers of length <i class="v">L</i><sub>t</sub> before the intersection, then narrowed again. The taper must be adiabatic, otherwise power goes into higher-order modes:</p>
+        <div class="eq"><i class="v">L</i><sub>ad</sub> ≈ 0.35 <span class="frac"><span><i class="v">n</i> (<i class="v">W</i><sub>c</sub>² − <i class="v">w</i><sub>0</sub>²)</span><span>λ</span></span>, &nbsp;&nbsp; η<sub>t</sub> ≈ 1 − ½ e<sup>−(<i class="v">L</i><sub>t</sub>/<i class="v">L</i><sub>ad</sub>)²</sup> <span class="live" id="lvT"></span></div>
+        <p>For a fixed taper length there is an <b>optimum centre width</b>: too narrow diffracts, too wide is not adiabatic. Practical designs use elliptical or MMI-based tapers that focus the light right at the intersection.</p>
+      </div>
+      <div class="th">
+        <h3>4 · Crosstalk and cascades</h3>
+        <p>Light scattered at the corners of the intersection is launched into the perpendicular waveguide. A wider, better collimated beam has less angular spread, so the crosstalk drops quickly with <i class="v">W</i><sub>c</sub>. In a cascade of <i class="v">N</i> crossings (incoherent approximation):</p>
+        <div class="eq">IL<sub>N</sub> = <i class="v">N</i> · IL, &nbsp;&nbsp; XT<sub>N</sub> ≈ 10 log<sub>10</sub>(<i class="v">N</i> · 10<sup>XT/10</sup>) <span class="live" id="lvN"></span></div>
+        <p>This is why planar switch architectures without crossings (Spanke–Beneš) or with few of them are attractive.</p>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+"use strict";
+const PI = Math.PI;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+let dirty = true;
+function f3(v) { const a = Math.abs(v); return !isFinite(v) ? '∞' : a >= 1000 ? v.toFixed(0) : a >= 100 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : a >= 1 ? v.toFixed(3) : v.toFixed(4); }
+const dB = p => 10 * Math.log10(Math.max(p, 1e-12));
+const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+function fitCanvas(c) {
+  const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  const W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); return { ctx, w: r.width, h: r.height };
+}
+function niceTicks(a, b, n) {
+  const span = b - a; if (!(span > 0)) return [a];
+  const s0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(s0))), q = s0 / mag;
+  const st = (q < 1.5 ? 1 : q < 3 ? 2 : q < 7 ? 5 : 10) * mag, t = [];
+  for (let v = Math.ceil(a / st - 1e-9) * st; v <= b + 1e-9; v += st) t.push(+v.toFixed(12));
+  return t;
+}
+function tickFmt(v, step) { const d = Math.max(0, Math.min(6, -Math.floor(Math.log10(step || 1) + 1e-9))); return v.toFixed(d); }
+function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
+  ctx.font = FONT; const w = ctx.measureText(text).width + 10, x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
+  ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
+  ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + 0.5);
+}
+/* colour maps: 'light' (dark → red → white, for optical intensity) and 'heat' (dark blue → red → yellow) */
+const CMAPS = {
+  light: [[0, [8, 10, 16]], [0.25, [90, 10, 40]], [0.5, [210, 40, 80]], [0.75, [255, 120, 120]], [1, [255, 235, 230]]],
+  heat: [[0, [14, 22, 48]], [0.25, [60, 30, 110]], [0.5, [180, 40, 90]], [0.75, [245, 120, 40]], [1, [255, 240, 150]]]
+};
+function cmap(name, t) {
+  const st = CMAPS[name]; t = clamp(t, 0, 1);
+  for (let i = 1; i < st.length; i++) if (t <= st[i][0]) { const u = (t - st[i - 1][0]) / (st[i][0] - st[i - 1][0]), a = st[i - 1][1], b = st[i][1]; return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u]; }
+  return st[st.length - 1][1];
+}
+/* ------------------------------------------------ sliders with editable numeric boxes */
+const LOGN = 2000;
+const toSlider = (c, v) => Math.round(LOGN * Math.log(v / c.min) / Math.log(c.max / c.min));
+const fromSlider = (c, u) => c.min * Math.pow(c.max / c.min, u / LOGN);
+const SLid = id => SL.find(c => c.id === id);
+const maxOf = c => typeof c.max === 'function' ? c.max() : c.max;
+function buildSliders() {
+  for (const c of SL) {
+    const host = document.querySelector(`[data-group="${c.g}"]`);
+    const row = document.createElement('div'); row.className = 'row'; row.id = 'row_' + c.id;
+    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val"><input type="text" inputmode="decimal" class="numin" id="n_${c.id}"><span class="unit">${c.unit ?? ''}</span><span class="extra" id="x_${c.id}"></span></span><input type="range" id="s_${c.id}">`;
+    const inl = host.querySelector('.inline.after'); if (inl) host.insertBefore(row, inl); else host.appendChild(row);
+    const s = row.querySelector('input[type=range]');
+    if (c.log) { s.min = 0; s.max = LOGN; s.step = 1; } else { s.min = c.min; s.max = maxOf(c); s.step = c.step; }
+    s.addEventListener('input', () => { c.set(c.log ? fromSlider(c, +s.value) : +s.value); if (c.after) c.after(); syncOut(c); dirty = true; });
+    const n = row.querySelector('.numin');
+    n.addEventListener('change', () => { let v = parseFloat(String(n.value).replace(',', '.')); if (isFinite(v)) { c.set(clamp(v, c.min, maxOf(c))); if (c.after) c.after(); syncSlider(c); dirty = true; } else syncOut(c); });
+    n.addEventListener('keydown', e => { if (e.key === 'Enter') n.blur(); });
+  }
+  SL.forEach(syncSlider);
+}
+function syncOut(c) {
+  const n = document.getElementById('n_' + c.id);
+  if (document.activeElement !== n) n.value = +c.get().toFixed(c.dec ?? 3);
+  document.getElementById('x_' + c.id).textContent = c.extra ? c.extra(c.get()) : '';
+}
+function syncSlider(c) {
+  const s = document.getElementById('s_' + c.id);
+  if (c.log) s.value = toSlider(c, c.get()); else { s.max = maxOf(c); s.value = c.get(); }
+  syncOut(c);
+}
+function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+function wireSeg(id, fn) { document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { fn(b.dataset.v); setSeg(id, b.dataset.v); dirty = true; }); }
+function readouts(id, items) { document.getElementById(id).innerHTML = items.map(([k, v]) => `<div class="ro"><div class="k">${k}</div><div class="v">${v}</div></div>`).join(''); }
+const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
+/* ------------------------------------------------ generic line plot
+   o = { x0, x1, y0, y1, xlabel, ylabel, series:[{x:[], y:[], color, width, dash}], vlines:[{x, color, label, dash}],
+         legend:[{color, label, dash}], yfmt, ylog } */
+function linePlot(canvas, o) {
+  const { ctx, w, h } = fitCanvas(canvas); ctx.clearRect(0, 0, w, h);
+  const m = { l: 60, r: 16, t: 30, b: 42 }, pw = w - m.l - m.r, ph = h - m.t - m.b; if (pw < 60 || ph < 40) return;
+  const ty = v => o.ylog ? Math.log10(Math.max(v, 1e-30)) : v;
+  const Y0 = ty(o.y0), Y1 = ty(o.y1);
+  const X = v => m.l + (v - o.x0) / (o.x1 - o.x0) * pw, Y = v => m.t + (1 - (ty(v) - Y0) / (Y1 - Y0)) * ph;
+  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  const xt = niceTicks(o.x0, o.x1, Math.max(3, Math.round(pw / 90))), xst = xt.length > 1 ? xt[1] - xt[0] : 1;
+  let yt; if (o.ylog) { yt = []; for (let d = Math.ceil(Y0); d <= Math.floor(Y1); d++) yt.push(Math.pow(10, d)); } else yt = niceTicks(o.y0, o.y1, Math.max(3, Math.round(ph / 55)));
+  const yst = !o.ylog && yt.length > 1 ? yt[1] - yt[0] : 1;
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
+  for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
+  for (const b of (o.bands || [])) { ctx.fillStyle = b.color; ctx.fillRect(X(b.x0), m.t, X(b.x1) - X(b.x0), ph); }
+  for (const v of (o.vlines || [])) {
+    if (v.x < o.x0 || v.x > o.x1) continue;
+    ctx.strokeStyle = v.color; ctx.lineWidth = 1.2; ctx.setLineDash(v.dash || [4, 4]);
+    ctx.beginPath(); ctx.moveTo(X(v.x), m.t); ctx.lineTo(X(v.x), m.t + ph); ctx.stroke(); ctx.setLineDash([]);
+    if (v.label) { ctx.font = FONT; ctx.fillStyle = v.color; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(v.label, X(v.x), m.t + 4 + (v.row || 0) * 14); }
+  }
+  for (const s of o.series) {
+    ctx.beginPath(); let pen = false;
+    for (let i = 0; i < s.x.length; i++) { const y = s.y[i]; if (!isFinite(y)) { pen = false; continue; } const px = X(s.x[i]), py = Y(y); if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py); }
+    ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 2; ctx.setLineDash(s.dash || []); ctx.lineJoin = 'round'; ctx.stroke(); ctx.setLineDash([]);
+  }
+  for (const p of (o.points || [])) { if (p.x < o.x0 || p.x > o.x1) continue; ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 5, 0, 2 * PI); ctx.fillStyle = p.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); }
+  ctx.restore();
+  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of xt) ctx.fillText(o.xfmt ? o.xfmt(t) : tickFmt(t, xst), X(t), m.t + ph + 6);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const t of yt) ctx.fillText(o.yfmt ? o.yfmt(t) : (o.ylog ? (t >= 1 ? String(t) : t.toExponential(0)) : tickFmt(t, yst)), m.l - 6, Y(t));
+  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
+  ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText(o.ylabel, 0, 0); ctx.restore();
+  let lx = m.l; const ly = 14; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
+  return { X, Y, m, pw, ph };
+}
+
+const S = { type: 'taper', w0: 0.45, Wc: 1.8, Lt: 6, lam: 1550, n: 2.85, N: 16, plot: 'il' };
+function xing(o = S) {
+  const lam = o.lam / 1000, Wc = o.type === 'bare' ? o.w0 : Math.max(o.Wc, o.w0), w = 0.42 * Wc + 0.12, zR = PI * o.n * w * w / lam, z = Wc;
+  const etaD = 1 / Math.sqrt(1 + (z / (2 * zR)) ** 2);
+  const scat = Math.pow(10, -(0.55 * Math.exp(-(Wc - o.w0) / 0.6) * (o.lam / 1550) ** 2) / 10);
+  const Lad = 0.35 * o.n * Math.max(Wc * Wc - o.w0 * o.w0, 0) / lam, etaT = o.type === 'bare' || Lad < 1e-6 ? 1 : 1 - 0.5 * Math.exp(-((o.Lt / Lad) ** 2));
+  const T = etaD * scat * etaT * etaT, xt = 0.04 * Math.exp(-(Wc - o.w0) / 0.45) * (o.lam / 1550) ** 2 + (o.type === 'bare' ? 0 : 0.003 * Math.exp(-((o.Lt / Math.max(Lad, 1e-6)) ** 2)));
+  return { Wc, w, zR, z, etaD, scat, Lad, etaT, T, IL: -10 * Math.log10(T), xt, XT: 10 * Math.log10(xt), ILN: -10 * Math.log10(T) * o.N, XTN: 10 * Math.log10(o.N * xt) };
+}
+function optWc() { let best = S.Wc, bt = 1e9; for (let i = 0; i <= 400; i++) { const Wc = 0.5 + 5.5 * i / 400, q = xing({ ...S, type: 'taper', Wc }); if (q.IL < bt) { bt = q.IL; best = Wc; } } return best; }
+/* ------------------------------------------------ plots */
+const cPlot = document.getElementById('cPlot');
+function drawPlot() {
+  const r = xing();
+  if (S.plot === 'il' || S.plot === 'xt') {
+    const xs = [], ser = [], Lts = [S.Lt / 2, S.Lt, S.Lt * 2], cols = ['#ff9548', '#4aa8ff', '#5fd38d'];
+    Lts.forEach((Lt, k) => { const y = []; for (let i = 0; i <= 300; i++) { const Wc = 0.45 + 5.55 * i / 300; if (k === 0) xs.push(Wc); const q = xing({ ...S, type: 'taper', Wc, Lt }); y.push(S.plot === 'il' ? q.IL : q.XT); } ser.push({ x: xs, y, color: cols[k], width: k === 1 ? 2.6 : 1.6, dash: k === 1 ? [] : [6, 4] }); });
+    const il = S.plot === 'il';
+    linePlot(cPlot, { x0: 0.45, x1: 6, y0: il ? 0 : -60, y1: il ? 1.5 : 0, xlabel: 'Centre width W_c (µm)', ylabel: il ? 'Insertion loss per crossing (dB)' : 'Crosstalk per crossing (dB)',
+      series: ser, vlines: [{ x: r.Wc, color: '#ffcc66', label: S.type === 'bare' ? 'bare' : 'W_c' }], points: [{ x: r.Wc, y: il ? r.IL : r.XT, color: '#fff' }],
+      legend: Lts.map((Lt, k) => ({ color: cols[k], label: `taper L_t = ${Lt.toFixed(1)} µm`, dash: k === 1 ? [] : [6, 4] })) });
+  } else if (S.plot === 'lam') {
+    const xs = [], t = [], x = [];
+    for (let i = 0; i <= 300; i++) { const lam = 1450 + 200 * i / 300, q = xing({ ...S, lam }); xs.push(lam); t.push(-q.IL); x.push(q.XT); }
+    linePlot(cPlot, { x0: 1450, x1: 1650, y0: -60, y1: 2, xlabel: 'Wavelength λ (nm)', ylabel: 'Power (dB)',
+      series: [{ x: xs, y: t, color: '#4aa8ff', width: 2.4 }, { x: xs, y: x, color: '#ff6b6b', width: 2.4 }], vlines: [{ x: S.lam, color: 'rgba(255,77,109,0.9)', label: 'λ' }],
+      legend: [{ color: '#4aa8ff', label: 'through (straight on)' }, { color: '#ff6b6b', label: 'crosstalk (each perpendicular port)' }] });
+  } else {
+    const xs = [], t = [], x = [], tb = [];
+    for (let N = 1; N <= 128; N++) { xs.push(N); t.push(-r.IL * N); x.push(10 * Math.log10(N * r.xt)); tb.push(-xing({ ...S, type: 'bare' }).IL * N); }
+    const lo = Math.max(-80, Math.floor(Math.min(...t, ...x) / 10) * 10 - 5);
+    linePlot(cPlot, { x0: 1, x1: 128, y0: lo, y1: 2, xlabel: 'Number of crossings in series N', ylabel: 'Power (dB)',
+      series: [{ x: xs, y: tb, color: 'rgba(255,255,255,0.4)', dash: [5, 5], width: 1.4 }, { x: xs, y: t, color: '#4aa8ff', width: 2.4 }, { x: xs, y: x, color: '#ff6b6b', width: 2.4 }],
+      vlines: [{ x: S.N, color: '#ffcc66', label: `N = ${S.N}` }],
+      legend: [{ color: '#4aa8ff', label: 'transmission' }, { color: '#ff6b6b', label: 'accumulated crosstalk' }, { color: 'rgba(255,255,255,0.6)', label: 'bare crossings', dash: [5, 5] }] });
+  }
+}
+function update() {
+  const r = xing();
+  readouts('ro', [
+    ['Centre width W_c', `${r.Wc.toFixed(2)} <small>µm</small>`],
+    ['Beam waist w · z_R', `${r.w.toFixed(2)} <small>·</small> ${r.zR.toFixed(2)} <small>µm</small>`],
+    ['Diffraction η_d', `${(r.etaD * 100).toFixed(2)} <small>%</small>`],
+    ['Adiabatic length L_ad', S.type === 'bare' ? '<small>n/a</small>' : `${r.Lad.toFixed(2)} <small>µm</small>`],
+    ['Taper efficiency η_t (each)', `${(r.etaT * 100).toFixed(2)} <small>%</small>`],
+    ['Insertion loss', `${r.IL.toFixed(3)} <small>dB</small>`],
+    ['Crosstalk', `${r.XT.toFixed(1)} <small>dB</small>`],
+    [`Loss after ${S.N} crossings`, `${r.ILN.toFixed(2)} <small>dB</small>`],
+    [`Crosstalk after ${S.N}`, `${r.XTN.toFixed(1)} <small>dB</small>`],
+    ['Footprint', `${(S.type === 'bare' ? 2 + S.w0 : 2 * S.Lt + r.Wc + 2).toFixed(1)} <small>µm</small>`]
+  ]);
+  setTxt('lvD', `η_d = ${(r.etaD * 100).toFixed(1)} %`); setTxt('lvT', S.type === 'bare' ? 'bare: no taper' : `L_ad = ${r.Lad.toFixed(2)} µm, η_t = ${(r.etaT * 100).toFixed(1)} %`);
+  setTxt('lvN', `N = ${S.N}: ${r.ILN.toFixed(2)} dB, ${r.XTN.toFixed(1)} dB`);
+  ['Wc', 'Lt'].forEach(id => document.getElementById('row_' + id).classList.toggle('off', S.type === 'bare'));
+}
+/* ------------------------------------------------ 3D */
+const c3d = document.getElementById('c3d');
+const WG_W = 0.45, WG_H = 0.22, CL_H = 0.5;
+const CAM0 = { yaw: -2.25, pitch: 0.95, dist: 22 }; const cam = { ...CAM0 };
+/* ---------------- tiny painter's-algorithm 3D engine (shared with the ring pages) */
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const crs = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const nrm = a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+let LAYERS, tracks, G;
+function addBox(layer, p0, p1, w, z0, z1, mat) {
+  const dx = p1[0] - p0[0], dy = p1[1] - p0[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L * w / 2, ny = dx / L * w / 2;
+  const b = [[p0[0] - nx, p0[1] - ny], [p1[0] - nx, p1[1] - ny], [p1[0] + nx, p1[1] + ny], [p0[0] + nx, p0[1] + ny]];
+  const v = [...b.map(q => [q[0], q[1], z0]), ...b.map(q => [q[0], q[1], z1])];
+  const c = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (z0 + z1) / 2];
+  for (const f of [[4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]]) {
+    const q = f.map(i => v[i]), fc = [(q[0][0] + q[2][0]) / 2, (q[0][1] + q[2][1]) / 2, (q[0][2] + q[2][2]) / 2];
+    let n = nrm(crs(sub(q[1], q[0]), sub(q[3], q[0]))); if (dot3(n, sub(fc, c)) < 0) n = [-n[0], -n[1], -n[2]];
+    LAYERS[layer].push({ q, n, c: fc, mat });
+  }
+}
+const aabb = (layer, x0, x1, y0, y1, z0, z1, mat) => addBox(layer, [x0, (y0 + y1) / 2], [x1, (y0 + y1) / 2], y1 - y0, z0, z1, mat);
+
+function pointAt(tr, s) { let i = 1; while (i < tr.L.length - 1 && tr.L[i] < s) i++; const a = tr.pts[i - 1], b = tr.pts[i], u = (s - tr.L[i - 1]) / ((tr.L[i] - tr.L[i - 1]) || 1); return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]; }
+
+function makeCam(w, h) {
+  const cp = Math.cos(cam.pitch), ty = (G.yTop + G.yBot) / 2;
+  const pos = [cam.dist * cp * Math.cos(cam.yaw), ty + cam.dist * cp * Math.sin(cam.yaw), cam.dist * Math.sin(cam.pitch)];
+  const f = nrm(sub([0, ty, 0], pos)), r = nrm(crs(f, [0, 0, 1])), u = crs(r, f);
+  return { pos, f, r, u, F: Math.min(w * 0.95, h * 1.55), cx: w / 2, cy: h * 0.5 };
+}
+function proj(C, p) { const d = sub(p, C.pos), z = dot3(d, C.f); if (z < 0.1) return null; return [C.cx + C.F * dot3(d, C.r) / z, C.cy - C.F * dot3(d, C.u) / z, z]; }
+const LIGHT = nrm([-0.35, -0.55, 1]), GLOW = [255, 64, 104];
+const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+
+function heatColor(t) { const st = [[0, [150, 158, 170]], [0.3, [190, 70, 40]], [0.62, [255, 140, 40]], [1, [255, 236, 170]]]; for (let i = 1; i < st.length; i++) if (t <= st[i][0]) return mix(st[i - 1][1], st[i][1], (t - st[i - 1][0]) / (st[i][0] - st[i - 1][0])); return st[3][1]; }
+const bright = p => clamp(Math.sqrt(Math.max(p, 0)), 0, 1);
+
+function drawLayer(ctx, C, faces, st, translucent) {
+  const vis = [];
+  for (const f of faces) { if (dot3(f.n, sub(C.pos, f.c)) <= 0) continue; const P = f.q.map(q => proj(C, q)); if (P.some(p => !p)) continue; vis.push({ f, P, z: (P[0][2] + P[1][2] + P[2][2] + P[3][2]) / 4 }); }
+  vis.sort((a, b) => b.z - a.z);
+  for (const { f, P } of vis) {
+    ctx.beginPath(); ctx.moveTo(P[0][0], P[0][1]); for (let i = 1; i < 4; i++) ctx.lineTo(P[i][0], P[i][1]); ctx.closePath();
+    if (translucent) { ctx.fillStyle = f.n[2] > 0.5 ? 'rgba(150,195,240,0.07)' : 'rgba(150,195,240,0.1)'; ctx.fill(); ctx.strokeStyle = 'rgba(170,210,250,0.15)'; ctx.lineWidth = 0.8; ctx.stroke(); continue; }
+    const { c, e } = matColor(f.mat, st), sh = 0.42 + 0.58 * Math.max(0, dot3(f.n, LIGHT)), k = sh * (1 - e) + e;
+    ctx.fillStyle = `rgb(${c[0] * k | 0},${c[1] * k | 0},${c[2] * k | 0})`; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 0.5; ctx.stroke();
+  }
+}
+function drawLight(ctx, C, st, time) {
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const sp = 0.8, speed = 2.2;
+  for (const tr of tracks) {
+    const P = Math.max(0, st[tr.key] ?? 0), p = bright(P); if (p < 0.03) continue;
+    const boost = 1 + 0.45 * Math.log10(Math.max(1, P));
+    const mid = proj(C, [...pointAt(tr, tr.len / 2), WG_H]); if (!mid) continue;
+    const lw = C.F * 0.3 / mid[2];
+    const colA = tr.key === 'ringB' || tr.key === 'busRefl' ? '255,150,90' : '255,60,100';
+    ctx.beginPath(); tr.pts.forEach((q, i) => { const s = proj(C, [q[0], q[1], WG_H]); if (s) i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); });
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = `rgba(${colA},${0.14 * p})`; ctx.lineWidth = lw * 3 * boost; ctx.stroke();
+    ctx.strokeStyle = `rgba(${colA},${0.3 * p})`; ctx.lineWidth = lw * 0.9; ctx.stroke();
+    const ph = (time * speed) % sp;
+    for (let s = ph; s < tr.len; s += sp) {
+      const q = pointAt(tr, s), Q = proj(C, [q[0], q[1], WG_H * 0.8]); if (!Q) continue;
+      const r = C.F * 0.32 * Math.min(1.6, boost) / Q[2], g = ctx.createRadialGradient(Q[0], Q[1], 0, Q[0], Q[1], r);
+      g.addColorStop(0, `rgba(255,228,236,${0.85 * p})`); g.addColorStop(0.35, `rgba(${colA},${0.5 * p})`); g.addColorStop(1, `rgba(${colA},0)`);
+      ctx.fillStyle = g; ctx.fillRect(Q[0] - r, Q[1] - r, 2 * r, 2 * r);
+    }
+  }
+  ctx.restore();
+}
+
+function label3D(ctx, C, p, text, color) { const P = proj(C, p); if (P) tag(ctx, P[0], P[1], text, color); }
+
+let drag3 = null;
+c3d.addEventListener('pointerdown', e => { drag3 = { x: e.clientX, y: e.clientY }; c3d.setPointerCapture(e.pointerId); });
+c3d.addEventListener('pointermove', e => { if (!drag3) return; cam.yaw -= (e.clientX - drag3.x) * 0.008; cam.pitch = clamp(cam.pitch + (e.clientY - drag3.y) * 0.006, 0.15, 1.5); drag3 = { x: e.clientX, y: e.clientY }; });
+c3d.addEventListener('pointerup', () => drag3 = null);
+c3d.addEventListener('wheel', e => { e.preventDefault(); cam.dist = clamp(cam.dist * Math.exp(e.deltaY * 0.001), 10, 70); }, { passive: false });
+c3d.addEventListener('dblclick', () => Object.assign(cam, CAM0));
+
+
+function matColor(mat, st) {
+  switch (mat.k) {
+    case 'sub': return { c: [34, 42, 54], e: 0 };
+    case 'wg': { const p = bright(st[mat.key]); return { c: mix([70, 84, 104], GLOW, p * 0.85), e: p * 0.55 }; }
+    case 'laser': return { c: [210, 48, 80], e: 0.35 };
+    case 'pd': { const p = bright(st[mat.key]); return { c: mix([48, 56, 70], GLOW, p * 0.75), e: p * 0.5 }; }
+  }
+  return { c: [128, 128, 128], e: 0 };
+}
+let sceneKey = '';
+function buildScene() {
+  LAYERS = [[], [], [], []]; tracks = [];
+  const sc = 0.9, Wc = xing().Wc * sc * 0.9 + 0.2, w0 = 0.45 * sc, Lt = S.type === 'bare' ? 0 : clamp(S.Lt * 0.55, 1, 5), A = 7.5, h = Wc / 2;
+  G = { A, yTop: A, yBot: -A };
+  aabb(0, -A - 1, A + 1, -A - 1, A + 1, -0.8, 0, { k: 'sub' });
+  const mk = (pts, key) => { const L = [0]; for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); tracks.push({ pts, key, L, len: L[L.length - 1] }); };
+  // four arms: straight (w0) then taper to Wc up to the centre square
+  const arms = [['w', [-1, 0]], ['e', [1, 0]], ['n', [0, 1]], ['s', [0, -1]]];
+  for (const [key, [dx, dy]] of arms) {
+    const P = t => [dx * t, dy * t], NS = 8;
+    addBox(1, P(A), P(h + Lt), w0, 0, WG_H, { k: 'wg', key });
+    for (let i = 0; i < NS; i++) { const t0 = h + Lt - Lt * i / NS, t1 = h + Lt - Lt * (i + 1) / NS, ww = w0 + (Wc - w0) * (i + 0.5) / NS; if (Lt > 0) addBox(1, P(t0), P(t1), ww, 0, WG_H, { k: 'wg', key }); }
+    mk(key === 'w' ? [P(A), P(h)] : [P(h), P(A)], key);
+  }
+  aabb(1, -h, h, -h, h, 0, WG_H, { k: 'wg', key: 'c' }); mk([[-h, 0], [h, 0]], 'c');
+  aabb(2, -A - 1, A + 1, -A - 1, A + 1, 0, CL_H, { k: 'clad' });
+  aabb(3, -A - 1.6, -A - 0.3, -0.45, 0.45, -0.25, 0.55, { k: 'laser' });
+  aabb(3, A + 0.3, A + 1.6, -0.45, 0.45, -0.25, 0.55, { k: 'pd', key: 'e' });
+  aabb(3, -0.45, 0.45, A + 0.3, A + 1.6, -0.25, 0.55, { k: 'pd', key: 'n' }); aabb(3, -0.45, 0.45, -A - 1.6, -A - 0.3, -0.25, 0.55, { k: 'pd', key: 's' });
+  sceneKey = [S.type, S.Wc.toFixed(2), S.Lt.toFixed(1)].join('|');
+}
+function draw3D(time) {
+  if (sceneKey !== [S.type, S.Wc.toFixed(2), S.Lt.toFixed(1)].join('|')) buildScene();
+  const { ctx, w, h } = fitCanvas(c3d); ctx.clearRect(0, 0, w, h);
+  const C = makeCam(w, h), r = xing(), st = { w: 1, c: 1, e: r.T, n: Math.sqrt(r.xt), s: Math.sqrt(r.xt) };   // √ to make the crosstalk visible
+  drawLayer(ctx, C, LAYERS[0], st, false); drawLayer(ctx, C, LAYERS[1], st, false); drawLight(ctx, C, st, time);
+  drawLayer(ctx, C, LAYERS[2], st, true); drawLayer(ctx, C, LAYERS[3], st, false);
+  const A = G.A;
+  label3D(ctx, C, [-A - 0.9, 0, 1.2], 'in', '#ff8fa8'); label3D(ctx, C, [A + 0.9, 0, 1.3], `through ${(r.T * 100).toFixed(2)} % (−${r.IL.toFixed(2)} dB)`, '#4aa8ff');
+  label3D(ctx, C, [0, A + 0.9, 1.3], `crosstalk ${r.XT.toFixed(1)} dB`, '#ff6b6b'); label3D(ctx, C, [0, -A - 0.9, 1.3], `crosstalk ${r.XT.toFixed(1)} dB`, '#ff6b6b');
+  ctx.fillStyle = 'rgba(139,152,169,0.8)'; ctx.font = FONT; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('drag: rotate · wheel: zoom · double-click: reset', w - 10, 8);
+  ctx.textAlign = 'left'; ctx.fillText('crosstalk glow exaggerated (√ of power)', 10, 8);
+}
+/* ------------------------------------------------ controls */
+const SL = [
+  { id: 'Wc', g: 'geo', lab: 'Centre width W_c', min: 0.45, max: 6, step: 0.01, unit: 'µm', dec: 2, get: () => S.Wc, set: v => S.Wc = v },
+  { id: 'Lt', g: 'geo', lab: 'Taper length L_t', min: 0.5, max: 20, step: 0.1, unit: 'µm', dec: 1, get: () => S.Lt, set: v => S.Lt = v },
+  { id: 'N', g: 'geo', lab: 'Crossings in series N', min: 1, max: 128, step: 1, unit: '', dec: 0, get: () => S.N, set: v => S.N = Math.round(v) },
+  { id: 'lam', g: 'opt', lab: 'Wavelength λ', min: 1450, max: 1650, step: 0.1, unit: 'nm', dec: 1, get: () => S.lam, set: v => S.lam = v },
+  { id: 'n', g: 'opt', lab: 'Slab effective index n', min: 1.6, max: 3.2, step: 0.01, unit: '', dec: 2, get: () => S.n, set: v => S.n = v }
+];
+wireSeg('segPlot', v => S.plot = v);
+wireSeg('segType', v => S.type = v);
+document.getElementById('bOpt').onclick = () => { S.type = 'taper'; setSeg('segType', 'taper'); S.Wc = optWc(); SL.forEach(syncSlider); dirty = true; };
+document.getElementById('pView').onclick = () => Object.assign(cam, CAM0);
+window.addEventListener('resize', () => dirty = true);
+buildSliders(); buildScene();
+let last = performance.now(), tA = 0;
+(function loop(now) { now = now || performance.now(); tA += Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now; draw3D(tA); if (dirty) { dirty = false; drawPlot(); update(); SL.forEach(syncOut); } requestAnimationFrame(loop); })();
+</script>
+<!--GDS--><script>
+/* ======================================================================
+   GDS emulator: Manhattan layout primitives, cell hierarchy, a KLayout-like
+   viewer (layers, cell tree, pan/zoom, ruler, hover info) and a GDSII writer.
+   Exposes window.GDS. Units: µm (database unit 1 nm).
+   ====================================================================== */
+(function () {
+  const TAU = 2 * Math.PI;
+  /* ---------------------------------------------------------------- layer table (generic SOI process) */
+  const LAYERS = [
+    { k: 'WG', l: 1, d: 0, name: 'WG', desc: 'Si core (220 nm, full etch)', c: '#ff6f91', pat: 'f' },
+    { k: 'SLAB', l: 2, d: 0, name: 'SLAB', desc: 'Si slab (90 nm, shallow etch)', c: '#a78bfa', pat: 'b' },
+    { k: 'P', l: 10, d: 0, name: 'P', desc: 'p implant', c: '#f6ad55', pat: 'd' },
+    { k: 'PPP', l: 11, d: 0, name: 'P++', desc: 'p++ contact implant', c: '#ed8936', pat: 'x' },
+    { k: 'N', l: 12, d: 0, name: 'N', desc: 'n implant', c: '#63b3ed', pat: 'd' },
+    { k: 'NPP', l: 13, d: 0, name: 'N++', desc: 'n++ contact implant', c: '#4299e1', pat: 'x' },
+    { k: 'GE', l: 20, d: 0, name: 'GE', desc: 'Germanium epitaxy', c: '#48d1a0', pat: 'b' },
+    { k: 'HEATER', l: 30, d: 0, name: 'HEATER', desc: 'TiN heater', c: '#ffc53d', pat: 'f' },
+    { k: 'VIA', l: 40, d: 0, name: 'VIA', desc: 'contact / via', c: '#f0f4f8', pat: 'x' },
+    { k: 'METAL', l: 41, d: 0, name: 'METAL', desc: 'Al routing', c: '#4fd1ff', pat: 'b' },
+    { k: 'PAD', l: 42, d: 0, name: 'PAD', desc: 'pad opening', c: '#e6c56a', pat: 'x' },
+    { k: 'TRENCH', l: 50, d: 0, name: 'TRENCH', desc: 'deep isolation trench', c: '#9aa7b8', pat: 'd' },
+    { k: 'DEVREC', l: 68, d: 0, name: 'DEVREC', desc: 'device boundary', c: '#5fd38d', pat: 'o' },
+    { k: 'PIN', l: 1, d: 10, name: 'PINREC', desc: 'optical / electrical ports', c: '#ff4d6d', pat: 'o' },
+    { k: 'TEXT', l: 66, d: 0, name: 'TEXT', desc: 'labels', c: '#c9d3de', pat: 'o' }
+  ];
+  const LK = Object.fromEntries(LAYERS.map(L => [L.k, L]));
+  /* ---------------------------------------------------------------- cells */
+  class Cell {
+    constructor(name) { this.name = name; this.polys = []; this.refs = []; this.labels = []; }
+    poly(layer, pts) { if (pts.length >= 3) this.polys.push({ layer, pts }); return this; }
+    rect(layer, x0, y0, x1, y1) { return this.poly(layer, [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]); }
+    box(layer, cx, cy, w, h) { return this.rect(layer, cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2); }
+    ref(cell, x = 0, y = 0, rot = 0, mx = false) { this.refs.push({ cell, x, y, rot: ((rot % 360) + 360) % 360, mx }); return this; }
+    label(text, x, y, layer = 'TEXT') { this.labels.push({ layer, text, x, y }); return this; }
+    port(name, x, y, dir, w = 0.5) {   // PINREC box across the waveguide end + text
+      const a = dir * Math.PI / 180, ux = Math.cos(a), uy = Math.sin(a), L = 0.2;
+      const px = -uy * w / 2, py = ux * w / 2;
+      this.poly('PIN', [[x - px - ux * L, y - py - uy * L], [x + px - ux * L, y + py - uy * L], [x + px + ux * L, y + py + uy * L], [x - px + ux * L, y - py + uy * L]]);
+      return this.label(name, x + ux * 1.2, y + uy * 1.2, 'PIN');
+    }
+  }
+  /* ---------------------------------------------------------------- waveguide geometry */
+  function arcPts(cx, cy, r, a0, a1, n) { const p = []; for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return p; }
+  const nArc = (r, da) => Math.max(6, Math.ceil(Math.abs(da) * Math.sqrt(Math.max(r, 0.5)) * 6));
+  /* annular sector (simple polygon); full rings are split in two halves (GDS boundaries cannot have holes) */
+  function sector(cell, layer, cx, cy, r, w, a0, a1) {
+    if (Math.abs(a1 - a0) >= TAU - 1e-9) { sector(cell, layer, cx, cy, r, w, a0, a0 + Math.PI); sector(cell, layer, cx, cy, r, w, a0 + Math.PI, a0 + TAU); return; }
+    const n = nArc(r, a1 - a0), o = arcPts(cx, cy, r + w / 2, a0, a1, n), i = arcPts(cx, cy, Math.max(0, r - w / 2), a1, a0, n);
+    cell.poly(layer, o.concat(i));
+  }
+  function disk(cell, layer, cx, cy, r) { cell.poly(layer, arcPts(cx, cy, r, 0, TAU, nArc(r, TAU)).slice(0, -1)); }
+  /* path builder: start at (x, y) heading dir (deg). segments:
+     ['s', L]  straight · ['l', R] / ['r', R] 90° left / right bend · ['L', R, deg] / ['R', R, deg] bend of any angle
+     ['t', L, w2] linear taper to width w2 · ['sb', dx, dy, R] S-bend made of two opposite arcs */
+  function path(cell, layer, w, x, y, dir, segs) {
+    let a = dir * Math.PI / 180;
+    const step = (s) => {
+      const t = s[0], ux = Math.cos(a), uy = Math.sin(a), nx = -uy, ny = ux;
+      if (t === 's' || t === 't') {
+        const L = s[1], w2 = t === 't' ? s[2] : w, x2 = x + ux * L, y2 = y + uy * L;
+        if (L > 1e-9) cell.poly(layer, [[x + nx * w / 2, y + ny * w / 2], [x2 + nx * w2 / 2, y2 + ny * w2 / 2], [x2 - nx * w2 / 2, y2 - ny * w2 / 2], [x - nx * w / 2, y - ny * w / 2]]);
+        x = x2; y = y2; w = w2; return;
+      }
+      if (t === 'sb') {   // S-bend in local frame: advance dx, shift dy (two arcs of radius R, angle θ)
+        const dx = s[1], dy = s[2], R0 = s[3] || 5, sg = Math.sign(dy) || 1, ady = Math.abs(dy);
+        let th, R = R0; if (ady >= 2 * R) th = Math.PI / 2; else th = Math.acos(1 - ady / (2 * R));
+        const straightV = Math.max(0, ady - 2 * R * (1 - Math.cos(th))), used = 2 * R * Math.sin(th);
+        const pre = Math.max(0, (dx - used) / 2);
+        step(['s', pre]); step([sg > 0 ? 'L' : 'R', R, th * 180 / Math.PI]); if (straightV > 1e-6) step(['s', straightV / Math.sin(th)]); step([sg > 0 ? 'R' : 'L', R, th * 180 / Math.PI]); step(['s', pre]);
+        return;
+      }
+      const left = t === 'l' || t === 'L', R = s[1], da = (t === 'l' || t === 'r' ? 90 : s[2]) * Math.PI / 180;
+      const cx = x + (left ? nx : -nx) * R, cy = y + (left ? ny : -ny) * R, a0 = Math.atan2(y - cy, x - cx), a1 = a0 + (left ? da : -da);
+      const n = nArc(R, da), o = arcPts(cx, cy, R + w / 2, a0, a1, n), i = arcPts(cx, cy, R - w / 2, a1, a0, n);
+      cell.poly(layer, o.concat(i));
+      x = cx + R * Math.cos(a1); y = cy + R * Math.sin(a1); a += left ? da : -da;
+    };
+    for (const s of segs) step(s);
+    return { x, y, dir: ((a * 180 / Math.PI) % 360 + 360) % 360, w };
+  }
+  /* pad with metal, opening and a via array */
+  function pad(cell, cx, cy, s = 80, name) {
+    cell.box('METAL', cx, cy, s, s); cell.box('PAD', cx, cy, s - 8, s - 8);
+    if (name) cell.label(name, cx, cy);
+  }
+  function vias(cell, x0, y0, x1, y1, p = 1.2, s = 0.6) {
+    const nx = Math.max(1, Math.floor((x1 - x0) / p)), ny = Math.max(1, Math.floor((y1 - y0) / p));
+    const ox = (x1 - x0 - (nx - 1) * p) / 2, oy = (y1 - y0 - (ny - 1) * p) / 2;
+    for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) cell.box('VIA', x0 + ox + i * p, y0 + oy + j * p, s, s);
+  }
+  /* manhattan metal route (list of points), width w */
+  function route(cell, layer, w, pts) {
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [a, b] = [pts[i], pts[i + 1]], x0 = Math.min(a[0], b[0]) - w / 2, x1 = Math.max(a[0], b[0]) + w / 2, y0 = Math.min(a[1], b[1]) - w / 2, y1 = Math.max(a[1], b[1]) + w / 2;
+      cell.rect(layer, x0, y0, x1, y1);
+    }
+  }
+  /* ---------------------------------------------------------------- flatten with transforms */
+  const xf = (p, r) => { let x = p[0], y = r.mx ? -p[1] : p[1]; const c = Math.round(Math.cos(r.rot * Math.PI / 180) * 1e9) / 1e9, s = Math.round(Math.sin(r.rot * Math.PI / 180) * 1e9) / 1e9; return [r.x + x * c - y * s, r.y + x * s + y * c]; };
+  function flatten(top) {
+    const polys = [], labels = [], inst = [];
+    (function rec(cell, T, path) {
+      const tp = p => T.reduceRight((q, r) => xf(q, r), p);
+      for (const P of cell.polys) polys.push({ layer: P.layer, pts: P.pts.map(tp), cell: cell.name, path });
+      for (const L of cell.labels) { const q = tp([L.x, L.y]); labels.push({ layer: L.layer, text: L.text, x: q[0], y: q[1] }); }
+      for (const r of cell.refs) { const sub = T.concat([r]); const bb = bboxCell(r.cell); const cs = [[bb[0], bb[1]], [bb[2], bb[1]], [bb[2], bb[3]], [bb[0], bb[3]]].map(p => sub.reduceRight((q, rr) => xf(q, rr), p)); inst.push({ cell: r.cell.name, pts: cs }); rec(r.cell, sub, path + '/' + r.cell.name); }
+    })(top, [], top.name);
+    return { polys, labels, inst };
+  }
+  function bboxCell(cell) {
+    let x0 = 1e18, y0 = 1e18, x1 = -1e18, y1 = -1e18;
+    (function rec(c, T) {
+      for (const P of c.polys) for (const p of P.pts) { const q = T.reduceRight((qq, r) => xf(qq, r), p); x0 = Math.min(x0, q[0]); y0 = Math.min(y0, q[1]); x1 = Math.max(x1, q[0]); y1 = Math.max(y1, q[1]); }
+      for (const r of c.refs) rec(r.cell, T.concat([r]));
+    })(cell, []);
+    return x0 > x1 ? [0, 0, 0, 0] : [x0, y0, x1, y1];
+  }
+  function cellList(top) { const out = [], seen = new Set(); (function rec(c) { for (const r of c.refs) rec(r.cell); if (!seen.has(c.name)) { seen.add(c.name); out.push(c); } })(top); return out; }   // children first
+  /* ---------------------------------------------------------------- GDSII writer */
+  function real8(v) {
+    const b = new Uint8Array(8); if (v === 0) return b;
+    let s = 0; if (v < 0) { s = 0x80; v = -v; }
+    let e = 64; while (v >= 1) { v /= 16; e++; } while (v < 1 / 16) { v *= 16; e--; }
+    let m = BigInt(Math.round(v * 2 ** 56)); b[0] = s | e;
+    for (let i = 7; i >= 1; i--) { b[i] = Number(m & 0xffn); m >>= 8n; }
+    return b;
+  }
+  function writeGDS(top, libname = 'PP_LIB') {
+    const out = []; let n = 0;
+    const rec = (type, dt, data) => { const len = 4 + (data ? data.length : 0), h = new Uint8Array(4); h[0] = len >> 8; h[1] = len & 255; h[2] = type; h[3] = dt; out.push(h); if (data) out.push(data); n += len; };
+    const i2 = arr => { const b = new Uint8Array(arr.length * 2), dv = new DataView(b.buffer); arr.forEach((v, i) => dv.setInt16(i * 2, v)); return b; };
+    const i4 = arr => { const b = new Uint8Array(arr.length * 4), dv = new DataView(b.buffer); arr.forEach((v, i) => dv.setInt32(i * 4, v)); return b; };
+    const str = s => { let t = s.replace(/[^\x20-\x7e]/g, '_'); if (t.length % 2) t += '\0'; return new TextEncoder().encode(t); };
+    const now = new Date(), dt = [now.getFullYear(), now.getMonth() + 1, now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds()];
+    const nm = v => Math.round(v * 1000);
+    rec(0x00, 0x02, i2([600])); rec(0x01, 0x02, i2(dt.concat(dt))); rec(0x02, 0x06, str(libname));
+    const u = new Uint8Array(16); u.set(real8(1e-3), 0); u.set(real8(1e-9), 8); rec(0x03, 0x05, u);
+    for (const c of cellList(top)) {
+      rec(0x05, 0x02, i2(dt.concat(dt))); rec(0x06, 0x06, str(c.name));
+      for (const P of c.polys) {
+        const L = LK[P.layer]; rec(0x08, 0x00); rec(0x0D, 0x02, i2([L.l])); rec(0x0E, 0x02, i2([L.d]));
+        const xy = []; for (const p of P.pts) xy.push(nm(p[0]), nm(p[1])); xy.push(nm(P.pts[0][0]), nm(P.pts[0][1])); rec(0x10, 0x03, i4(xy)); rec(0x11, 0x00);
+      }
+      for (const T of c.labels) { const L = LK[T.layer]; rec(0x0C, 0x00); rec(0x0D, 0x02, i2([L.l])); rec(0x16, 0x02, i2([L.d])); rec(0x10, 0x03, i4([nm(T.x), nm(T.y)])); rec(0x19, 0x06, str(T.text)); rec(0x11, 0x00); }
+      for (const r of c.refs) {
+        rec(0x0A, 0x00); rec(0x12, 0x06, str(r.cell.name));
+        if (r.mx || r.rot) { rec(0x1A, 0x01, i2([r.mx ? -32768 : 0])); if (r.rot) rec(0x1C, 0x05, real8(r.rot)); }
+        rec(0x10, 0x03, i4([nm(r.x), nm(r.y)])); rec(0x11, 0x00);
+      }
+      rec(0x07, 0x00);
+    }
+    rec(0x04, 0x00);
+    const buf = new Uint8Array(n); let o = 0; for (const a of out) { buf.set(a, o); o += a.length; } return buf;
+  }
+  /* ---------------------------------------------------------------- viewer */
+  const CSS = `
+  .gdshead{display:flex;align-items:center;gap:10px;margin:0 0 8px}.gdshead h2{margin:0!important}
+  .gdsseg{display:inline-flex;border:1px solid var(--line,#243041);border-radius:8px;overflow:hidden;margin-left:auto}
+  .gdsseg button{background:transparent;color:var(--muted,#8b98a9);border:0;padding:3px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+  .gdsseg button+button{border-left:1px solid var(--line,#243041)}.gdsseg button.on{background:#223046;color:var(--text,#e6edf3)}
+  .gdswrap{flex:1;display:flex;flex-direction:column;min-height:0}
+  .gdstool{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:#8b98a9;margin-bottom:6px}
+  .gdstool button{background:#1d2735;color:#e6edf3;border:1px solid #243041;border-radius:6px;padding:2px 9px;font:inherit;font-size:12px;cursor:pointer}
+  .gdstool button.on{background:#2d2615;border-color:#6b5a2b;color:#ffcc66}.gdstool .co{margin-left:auto;font:12px ui-monospace,Consolas,monospace;color:#c9d3de}
+  .gdsmain{flex:1;display:flex;gap:8px;min-height:0}
+  .gdscv{flex:1;min-width:0;width:100%;height:100%;display:block;border-radius:6px;background:#050608;cursor:crosshair;touch-action:none}
+  .gdsside{width:178px;flex:none;overflow:auto;background:#0e131a;border:1px solid #243041;border-radius:6px;padding:6px 8px;font-size:11.5px;color:#c9d3de}
+  .gdsside h4{margin:4px 0 4px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8b98a9;font-weight:600}
+  .gdsl{display:flex;align-items:center;gap:6px;padding:2px 2px;border-radius:4px;cursor:pointer;user-select:none}.gdsl:hover{background:#18202b}
+  .gdsl.off{opacity:.35}.gdsl canvas{width:22px;height:13px;border-radius:2px;flex:none}.gdsl small{color:#6f7d90;margin-left:auto}
+  .gdsc{padding:1px 2px;cursor:pointer;border-radius:4px;white-space:nowrap}.gdsc:hover,.gdsc.sel{background:#2d2615;color:#ffcc66}
+  .gdsc small{color:#6f7d90}`;
+  let cssDone = false;
+  const patCache = {};
+  function pattern(ctx, L) {
+    const key = L.k; if (patCache[key]) return patCache[key];
+    const c = document.createElement('canvas'), s = 8; c.width = c.height = s; const g = c.getContext('2d');
+    g.strokeStyle = L.c; g.globalAlpha = 0.9; g.lineWidth = 1;
+    if (L.pat === 'f') { g.beginPath(); g.moveTo(0, s); g.lineTo(s, 0); g.stroke(); }
+    else if (L.pat === 'b') { g.beginPath(); g.moveTo(0, 0); g.lineTo(s, s); g.stroke(); }
+    else if (L.pat === 'x') { g.beginPath(); g.moveTo(0, 0); g.lineTo(s, s); g.moveTo(0, s); g.lineTo(s, 0); g.stroke(); }
+    else if (L.pat === 'd') { g.fillStyle = L.c; g.fillRect(1, 1, 1.4, 1.4); g.fillRect(5, 5, 1.4, 1.4); }
+    return patCache[key] = ctx.createPattern(c, 'repeat');
+  }
+  function swatch(L) { const c = document.createElement('canvas'); c.width = 44; c.height = 26; const g = c.getContext('2d'); g.scale(2, 2); g.fillStyle = '#050608'; g.fillRect(0, 0, 22, 13); if (L.pat !== 'o') { g.fillStyle = pattern(g, L); g.fillRect(0, 0, 22, 13); delete patCache[L.k]; } g.strokeStyle = L.c; g.lineWidth = 1.2; g.strokeRect(1, 1, 20, 11); return c; }
+  function pip(pt, poly) { let ins = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const a = poly[i], b = poly[j]; if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0]) ins = !ins; } return ins; }
+
+  function mount(o) {
+    if (!cssDone) { const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st); cssDone = true; }
+    const card = o.card, h2 = card.querySelector('h2'), head = document.createElement('div'); head.className = 'gdshead';
+    h2.parentNode.insertBefore(head, h2); head.appendChild(h2);
+    const label0 = h2.textContent, seg = document.createElement('div'); seg.className = 'gdsseg';
+    seg.innerHTML = `<button data-v="0" class="on">${o.viewName || '3D'}</button><button data-v="1">GDS layout</button>`; head.appendChild(seg);
+    const others = [...card.children].filter(e => e !== head);
+    const wrap = document.createElement('div'); wrap.className = 'gdswrap'; wrap.style.display = 'none';
+    wrap.innerHTML = `<div class="gdstool"><button data-a="fit">Zoom fit</button><button data-a="ruler">Ruler</button><button data-a="grid" class="on">Grid</button><button data-a="fill" class="on">Fill</button><button data-a="lbl" class="on">Labels</button><button data-a="dl">Download .gds</button><span class="co">x = —  y = —</span></div>
+      <div class="gdsmain"><canvas class="gdscv"></canvas><div class="gdsside"><h4>Layers</h4><div class="ll"></div><h4 style="margin-top:10px">Cells</h4><div class="ct"></div></div></div>`;
+    card.appendChild(wrap);
+    const cv = wrap.querySelector('.gdscv'), co = wrap.querySelector('.co'), ll = wrap.querySelector('.ll'), ct = wrap.querySelector('.ct');
+    const V = { on: false, top: null, flat: null, key: '', view: null, hidden: new Set(), grid: true, fill: true, lbl: true, ruler: false, rul: null, hover: null, selCell: null, mouse: null };
+    seg.querySelectorAll('button').forEach(b => b.onclick = () => {
+      V.on = b.dataset.v === '1'; seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+      others.forEach(e => e.style.display = V.on ? 'none' : ''); wrap.style.display = V.on ? '' : 'none';
+      h2.textContent = V.on ? (o.gdsTitle || 'GDS layout') : label0; if (V.on) { V.key = ''; V.view = null; V.user = false; } else window.dispatchEvent(new Event('resize'));
+    });
+    const usedLayers = () => LAYERS.filter(L => V.flat.polys.some(p => p.layer === L.k) || V.flat.labels.some(t => t.layer === L.k));
+    function buildPanels() {
+      ll.innerHTML = ''; for (const L of usedLayers()) {
+        const d = document.createElement('div'); d.className = 'gdsl' + (V.hidden.has(L.k) ? ' off' : ''); d.title = L.desc; d.appendChild(swatch(L));
+        d.insertAdjacentHTML('beforeend', `<span>${L.name}</span><small>${L.l}/${L.d}</small>`); d.onclick = () => { V.hidden.has(L.k) ? V.hidden.delete(L.k) : V.hidden.add(L.k); d.classList.toggle('off'); };
+        ll.appendChild(d);
+      }
+      ct.innerHTML = '';
+      (function rec(c, depth, count) {
+        const d = document.createElement('div'); d.className = 'gdsc' + (V.selCell === c.name ? ' sel' : ''); d.style.paddingLeft = (2 + depth * 12) + 'px';
+        d.innerHTML = `${depth ? '└ ' : '▣ '}${c.name}${count > 1 ? ` <small>×${count}</small>` : ''}`; d.onclick = () => { V.selCell = V.selCell === c.name ? null : c.name; buildPanels(); };
+        ct.appendChild(d);
+        const kids = new Map(); for (const r of c.refs) kids.set(r.cell, (kids.get(r.cell) || 0) + 1);
+        for (const [k, n] of kids) rec(k, depth + 1, n);
+      })(V.top, 0, 1);
+    }
+    function fit(w, h) { const bb = bboxCell(V.top), pw = bb[2] - bb[0] || 1, ph = bb[3] - bb[1] || 1, s = 0.88 * Math.min(w / pw, h / ph); V.view = { s, cx: (bb[0] + bb[2]) / 2, cy: (bb[1] + bb[3]) / 2 }; }
+    const toS = (p, w, h) => [w / 2 + (p[0] - V.view.cx) * V.view.s, h / 2 - (p[1] - V.view.cy) * V.view.s];
+    const toW = (x, y, w, h) => [V.view.cx + (x - w / 2) / V.view.s, V.view.cy - (y - h / 2) / V.view.s];
+    function niceStep(px) { const raw = px / V.view.s, m = Math.pow(10, Math.floor(Math.log10(raw))), q = raw / m; return (q < 2 ? 2 : q < 5 ? 5 : 10) * m; }
+    const fmt = v => Math.abs(v) >= 100 ? v.toFixed(1) : Math.abs(v) >= 10 ? v.toFixed(2) : v.toFixed(3);
+    function draw() {
+      if (!V.on) return;
+      const k = o.key(); if (k !== V.key) { V.key = k; V.top = o.build(); V.flat = flatten(V.top); buildPanels(); if (!V.user) V.view = null; }
+      const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1, W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
+      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+      const ctx = cv.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); const w = r.width, h = r.height; ctx.fillStyle = '#050608'; ctx.fillRect(0, 0, w, h);
+      if (!V.view) fit(w, h);
+      if (V.grid) {   // dotted grid + major lines
+        const st = niceStep(40), a = toW(0, h, w, h), b = toW(w, 0, w, h);
+        ctx.fillStyle = 'rgba(140,160,190,0.35)';
+        for (let x = Math.ceil(a[0] / st) * st; x <= b[0]; x += st) for (let y = Math.ceil(a[1] / st) * st; y <= b[1]; y += st) { const p = toS([x, y], w, h); ctx.fillRect(p[0] - 0.6, p[1] - 0.6, 1.2, 1.2); }
+        const o0 = toS([0, 0], w, h); ctx.strokeStyle = 'rgba(140,160,190,0.25)'; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(o0[0], 0); ctx.lineTo(o0[0], h); ctx.moveTo(0, o0[1]); ctx.lineTo(w, o0[1]); ctx.stroke(); ctx.setLineDash([]);
+      }
+      const order = LAYERS.map(L => L.k);
+      for (const key of order) {
+        if (V.hidden.has(key)) continue; const L = LK[key];
+        ctx.beginPath(); let any = false;
+        for (const P of V.flat.polys) { if (P.layer !== key) continue; any = true; P.pts.forEach((q, i) => { const s = toS(q, w, h); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); }); ctx.closePath(); }
+        if (!any) continue;
+        if (V.fill && L.pat !== 'o') { ctx.save(); ctx.globalAlpha = 0.85; ctx.fillStyle = pattern(ctx, L); ctx.fill('evenodd'); ctx.globalAlpha = 0.12; ctx.fillStyle = L.c; ctx.fill('evenodd'); ctx.restore(); }
+        ctx.strokeStyle = L.c; ctx.lineWidth = key === 'DEVREC' ? 1 : 1.1; if (key === 'DEVREC') ctx.setLineDash([6, 4]); ctx.stroke(); ctx.setLineDash([]);
+      }
+      if (V.lbl) { ctx.font = '11px ui-monospace,Consolas,monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; for (const t of V.flat.labels) { if (V.hidden.has(t.layer)) continue; const s = toS([t.x, t.y], w, h); ctx.fillStyle = LK[t.layer].c; ctx.fillText(t.text, s[0], s[1]); } }
+      if (V.selCell) { ctx.strokeStyle = '#ffcc66'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 3]); for (const I of V.flat.inst) if (I.cell === V.selCell) { ctx.beginPath(); I.pts.forEach((q, i) => { const s = toS(q, w, h); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); }); ctx.closePath(); ctx.stroke(); } ctx.setLineDash([]); }
+      if (V.hover) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); V.hover.pts.forEach((q, i) => { const s = toS(q, w, h); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); }); ctx.closePath(); ctx.stroke(); }
+      // scale bar
+      const sb = niceStep(110); ctx.strokeStyle = '#c9d3de'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(14, h - 16); ctx.lineTo(14 + sb * V.view.s, h - 16); ctx.moveTo(14, h - 21); ctx.lineTo(14, h - 11); ctx.moveTo(14 + sb * V.view.s, h - 21); ctx.lineTo(14 + sb * V.view.s, h - 11); ctx.stroke();
+      ctx.fillStyle = '#c9d3de'; ctx.font = '11.5px system-ui,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText(`${sb >= 1 ? sb : sb.toPrecision(2)} µm`, 14, h - 24);
+      ctx.textAlign = 'right'; ctx.fillStyle = '#6f7d90'; ctx.fillText(`top cell: ${V.top.name}`, w - 10, h - 8);
+      if (V.rul) { const a = toS(V.rul[0], w, h), b = toS(V.rul[1], w, h), dx = V.rul[1][0] - V.rul[0][0], dy = V.rul[1][1] - V.rul[0][1];
+        ctx.strokeStyle = '#ffcc66'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+        for (const p of [a, b]) { ctx.beginPath(); ctx.arc(p[0], p[1], 3, 0, TAU); ctx.fillStyle = '#ffcc66'; ctx.fill(); }
+        const t = `${fmt(Math.hypot(dx, dy))} µm  (Δx ${fmt(dx)}, Δy ${fmt(dy)})`; ctx.font = '12px system-ui,sans-serif'; const tw = ctx.measureText(t).width + 10, mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2 - 14;
+        ctx.fillStyle = 'rgba(8,11,16,0.92)'; ctx.fillRect(mx - tw / 2, my - 9, tw, 18); ctx.fillStyle = '#ffcc66'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, mx, my); }
+      if (V.hover && V.mouse) { const L = LK[V.hover.layer], bb = V.hover.pts.reduce((b, p) => [Math.min(b[0], p[0]), Math.min(b[1], p[1]), Math.max(b[2], p[0]), Math.max(b[3], p[1])], [1e9, 1e9, -1e9, -1e9]);
+        const t = `${L.name} ${L.l}/${L.d} · ${L.desc} · cell ${V.hover.cell} · ${fmt(bb[2] - bb[0])} × ${fmt(bb[3] - bb[1])} µm`; ctx.font = '12px system-ui,sans-serif'; const tw = ctx.measureText(t).width + 12;
+        const x = Math.min(V.mouse[0] + 12, w - tw - 4), y = Math.max(14, V.mouse[1] - 16); ctx.fillStyle = 'rgba(8,11,16,0.94)'; ctx.fillRect(x, y - 10, tw, 20); ctx.strokeStyle = L.c; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y - 9.5, tw - 1, 19); ctx.fillStyle = '#e6edf3'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t, x + 6, y); }
+    }
+    let drag = null;
+    cv.addEventListener('pointerdown', e => { const r = cv.getBoundingClientRect(); if (V.ruler) { const p = toW(e.offsetX, e.offsetY, r.width, r.height); V.rul = [p, p]; drag = { ruler: true }; } else drag = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener('pointermove', e => {
+      const r = cv.getBoundingClientRect(); if (!V.view) return; const p = toW(e.offsetX, e.offsetY, r.width, r.height); V.mouse = [e.offsetX, e.offsetY];
+      co.textContent = `x = ${fmt(p[0])}  y = ${fmt(p[1])} µm`;
+      if (drag && drag.ruler) { V.rul[1] = p; return; }
+      if (drag) { V.user = true; V.view.cx -= (e.clientX - drag.x) / V.view.s; V.view.cy += (e.clientY - drag.y) / V.view.s; drag = { x: e.clientX, y: e.clientY }; return; }
+      V.hover = null; const order = LAYERS.map(L => L.k).reverse();
+      outer: for (const key of order) { if (V.hidden.has(key) || key === 'DEVREC') continue; for (let i = V.flat.polys.length - 1; i >= 0; i--) { const P = V.flat.polys[i]; if (P.layer === key && pip(p, P.pts)) { V.hover = P; break outer; } } }
+    });
+    cv.addEventListener('pointerup', () => drag = null);
+    cv.addEventListener('pointerleave', () => { V.hover = null; V.mouse = null; });
+    cv.addEventListener('wheel', e => { e.preventDefault(); const r = cv.getBoundingClientRect(), p = toW(e.offsetX, e.offsetY, r.width, r.height), f = Math.exp(-e.deltaY * 0.0015); V.user = true; V.view.s *= f; const q = toW(e.offsetX, e.offsetY, r.width, r.height); V.view.cx += p[0] - q[0]; V.view.cy += p[1] - q[1]; }, { passive: false });
+    cv.addEventListener('dblclick', () => { V.view = null; V.user = false; });
+    wrap.querySelectorAll('.gdstool button').forEach(b => b.onclick = () => {
+      const a = b.dataset.a;
+      if (a === 'fit') { V.view = null; V.user = false; }
+      if (a === 'ruler') { V.ruler = !V.ruler; b.classList.toggle('on', V.ruler); if (!V.ruler) V.rul = null; cv.style.cursor = V.ruler ? 'cell' : 'crosshair'; }
+      if (a === 'grid' || a === 'fill' || a === 'lbl') { V[a] = !V[a]; b.classList.toggle('on', V[a]); }
+      if (a === 'dl') { const data = writeGDS(V.top), url = URL.createObjectURL(new Blob([data], { type: 'application/octet-stream' })), el = document.createElement('a'); el.href = url; el.download = V.top.name + '.gds'; document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000); }
+    });
+    (function loop() { draw(); requestAnimationFrame(loop); })();
+    return V;
+  }
+
+  /* ---------------------------------------------------------------- shared device cells */
+  /* Ge vertical PIN photodiode: optical port o1 at (−24, 0); electrical ports k (n++, y = 0) and a (p++, y = +ya) at x = L + 12 */
+  function geCell(L, W, name) {
+    const c = new Cell(name || `GE_PD_L${Math.round(L)}_W${W.toFixed(1)}`), wg = 0.45, hw = W / 2, sy = hw + 6, ya = hw + 4.25;
+    path(c, 'WG', wg, -24, 0, 0, [['s', 12], ['t', 12, W + 1]]);
+    c.rect('SLAB', 0, -sy, L + 4, sy); c.rect('P', -1, -sy - 1, L + 5, sy + 1);
+    for (const s of [1, -1]) { c.rect('PPP', 0.5, s > 0 ? hw + 3 : -hw - 5.5, L + 3.5, s > 0 ? hw + 5.5 : -hw - 3); vias(c, 1, s > 0 ? hw + 3.5 : -hw - 5, L + 3, s > 0 ? hw + 5 : -hw - 3.5); }
+    c.rect('GE', 2, -hw, L + 2, hw); c.rect('NPP', 3, -0.8, L + 1, 0.8); vias(c, 3.5, -0.5, L + 0.5, 0.5);
+    c.rect('METAL', 0.5, hw + 3, L + 12, hw + 5.5); c.rect('METAL', 0.5, -hw - 5.5, L + 3.5, -hw - 3); c.rect('METAL', -3, -hw - 5.5, 0.5, hw + 5.5);   // anode: both p++ strips joined on the left
+    c.rect('METAL', 3, -1, L + 12, 1);   // cathode strip to the right
+    c.port('o1', -24, 0, 180, wg); c.port('k', L + 12, 0, 0, 2); c.port('a', L + 12, ya, 0, 2.5);
+    c.rect('DEVREC', -24, -sy - 2, L + 12, sy + 2);
+    return { cell: c, ya };
+  }
+  /* balanced pair: two mirrored photodiodes at (x, yc ± Y); series connection +V → PD1 → OUT → PD2 → −V; pads at x = xp */
+  function bpdPair(top, pd, x, yc, Y, xp, names, padCell) {
+    top.ref(pd.cell, x, yc + Y, 0, true); top.ref(pd.cell, x, yc - Y, 0, true);
+    const L = pd.L, xe = x + L + 12, x0 = xe + 14, x1 = xe + 34, w = 4, pyH = yc + Y + 70, pyL = yc - Y - 70;
+    route(top, 'METAL', w, [[xe, yc + Y], [x0, yc + Y], [x0, pyH], [xp, pyH]]);            // PD1 cathode → +V
+    route(top, 'METAL', w, [[xe, yc + Y - pd.ya], [x1, yc + Y - pd.ya], [x1, yc], [xp, yc]]); // PD1 anode → OUT
+    route(top, 'METAL', w, [[xe, yc - Y], [x1, yc - Y], [x1, yc]]);                          // PD2 cathode → OUT
+    route(top, 'METAL', w, [[xe, yc - Y - pd.ya], [x0, yc - Y - pd.ya], [x0, pyL], [xp, pyL]]); // PD2 anode → −V
+    for (const [y, n] of [[pyH, names[0]], [yc, names[1]], [pyL, names[2]]]) { top.ref(padCell, xp + 40, y); top.label(n, xp + 40, y); }
+  }
+  function padCell(s = 80) { const c = new Cell(`PAD_${s}`); pad(c, 0, 0, s); return c; }
+  /* generic M×N MMI with tapered access ports; ports listed as y positions */
+  function mmiCell(name, W, L, ins, outs, wa = 1.4, lt = 10) {
+    const c = new Cell(name), t = new Cell(`TAPER_${wa.toFixed(2)}_${lt}`);
+    path(t, 'WG', wa, 0, 0, 0, [['t', lt, 0.45]]);
+    c.rect('WG', 0, -W / 2, L, W / 2);
+    ins.forEach((y, i) => { c.ref(t, 0, y, 180); c.port('i' + (i + 1), -lt, y, 180); });
+    outs.forEach((y, i) => { c.ref(t, L, y, 0); c.port('o' + (i + 1), L + lt, y, 0); });
+    c.rect('DEVREC', -lt, -W / 2 - 1, L + lt, W / 2 + 1);
+    return c;
+  }
+  window.GDS = { geCell: (L, W, n) => { const r = geCell(L, W, n); r.L = L; return r; }, bpdPair, padCell, mmiCell, LAYERS, Cell, path, sector, disk, pad, vias, route, flatten, bboxCell, writeGDS, mount, cellList };
+})();
+
+(function () {
+  const G = GDS;
+  function build() {
+    const bare = S.type === 'bare', w0 = S.w0, Wc = bare ? w0 : Math.max(S.Wc, w0), Lt = bare ? 0 : S.Lt, ext = 5;
+    const top = new G.Cell(bare ? 'CROSSING_BARE' : `CROSSING_W${Wc.toFixed(2)}_LT${Lt.toFixed(1)}`);
+    const arm = new G.Cell(bare ? 'XARM_BARE' : `XARM_W${Wc.toFixed(2)}_LT${Lt.toFixed(1)}`);
+    G.path(arm, 'WG', w0, Wc / 2 + Lt + ext, 0, 180, [['s', ext]].concat(Lt > 0 ? [['t', Lt, Wc]] : []));
+    [0, 90, 180, 270].forEach(r => top.ref(arm, 0, 0, r));
+    top.box('WG', 0, 0, Wc, Wc);
+    const e = Wc / 2 + Lt + ext; top.port('in', -e, 0, 180, w0); top.port('through', e, 0, 0, w0); top.port('cross1', 0, e, 90, w0); top.port('cross2', 0, -e, 270, w0);
+    top.rect('DEVREC', -e, -e, e, e);
+    return top;
+  }
+  G.mount({ card: document.querySelector('.card.view'), build, key: () => [S.type, S.Wc, S.Lt].join('|'), viewName: '3D' });
+})();
+
+</script><!--/GDS-->
+</body>
+</html>
