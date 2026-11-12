@@ -66,6 +66,13 @@ table.fm td.f small{display:block;font:11.5px system-ui,sans-serif;color:var(--m
 table.fm td:last-child{text-align:right}
 i.v{font-family:"Cambria Math","Times New Roman",serif;font-style:italic}
 a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1c;background:#1f1a0e;border-radius:8px;padding:3px 10px;margin-right:4px}a.back:hover{background:#2d2615}
+
+.row .val{display:flex;align-items:center;justify-content:flex-end;gap:4px;text-align:right}
+.numin{width:78px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font:inherit;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.numin:focus{outline:none;border-color:var(--accent)}
+.row .unit{color:var(--muted);font-size:12px;min-width:18px;text-align:left}
+.row .extra{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.cfgsel{background:#1f1a0e;color:var(--accent);border:1px solid #6b5a2b;border-radius:9px;padding:6px 10px;font:inherit;font-size:13.5px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -116,7 +123,7 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
         <div class="inline">I<sub>max</sub> <input type="number" id="nImax" min="0.1" step="0.5"> mA <button class="btn" id="btnPlay">▶ Sweep current</button></div>
       </div>
       <div class="group" data-group="laser"><h3>Laser</h3>
-        <div class="inline">λ₀ <input type="number" id="nLam0" step="0.001"> nm <span>· click the λ plot to move the laser</span></div>
+        <div class="inline"><span>Tip: click the λ plot to move the laser.</span><input type="hidden" id="nLam0"></div>
       </div>
     </div>
   </section>
@@ -282,9 +289,9 @@ function buildSliders() {
   for (const c of SL) {
     const host = document.querySelector(`[data-group="${c.g}"]`);
     const row = document.createElement('div'); row.className = 'row'; row.id = 'row_' + c.id;
-    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val" id="o_${c.id}"></span><input type="range" id="s_${c.id}">`;
+    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val"><input type="text" inputmode="decimal" class="numin" id="n_${c.id}"><span class="unit">${c.unit ?? ''}</span><span class="extra" id="x_${c.id}"></span></span><input type="range" id="s_${c.id}">`;
     const inl = host.querySelector('.inline'); if (c.id === 'I' || c.id === 'lam0') host.insertBefore(row, inl); else host.appendChild(row);
-    const s = row.querySelector('input');
+    const s = row.querySelector('input[type=range]');
     if (c.log) { s.min = 0; s.max = LOGN; s.step = 1; if (c.inv) s.style.direction = 'rtl'; }
     else { s.min = c.min; s.max = typeof c.max === 'function' ? c.max() : c.max; s.step = c.step; }
     s.addEventListener('input', () => {
@@ -296,13 +303,29 @@ function buildSliders() {
     });
   }
 }
-function syncOut(c) { document.getElementById('o_' + c.id).textContent = c.fmt(c.get()); }
+function syncOut(c) {
+  const n = document.getElementById('n_' + c.id);
+  if (!n.dataset.w) { n.dataset.w = 1; n.addEventListener('change', () => numSet(c, n)); n.addEventListener('keydown', e => { if (e.key === 'Enter') n.blur(); }); }
+  if (document.activeElement !== n) n.value = +c.get().toFixed(c.dec ?? 3);
+  document.getElementById('x_' + c.id).textContent = c.extra ? c.extra(c.get()) : '';
+}
+function numSet(c, n) {
+  let v = parseFloat(String(n.value).replace(',', '.'));
+  if (!isFinite(v)) { syncOut(c); return; }
+  const mx = typeof c.max === 'function' ? c.max() : c.max;
+  v = c.inv ? clamp(v, 1 - c.max, 1 - c.min) : clamp(v, c.min, mx);
+  c.set(v); sliderSide(c); syncSlider(c); dirty = true;
+}
+function sliderSide(c) { if (c.id === 'I') { S.playing = false; updPlay(); } if (c.id === 'lam0') document.getElementById('nLam0').value = S.lam0.toFixed(3); if (c.geo) geoDirty = true; }
 function syncSlider(c) {
   const s = document.getElementById('s_' + c.id);
   if (c.log) s.value = toSlider(c, c.get()); else { if (typeof c.max === 'function') s.max = c.max(); s.value = c.get(); }
   syncOut(c);
 }
 const SLid = id => SL.find(c => c.id === id);
+const NUMF = { R: ['µm', 2], Lc: ['µm', 1], neff: ['', 3], ng: ['', 3], loss: ['dB/cm', 2], r: ['', 5, v => `κ² = ${((1 - v * v) * 100).toPrecision(3)} %`],
+  rho: ['', 4, v => `|ρ|² = ${(v * v * 100).toPrecision(2)} %`], Rh: ['kΩ', 3], Ppi: ['mW', 2], I: ['mA', 3, v => `P = ${f3(Pel(v))} mW`], lam0: ['nm', 3] };
+SL.forEach(c => { const f = NUMF[c.id]; if (f) Object.assign(c, { unit: f[0], dec: f[1], extra: f[2] }); });
 function syncUI() {
   SL.forEach(syncSlider);
   document.getElementById('row_Lc').classList.toggle('off', S.shape !== 'race');

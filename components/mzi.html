@@ -84,6 +84,13 @@ details p,details li{color:#c9d3de;font-size:13px}
 
 .span2{grid-column:1/-1}
 a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1c;background:#1f1a0e;border-radius:8px;padding:3px 10px;margin-right:4px}a.back:hover{background:#2d2615}
+
+.row .val{display:flex;align-items:center;justify-content:flex-end;gap:4px;text-align:right}
+.numin{width:78px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font:inherit;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.numin:focus{outline:none;border-color:var(--accent)}
+.row .unit{color:var(--muted);font-size:12px;min-width:18px;text-align:left}
+.row .extra{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.cfgsel{background:#1f1a0e;color:var(--accent);border:1px solid #6b5a2b;border-radius:9px;padding:6px 10px;font:inherit;font-size:13.5px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -94,7 +101,7 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
 </header>
 <nav class="cfgbar">
   <span>Configuration</span>
-  <div class="tabs" id="segCfg"><button data-v="single" class="on">1 internal phase shifter</button><button data-v="dual">2 internal phase shifters</button><button data-v="intext">Internal + external phase shifter</button><button data-v="full">Internal + input + output phase shifters</button><button data-v="u2">Internal + input + 2 output phase shifters</button></div>
+  <select id="selCfg" class="cfgsel"><option value="single">1 internal phase shifter</option><option value="dual">2 internal phase shifters (dual drive)</option><option value="intext">Internal + external phase shifter</option><option value="full">Internal + input + output phase shifters</option><option value="u2">Internal + input + 2 output phase shifters</option></select>
   <span id="cfgNote"></span>
 </nav>
 
@@ -317,6 +324,10 @@ const SL = [
   { id: 'psi', g: 'input', lab: 'Relative phase of the lower input ψ', min: -PI, max: PI, step: 0.001, get: () => S.psi, set: v => S.psi = v, fmt: v => (v / PI).toFixed(3) + 'π' }
 ];
 const SLid = id => SL.find(c => c.id === id);
+const NUMF = { I: ['mA', 3], I2: ['mA', 3], I3: ['mA', 3], I4: ['mA', 3], R: ['Ω', 0], Ppi: ['mW', 3], gamma: ['%/mW', 2],
+  theta0: ['rad', 3, v => `(${(v / PI).toFixed(2)}π)`], a1: ['rad', 3, v => splitTxt(v)], a2: ['rad', 3, v => splitTxt(v)], psi: ['rad', 3, v => `(${(v / PI).toFixed(3)}π)`] };
+function splitTxt(a) { const s = Math.sin(PI / 4 + a) ** 2 * 100; return s.toFixed(1) + ':' + (100 - s).toFixed(1); }
+SL.forEach(c => { const f = NUMF[c.id]; if (f) Object.assign(c, { unit: f[0], dec: f[1], extra: f[2] }); });
 const swKey = () => ['I', 'I', 'I2', 'I3', 'I4'][S.sweep];
 function setSw(v) { const k = swKey(); S[k] = v; syncSlider(SLid(k)); }
 function split(a) { const s = Math.sin(PI / 4 + a) ** 2 * 100; return a.toFixed(3) + ' rad · ' + s.toFixed(1) + ':' + (100 - s).toFixed(1); }
@@ -325,9 +336,9 @@ function buildSliders() {
   for (const c of SL) {
     const host = document.querySelector(`[data-group="${c.g}"]`);
     const row = document.createElement('div'); row.className = 'row'; row.id = 'row_' + c.id;
-    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val" id="o_${c.id}"></span><input type="range" id="s_${c.id}">`;
+    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val"><input type="text" inputmode="decimal" class="numin" id="n_${c.id}"><span class="unit">${c.unit ?? ''}</span><span class="extra" id="x_${c.id}"></span></span><input type="range" id="s_${c.id}">`;
     host.appendChild(row);
-    const s = row.querySelector('input');
+    const s = row.querySelector('input[type=range]');
     if (c.log) { s.min = 0; s.max = LOGN; s.step = 1; }
     else { s.min = c.min; s.max = typeof c.max === 'function' ? c.max() : c.max; s.step = c.step; }
     s.addEventListener('input', () => {
@@ -339,7 +350,20 @@ function buildSliders() {
   }
   syncUI();
 }
-function syncOut(c) { document.getElementById('o_' + c.id).textContent = c.fmt(c.get()); }
+function syncOut(c) {
+  const n = document.getElementById('n_' + c.id);
+  if (!n.dataset.w) { n.dataset.w = 1; n.addEventListener('change', () => numSet(c, n)); n.addEventListener('keydown', e => { if (e.key === 'Enter') n.blur(); }); }
+  if (document.activeElement !== n) n.value = +c.get().toFixed(c.dec ?? 3);
+  document.getElementById('x_' + c.id).textContent = c.extra ? c.extra(c.get()) : '';
+}
+function numSet(c, n) {
+  let v = parseFloat(String(n.value).replace(',', '.'));
+  if (!isFinite(v)) { syncOut(c); return; }
+  const mx = typeof c.max === 'function' ? c.max() : c.max;
+  v = c.inv ? clamp(v, 1 - c.max, 1 - c.min) : clamp(v, c.min, mx);
+  c.set(v); sliderSide(c); syncSlider(c); dirty = true;
+}
+function sliderSide(c) { if (/^I\d?$/.test(c.id)) { S.playing = false; updPlayBtn(); } }
 function syncSlider(c) {
   const s = document.getElementById('s_' + c.id);
   if (c.log) s.value = Math.round(LOGN * Math.log(c.get() / c.min) / Math.log(c.max / c.min));
@@ -352,7 +376,7 @@ function syncUI() {
   document.getElementById('nVmax').value = S.Vmax;
   document.getElementById('nPax').value = +S.Paxis.toFixed(2);
   setSeg('segX', S.xmode); setSeg('segY', S.ymode);
-  setSeg('segCfg', S.cfg); setSeg('segSw', String(S.sweep)); setSeg('segIn', S.inp); setSeg('segExt', S.extPos);
+  document.getElementById('selCfg').value = S.cfg; setSeg('segSw', String(S.sweep)); setSeg('segIn', S.inp); setSeg('segExt', S.extPos);
   const vis = (id, on) => document.getElementById(id).classList.toggle('hide', !on);
   vis('row_I2', S.cfg !== 'single'); vis('row_I3', isFull()); vis('swBtn3', isFull()); vis('row_I4', S.cfg === 'u2'); vis('swBtn4', S.cfg === 'u2'); setSeg('segGrp', S.grp); vis('sweepWrap', S.cfg !== 'single'); vis('extWrap', S.cfg === 'intext'); vis('row_psi', S.inp === 'both');
   document.querySelector('#row_I2 .lab').textContent = S.cfg === 'dual' ? 'Heater 2 current I₂ (internal, lower arm)' : 'Heater 2 current I₂ (external, upper ' + (extAtInput() ? 'input)' : 'output)');
@@ -907,6 +931,7 @@ document.querySelectorAll('#segY button').forEach(b => b.onclick = () => { S.ymo
 document.getElementById('chkBar').onchange = e => { S.showBar = e.target.checked; dirty = true; };
 document.getElementById('chkCross').onchange = e => { S.showCross = e.target.checked; dirty = true; };
 const segs2 = { segGrp: v => S.grp = v, segCfg: v => { S.cfg = v; if (S.sweep > nHeaters()) S.sweep = 1; }, segSw: v => S.sweep = +v, segIn: v => S.inp = v, segExt: v => S.extPos = v };
+document.getElementById('selCfg').onchange = e => { segs2.segCfg(e.target.value); syncUI(); };
 for (const id in segs2) document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { segs2[id](b.dataset.v); syncUI(); });
 const num = (id, key, min) => document.getElementById(id).addEventListener('change', e => {
   const v = parseFloat(e.target.value); if (isFinite(v) && v >= min) S[key] = v; else e.target.value = S[key];
