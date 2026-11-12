@@ -87,6 +87,32 @@ select.sm{background:#0f141b;color:var(--text);border:1px solid var(--line);bord
 input.ni{width:56px}
 #selInfo{font-size:12.5px;color:var(--accent);margin:4px 0 2px}
 .theory p, .theory li{color:#c9d3de;font-size:13px}
+.stepbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.stepbar .cnt{color:var(--text);font-weight:600;font-size:13px;min-width:92px}
+.dots{display:flex;gap:4px;flex-wrap:wrap}
+.dots i{width:11px;height:11px;border-radius:50%;background:#253042;cursor:pointer;display:block}
+.dots i.done{background:#7a6233}.dots i.on{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.stepgrid{display:grid;grid-template-columns:minmax(0,auto) minmax(0,auto) minmax(260px,1fr);gap:16px;align-items:start}
+@media (max-width:1100px){.stepgrid{grid-template-columns:minmax(0,1fr)}}
+.mt{border-collapse:separate;border-spacing:3px;font:12px ui-monospace,Consolas,monospace}
+.mt caption{color:var(--muted);font:600 12px system-ui,sans-serif;text-align:left;padding-bottom:4px;caption-side:top}
+.mt th{color:#5c6c84;font-weight:400;padding:0 3px}
+.mt td{background:#0f141b;border:1px solid #1e2836;border-radius:5px;padding:4px 6px;text-align:center;white-space:nowrap;color:#c9d3de;min-width:74px}
+.mt td small{color:#8b98a9}
+.mt td.z{color:#3f5068;background:#0c1118}
+.mt td.zn{color:#5fd38d;background:#10231a;border-color:#2c6b47}
+.mt td.inv{background:#2a2312;border-color:#6b5426}
+.mt td.ab{background:#2a2312;border-color:var(--accent);color:#fff}
+.mt td.tgt{outline:2px solid var(--laser);outline-offset:-1px}
+.mt td.dg{background:#14202e;border-color:#2f5f8f;color:#cfe6ff}
+.sx{font-size:13px;color:#c9d3de;line-height:1.55}
+.sx h4{margin:0 0 6px;color:var(--accent);font-size:14px}
+.sx .f{font:14px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8;background:#0f141b;border:1px solid #1e2836;border-radius:8px;padding:6px 10px;margin:6px 0;line-height:1.8}
+.sx .res{color:#5fd38d;font-weight:600}
+.sx table.pt{border-collapse:collapse;font-size:12px;margin-top:4px}
+.sx table.pt td,.sx table.pt th{border-bottom:1px solid #1e2836;padding:2px 8px;text-align:right}
+.sx table.pt th{color:var(--muted);font-weight:500}
+#cStep{width:100%;height:210px;display:block;border-radius:8px;background:#0b0f15;margin-top:12px}
 </style>
 </head>
 <body>
@@ -120,11 +146,22 @@ input.ni{width:56px}
         <h3>2 · Decomposition into 2×2 rotations</h3>
         <p>Any <i class="v">U</i> can be factorized into <i class="v">N</i>(<i class="v">N</i>−1)/2 MZIs <i class="v">T</i><sub>m,m+1</sub>, each acting on two neighbouring waveguides, followed by a diagonal screen of <i class="v">N</i> output phases:</p>
         <div class="eq"><i class="v">U</i> = <i class="v">D</i> · Π<sub>(m,n)</sub> <i class="v">T</i><sub>m,m+1</sub>(θ, φ), &nbsp;&nbsp; 2 · <span class="frac"><span><i class="v">N</i>(<i class="v">N</i>−1)</span><span>2</span></span> + <i class="v">N</i> = <i class="v">N</i>²</div>
-        <p>The phases are found by <b>nulling</b>: multiply <i class="v">U</i> by MZI matrices chosen to set one element to zero at a time, until only a diagonal is left. The order of the nulling defines the topology of the mesh.</p>
+        <p>The phases are found by <b>nulling</b>: multiply <i class="v">U</i> by MZI matrices chosen to set one element to zero at a time, until only a diagonal is left. Each nulling fixes one MZI (θ, φ). The order of the nulling defines the topology of the mesh.</p>
+        <p><b>Nulling from the right</b> (mixes columns <i class="v">m</i>, <i class="v">m</i>+1). Take two neighbouring elements of one row, <i class="v">a</i> = <i class="v">W</i><sub>r,m</sub> and <i class="v">b</i> = <i class="v">W</i><sub>r,m+1</sub>. After <i class="v">W</i> → <i class="v">W</i>·<i class="v">T</i>†<sub>m,m+1</sub> the new left element is <i class="v">a</i> e<sup>−jφ</sup> sin(θ/2) + <i class="v">b</i> cos(θ/2) (times a phase), which vanishes for</p>
+        <div class="eq">θ = 2 atan <span class="frac"><span>|<i class="v">b</i>|</span><span>|<i class="v">a</i>|</span></span>, &nbsp;&nbsp; φ = arg(−<i class="v">a</i> / <i class="v">b</i>)</div>
+        <p><b>Nulling from the left</b> (mixes rows <i class="v">m</i>, <i class="v">m</i>+1). Take two neighbouring elements of one column, <i class="v">a</i> = <i class="v">W</i><sub>m,c</sub> and <i class="v">b</i> = <i class="v">W</i><sub>m+1,c</sub>. After <i class="v">W</i> → <i class="v">T</i><sub>m,m+1</sub>·<i class="v">W</i> the new lower element is ∝ <i class="v">a</i> e<sup>jφ</sup> cos(θ/2) − <i class="v">b</i> sin(θ/2), which vanishes for</p>
+        <div class="eq">θ = 2 atan <span class="frac"><span>|<i class="v">a</i>|</span><span>|<i class="v">b</i>|</span></span>, &nbsp;&nbsp; φ = arg(<i class="v">b</i> / <i class="v">a</i>)</div>
+        <p>The modulus ratio fixes the splitting (θ) and the relative phase fixes φ. Because the MZI is unitary, the zeros created before are never destroyed, as long as the order is chosen properly.</p>
       </div>
       <div class="th">
         <h3>3 · Reck (1994): triangular mesh</h3>
-        <p>The rows are nulled from the bottom, using multiplications from one side only. The MZIs form a triangle:</p>
+        <p>The algorithm uses multiplications from the right only:</p>
+        <ol style="margin:4px 0 6px 18px;padding:0">
+          <li>Start with <i class="v">W</i> = <i class="v">U</i>.</li>
+          <li>Last row (<i class="v">N</i>): null <i class="v">W</i><sub>N,1</sub>, <i class="v">W</i><sub>N,2</sub>, …, <i class="v">W</i><sub>N,N−1</sub> from left to right. Element <i class="v">W</i><sub>N,c</sub> is nulled with an MZI on columns <i class="v">c</i>, <i class="v">c</i>+1, pushing the power of the row to the right. Since the row has unit norm, <i class="v">W</i><sub>N,N</sub> ends with |·| = 1, and by unitarity the rest of column <i class="v">N</i> becomes zero too.</li>
+          <li>Repeat with row <i class="v">N</i>−1 (elements 1 … <i class="v">N</i>−2), then row <i class="v">N</i>−2, … down to row 2.</li>
+          <li>After <i class="v">N</i>(<i class="v">N</i>−1)/2 steps, <i class="v">U</i> · <i class="v">T</i>†<sub>1</sub> ⋯ <i class="v">T</i>†<sub>K</sub> = <i class="v">D</i> is diagonal, so <b><i class="v">U</i> = <i class="v">D</i> · <i class="v">T</i><sub>K</sub> ⋯ <i class="v">T</i><sub>1</sub></b>: the first MZI found is the first one crossed by the light. The phases of <i class="v">D</i> are the output phase shifters.</li>
+        </ol>
         <ul style="margin:4px 0 0 18px;padding:0">
           <li>number of MZIs: <i class="v">N</i>(<i class="v">N</i>−1)/2</li>
           <li>optical depth: <b>2<i class="v">N</i> − 3</b> MZI columns</li>
@@ -135,13 +172,20 @@ input.ni{width:56px}
       </div>
       <div class="th">
         <h3>4 · Clements (2016): rectangular mesh</h3>
-        <p>Rows and columns are nulled alternately from both sides. The left-hand factors are then moved through the diagonal using <i class="v">T</i>⁻¹<i class="v">D</i> = <i class="v">D</i>′<i class="v">T</i>′:</p>
+        <p>The lower-left triangle of <i class="v">U</i> is cleared diagonal by diagonal, alternating the side:</p>
+        <ol style="margin:4px 0 6px 18px;padding:0">
+          <li>For <i class="v">i</i> = 1 … <i class="v">N</i>−1 take the <i class="v">i</i>-th anti-diagonal of the lower triangle.</li>
+          <li><b><i class="v">i</i> odd</b>: null its elements from bottom to top <b>from the right</b>, <i class="v">W</i> → <i class="v">W</i>·<i class="v">T</i>†. These MZIs sit at the input side of the mesh.</li>
+          <li><b><i class="v">i</i> even</b>: null its elements from top to bottom <b>from the left</b>, <i class="v">W</i> → <i class="v">T</i>·<i class="v">W</i>. These MZIs belong to the output side.</li>
+          <li>At the end <i class="v">T</i><sub>L</sub> ⋯ <i class="v">U</i> ⋯ <i class="v">T</i>†<sub>R</sub> = <i class="v">D</i>, i.e. <i class="v">U</i> = <i class="v">T</i>†<sub>L</sub> ⋯ <i class="v">D</i> ⋯ <i class="v">T</i><sub>R</sub>.</li>
+          <li><b>Commute</b> each inverse left factor through <i class="v">D</i>, starting with the one next to it: <i class="v">T</i>⁻¹(θ, φ) · diag(<i class="v">d</i><sub>m</sub>, <i class="v">d</i><sub>m+1</sub>) = <i class="v">V</i> = diag(<i class="v">d</i>′<sub>m</sub>, <i class="v">d</i>′<sub>m+1</sub>) · <i class="v">T</i>(θ′, φ′), with θ′ = 2 acos|<i class="v">V</i><sub>12</sub>|. Every MZI ends with the standard (θ′, φ′) form and <i class="v">D</i> moves to the output.</li>
+        </ol>
         <ul style="margin:4px 0 0 18px;padding:0">
           <li>same number of MZIs: <i class="v">N</i>(<i class="v">N</i>−1)/2</li>
           <li>optical depth: <b><i class="v">N</i></b> columns, about half of Reck's</li>
           <li>every path crosses a similar number of MZIs, so <b>loss is balanced</b></li>
         </ul>
-        <p>The result is a more compact mesh that is more tolerant to loss, and the preferred choice in today's photonic processors.</p>
+        <p>The result is a more compact mesh that is more tolerant to loss, and the preferred choice in today's photonic processors. Both simulations include a <b>step-by-step 4×4 worked example</b> of the algorithm.</p>
         <canvas class="schem" id="schClem"></canvas>
       </div>
       <div class="th">
@@ -179,7 +223,7 @@ input.ni{width:56px}
       <div class="group" data-group="prog"><h3>Programming</h3>
         <div class="inline">Target <select id="selTarget" class="sm">
           <option value="dft">DFT (N×N splitter)</option><option value="rand">Random unitary (Haar)</option><option value="id">Identity</option>
-          <option value="rev">Reverse order (swap)</option><option value="shift">Cyclic shift</option><option value="route">Route port i → j</option><option value="had">Hadamard (N = 4, 8)</option>
+          <option value="rev">Reverse order (swap)</option><option value="shift">Cyclic shift</option><option value="route">Route port i → j</option><option value="had">Hadamard (N = 4, 8)</option><option value="example">4×4 worked example (below)</option>
         </select></div>
         <div class="inline" id="routeWrap">i <input type="number" id="nRi" class="ni" min="1" value="1"> → j <input type="number" id="nRj" class="ni" min="1" value="4"></div>
         <div class="inline">Ports N <span class="seg" id="segN"><button data-v="4">4</button><button data-v="6" class="on">6</button><button data-v="8">8</button></span></div>
@@ -208,6 +252,18 @@ input.ni{width:56px}
       <span id="plotNote"></span>
     </div>
     <canvas id="cPlot"></canvas>
+  </section>
+  <section class="card span2" id="stepCard">
+    <h2 id="stepTitle">Step-by-step decomposition · 4×4 worked example</h2>
+    <div class="stepbar">
+      <button class="btn" id="bFirst">⏮</button><button class="btn" id="bPrev">◀ Prev</button><span class="cnt" id="stepCnt"></span><button class="btn primary" id="bNext">Next ▶</button><button class="btn" id="bLast">⏭</button>
+      <div class="dots" id="stepDots"></div>
+      <button class="btn" id="bLoadEx" style="margin-left:auto">Load this example into the mesh above</button>
+    </div>
+    <div class="stepgrid">
+      <div id="mBefore"></div><div id="mAfter"></div><div class="sx" id="stepText"></div>
+    </div>
+    <canvas id="cStep"></canvas>
   </section>
 </main>
 <script>
@@ -436,6 +492,7 @@ function target() {
     // falls through to DFT when N is not a power of two
     case 'dft': return M((k, n) => cscale(cexpj(-2 * PI * k * n / N), 1 / Math.sqrt(N)));
     case 'rand': return haar(N, rng(S.randSeed * 7919 + N));
+    case 'example': return N === 4 ? matCopy(EX) : haar(N, rng(S.randSeed * 7919 + N));
   }
 }
 function program() { U = target(); mesh = S.view === 'reck' ? decompReck(U) : decompClements(U); S.sel = -1; S.edited = false; refreshErr(); }
@@ -504,8 +561,9 @@ function drawMesh(cv, ms, opt) {
     const p = cols ? cols[c][k] : 0; wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(xa, yk(k)); ctx.lineTo(xb, yk(k)); }, p, lit, opt.t || 0);
   }
   // MZIs drawn as real interferometers: external PS → coupler → two arms (internal PS on top) → coupler
-  boxes = [];
+  const bx = [], done = opt.done || null;
   ms.ops.forEach((o, i) => {
+    ctx.save(); if (done && !done.has(i)) ctx.globalAlpha = i === opt.sel ? 0.55 : 0.13;
     const x = xc(o.col), L = x - cw / 2, R = x + cw / 2, ya = yk(o.m), yb = yk(o.m + 1), ym = (ya + yb) / 2, g = 3.2;
     const f = u => L + u * cw, pin = cols ? [cols[o.col][o.m], cols[o.col][o.m + 1]] : [0, 0], pout = cols ? [cols[o.col + 1][o.m], cols[o.col + 1][o.m + 1]] : [0, 0], pa = pr ? pr.arms[i] : [0, 0];
     const sb = (xa, y1, xb, y2) => ctx.bezierCurveTo((xa + xb) / 2, y1, (xa + xb) / 2, y2, xb, y2);
@@ -519,9 +577,20 @@ function drawMesh(cv, ms, opt) {
     heater(ctx, f(0.43), f(0.57), ya, o.th / (2 * PI), lit);    // internal phase shifter (θ)
     const bx0 = f(0.0), bx1 = f(1.0), by0 = ya - 14, by1 = yb + 10;
     if (i === opt.sel || i === opt.hover) { ctx.save(); ctx.strokeStyle = i === opt.sel ? 'rgba(255,255,255,0.85)' : 'rgba(255,204,102,0.7)'; ctx.lineWidth = 1.4; ctx.setLineDash(i === opt.sel ? [] : [4, 3]); roundRect(ctx, bx0 + 2, by0, bx1 - bx0 - 4, by1 - by0, 8); ctx.stroke(); ctx.restore(); }
-    boxes.push({ i, x0: bx0 + 2, x1: bx1 - 2, y0: by0, y1: by1 });
+    if (opt.num) { ctx.fillStyle = i === opt.sel ? '#ffcc66' : '#8b98a9'; ctx.font = '600 11px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(`#${i + 1}`, x, by0 - 2); }
+    ctx.restore();
+    bx.push({ i, x0: bx0 + 2, x1: bx1 - 2, y0: by0, y1: by1 });
   });
-  if (!lit) return;
+  if (lit) boxes = bx;
+  if (!lit) {
+    if (opt.num) {   // worked example: output phase screen and port labels
+      ctx.font = FONT; ctx.textBaseline = 'middle';
+      for (let k = 0; k < N; k++) { ctx.save(); if (!opt.dDone) ctx.globalAlpha = 0.2; heater(ctx, xD - 9, xD + 9, yk(k), ms.D[k] / (2 * PI), true); ctx.restore(); }
+      ctx.fillStyle = opt.dDone ? '#ffcc66' : '#5c6c84'; ctx.textAlign = 'center'; ctx.fillText('D', xD, m.t - 12);
+      ctx.fillStyle = '#8b98a9'; ctx.fillText('in', 10, m.t - 12); ctx.fillText('out', w - 12, m.t - 12);
+    }
+    return;
+  }
   // output phase screen (D), photodetectors and input labels
   ctx.font = FONT; ctx.textBaseline = 'middle';
   for (let k = 0; k < N; k++) {
@@ -530,7 +599,7 @@ function drawMesh(cv, ms, opt) {
     const pin = cols[0][k]; ctx.textAlign = 'right'; ctx.fillStyle = pin > 0.001 ? '#ff8fa8' : '#5c6c84'; ctx.fillText(`in ${k + 1}${pin > 0.001 ? ` · ${(pin * 100).toFixed(0)}%` : ''}`, m.l - 12, yk(k) - 11);
   }
   ctx.fillStyle = '#8b98a9'; ctx.textAlign = 'center'; ctx.fillText('D', xD, m.t - 12); ctx.fillText('photodetectors', xEnd + 52, m.t - 12);
-  if (opt.hover >= 0 && opt.hover < ms.ops.length) { const o = ms.ops[opt.hover], b = boxes[opt.hover]; tag(ctx, clamp((b.x0 + b.x1) / 2, 180, w - 180), b.y0 - 12, `MZI ${opt.hover + 1} · θ = ${(o.th / PI).toFixed(3)}π · φ = ${(o.ph / PI).toFixed(3)}π · bar ${(Math.sin(o.th / 2) ** 2 * 100).toFixed(0)} %`, '#fff', 'rgba(8,11,16,0.92)'); }
+  if (opt.hover >= 0 && opt.hover < ms.ops.length) { const o = ms.ops[opt.hover], b = bx[opt.hover]; tag(ctx, clamp((b.x0 + b.x1) / 2, 180, w - 180), b.y0 - 12, `MZI ${opt.hover + 1} · θ = ${(o.th / PI).toFixed(3)}π · φ = ${(o.ph / PI).toFixed(3)}π · bar ${(Math.sin(o.th / 2) ** 2 * 100).toFixed(0)} %`, '#fff', 'rgba(8,11,16,0.92)'); }
 }
 /* ------------------------------------------------ matrices */
 function drawMatrices() {
@@ -601,6 +670,148 @@ function update() {
   ['thSel', 'phSel'].forEach(id => document.getElementById('row_' + id).classList.toggle('off', !o));
   setTxt('meshTitle', `${S.view === 'reck' ? 'Reck' : 'Clements'} mesh · N = ${N} · ${mesh.ops.length} MZIs`);
 }
+/* ------------------------------------------------ step-by-step worked example (fixed 4×4 Haar unitary) */
+const EX = haar(4, rng(2024));
+const piM = x => (((x / PI) % 2) + 2) % 2;                       // angle mod 2π, in units of π
+const pf = x => `${piM(x).toFixed(3)}π`;
+const ps = x => `${(x / PI).toFixed(3)}π`;
+const cfmt = z => cabs(z) < 1e-9 ? '0' : `${cabs(z).toFixed(3)} <small>∠${(carg(z) / PI).toFixed(2)}π</small>`;
+const cinl = z => `${cabs(z).toFixed(3)}·e<sup>j${(carg(z) / PI).toFixed(3)}π</sup>`;
+const wv = (r, c) => `<i class="v">W</i><sub>${r + 1},${c + 1}</sub>`;
+const diagM = d => d.map((z, i) => d.map((_, j) => i === j ? z : cx(0)));
+function stepsReck(U) {
+  const N = U.length, W = matCopy(U), st = []; let k = 0;
+  for (let r = N - 1; r >= 1; r--) for (let c = 0; c < r; c++) {
+    const a = W[r][c], b = W[r][c + 1], { th, ph } = nullRight(a, b, 0), before = matCopy(W);
+    rightMul2(W, c, dag(Tmzi(th, ph)));
+    st.push({ kind: 'right', r, c, m: c, a, b, th, ph, before, after: matCopy(W), op: k++, rowEnd: c === r - 1 });
+  }
+  const d = W.map((r, i) => r[i]); st.push({ kind: 'diag', d, before: matCopy(W), after: diagM(d) });
+  return st;
+}
+function stepsClements(U) {
+  const N = U.length, W = matCopy(U), st = []; let nR = 0, nL = 0;
+  for (let i = 1; i <= N - 1; i++) {
+    if (i % 2 === 1) for (let j = 0; j <= i - 1; j++) {
+      const m = i - j - 1, r = N - 1 - j, a = W[r][m], b = W[r][m + 1], { th, ph } = nullRight(a, b, 0), before = matCopy(W);
+      rightMul2(W, m, dag(Tmzi(th, ph))); st.push({ kind: 'right', i, r, c: m, m, a, b, th, ph, before, after: matCopy(W), op: nR++ });
+    } else for (let j = 1; j <= i; j++) {
+      const m = N + j - i - 2, col = j - 1, a = W[m][col], b = W[m + 1][col], { th, ph } = nullLeft(a, b, 1), before = matCopy(W);
+      leftMul2(W, m, Tmzi(th, ph)); st.push({ kind: 'left', i, r: m + 1, c: col, m, a, b, th, ph, before, after: matCopy(W), li: nL++ });
+    }
+  }
+  st.forEach(s => { if (s.kind === 'left') s.op = nR + (nL - 1 - s.li); });
+  const d = W.map((r, i) => r[i]);
+  st.push({ kind: 'diag0', d: d.slice(), before: matCopy(W), after: diagM(d), nR, nL });
+  const lefts = st.filter(s => s.kind === 'left');
+  for (let l = nL - 1; l >= 0; l--) {
+    const L = lefts[l], Ti = dag(Tmzi(L.th, L.ph)), m = L.m, dB = d.slice();
+    const V = [[cmul(Ti[0][0], d[m]), cmul(Ti[0][1], d[m + 1])], [cmul(Ti[1][0], d[m]), cmul(Ti[1][1], d[m + 1])]], sp = splitDT(V);
+    d[m] = sp.p; d[m + 1] = sp.q;
+    st.push({ kind: 'commute', L, l, m, V, th: sp.th, ph: sp.ph, dB, dA: d.slice(), before: diagM(dB), after: diagM(d), op: nR + (nL - 1 - l) });
+  }
+  st.push({ kind: 'diag', d: d.slice(), before: diagM(d), after: diagM(d) });
+  return st;
+}
+const ST = { arch: null, steps: [], mesh: null, k: 0 };
+function buildSteps() {
+  const arch = S.view === 'reck' ? 'reck' : 'clements';
+  if (ST.arch === arch) return;
+  ST.arch = arch; ST.k = 0; ST.steps = arch === 'reck' ? stepsReck(EX) : stepsClements(EX); ST.mesh = arch === 'reck' ? decompReck(EX) : decompClements(EX);
+  const e = ST.steps.reduce((mx, s) => (s.kind === 'right' || s.kind === 'commute') ? Math.max(mx, Math.abs(piM(s.th) - piM(ST.mesh.ops[s.op].th)) % 2, Math.abs(piM(s.ph) - piM(ST.mesh.ops[s.op].ph)) % 2) : mx, 0);
+  if (e > 1e-9 && e < 2 - 1e-9) console.warn('worked example: steps and decomposition disagree', e);
+}
+function mtab(M, cap, hl) {
+  const N = M.length; let h = `<table class="mt"><caption>${cap}</caption><tr><th></th>${M.map((_, j) => `<th>${j + 1}</th>`).join('')}</tr>`;
+  for (let i = 0; i < N; i++) {
+    h += `<tr><th>${i + 1}</th>`;
+    for (let j = 0; j < N; j++) {
+      const z = M[i][j], cl = [];
+      if (cabs(z) < 1e-9) cl.push(i > j ? 'zn' : 'z');
+      else if (hl.ab && hl.ab.some(([r, c]) => r === i && c === j)) cl.push('ab');
+      else if (hl.diag && i === j) cl.push('dg');
+      else if ((hl.cols && hl.cols.includes(j)) || (hl.rows && hl.rows.includes(i))) cl.push('inv');
+      if (hl.tgt && hl.tgt[0] === i && hl.tgt[1] === j) cl.push('tgt');
+      h += `<td class="${cl.join(' ')}">${hl.label ? hl.label(i, j) : cfmt(z)}</td>`;
+    }
+    h += '</tr>';
+  }
+  return h + '</table>';
+}
+const smat2 = V => `<span class="smat"><span>${cinl(V[0][0])}</span><span>${cinl(V[0][1])}</span><span>${cinl(V[1][0])}</span><span>${cinl(V[1][1])}</span></span>`;
+function renderStep() {
+  buildSteps();
+  const st = ST.steps, n = st.length, k = ST.k, reck = ST.arch === 'reck', ms = ST.mesh, N = 4;
+  setTxt('stepTitle', `Step-by-step ${reck ? 'Reck' : 'Clements'} decomposition · 4×4 worked example`);
+  setTxt('stepCnt', k === 0 ? `Start · 0 / ${n}` : `Step ${k} / ${n}`);
+  document.getElementById('stepDots').innerHTML = Array.from({ length: n + 1 }, (_, i) => `<i data-k="${i}" class="${i === k ? 'on' : i < k ? 'done' : ''}" title="${i === 0 ? 'Start' : 'Step ' + i}"></i>`).join('');
+  document.querySelectorAll('#stepDots i').forEach(d => d.onclick = () => { ST.k = +d.dataset.k; renderStep(); });
+  let before = '', after = '', txt = '', done = new Set(), sel = -1, dDone = false;
+  const bar = th => (Math.sin(th / 2) ** 2 * 100).toFixed(1);
+  if (k === 0) {
+    const UU = matMul(dag(EX), EX); let e = 0; for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) e = Math.max(e, cabs(csub(UU[i][j], cx(i === j ? 1 : 0))));
+    const order = {}; st.forEach((s, q) => { if (s.kind === 'right' || s.kind === 'left') order[s.r + ',' + s.c] = [q + 1, s.kind === 'right' ? 'R' : 'L']; });
+    before = mtab(EX, 'Target U (modulus ∠ phase)', {});
+    after = mtab(EX, 'Nulling plan (step · side)', { label: (i, j) => order[i + ',' + j] ? `<b style="color:var(--accent)">${order[i + ',' + j][0]}</b> <small>${order[i + ',' + j][1] === 'R' ? 'right' : 'left'}</small>` : '<small>·</small>', rows: [] });
+    txt = `<h4>The target matrix</h4><p>A random 4×4 unitary drawn from the Haar measure (fixed seed, so the numbers are always the same). Each cell shows |<i class="v">U</i><sub>ij</sub>| ∠ arg(<i class="v">U</i><sub>ij</sub>). Unitarity check: max |<i class="v">U</i>†<i class="v">U</i> − <i class="v">I</i>| = ${e.toExponential(1)}.</p>
+      <p>We need <i class="v">N</i>(<i class="v">N</i>−1)/2 = <b>6 MZIs</b> (12 phases) plus <b>4 output phases</b>: 16 = <i class="v">N</i>² real parameters. Each nulling removes one complex element below the diagonal and fixes one MZI.</p>
+      <p>${reck ? 'Reck nulls the rows from the bottom, left to right, always multiplying <b>from the right</b> (W → W·T†).' : 'Clements clears the anti-diagonals of the lower triangle alternately: odd diagonals <b>from the right</b> (W → W·T†), even diagonals <b>from the left</b> (W → T·W).'} The table on the right shows the order. Press <b>Next</b>.</p>`;
+  } else {
+    const s = st[k - 1];
+    st.slice(0, k).forEach(q => { if (q.kind === 'right' || q.kind === 'commute') done.add(q.op); });
+    if (s.op !== undefined) sel = s.op;
+    const o = s.op !== undefined ? ms.ops[s.op] : null, where = o ? `waveguides ${o.m + 1}–${o.m + 2}, column ${o.col + 1} of the mesh` : '';
+    if (s.kind === 'right') {
+      const cols = [s.c, s.c + 1];
+      before = mtab(s.before, 'W before', { ab: [[s.r, s.c], [s.r, s.c + 1]], cols, tgt: [s.r, s.c] });
+      after = mtab(s.after, `W · T†<sub>${s.c + 1},${s.c + 2}</sub> after`, { cols, tgt: [s.r, s.c] });
+      txt = `<h4>Null ${wv(s.r, s.c)} from the right</h4>
+        <p>${reck ? `Row ${s.r + 1} is processed from left to right.` : `Anti-diagonal ${s.i} is odd: its elements are nulled from the bottom up, from the right.`} Multiply by <i class="v">T</i>†(θ, φ) acting on <b>columns ${s.c + 1} and ${s.c + 2}</b>: only these two columns change (amber).</p>
+        <div class="f"><i class="v">a</i> = ${wv(s.r, s.c)} = ${cinl(s.a)}<br><i class="v">b</i> = ${wv(s.r, s.c + 1)} = ${cinl(s.b)}</div>
+        <div class="f">θ = 2 atan(|<i class="v">b</i>| / |<i class="v">a</i>|) = 2 atan(${cabs(s.b).toFixed(3)} / ${cabs(s.a).toFixed(3)}) = <span class="res">${pf(s.th)}</span><br>φ = arg(−<i class="v">a</i> / <i class="v">b</i>) = <span class="res">${pf(s.ph)}</span></div>
+        <p>→ <b>MZI #${s.op + 1}</b> (${where}) · bar ${bar(s.th)} %. ${wv(s.r, s.c)} is now 0; the zeros made before stay at zero.${reck && s.rowEnd ? ` <b>Row ${s.r + 1} is finished</b>: |${wv(s.r, s.r)}| = 1, and by unitarity the rest of column ${s.r + 1} has become zero too.` : ''}${!reck ? ' This MZI sits on the input side of the mesh.' : ''}</p>`;
+    } else if (s.kind === 'left') {
+      const rows = [s.m, s.m + 1];
+      before = mtab(s.before, 'W before', { ab: [[s.m, s.c], [s.m + 1, s.c]], rows, tgt: [s.r, s.c] });
+      after = mtab(s.after, `T<sub>${s.m + 1},${s.m + 2}</sub> · W after`, { rows, tgt: [s.r, s.c] });
+      txt = `<h4>Null ${wv(s.r, s.c)} from the left</h4>
+        <p>Anti-diagonal ${s.i} is even: its elements are nulled from the top down, from the left. Multiply by <i class="v">T</i>(θ, φ) acting on <b>rows ${s.m + 1} and ${s.m + 2}</b>: only these two rows change (amber).</p>
+        <div class="f"><i class="v">a</i> = ${wv(s.m, s.c)} = ${cinl(s.a)}<br><i class="v">b</i> = ${wv(s.m + 1, s.c)} = ${cinl(s.b)}</div>
+        <div class="f">θ = 2 atan(|<i class="v">a</i>| / |<i class="v">b</i>|) = 2 atan(${cabs(s.a).toFixed(3)} / ${cabs(s.b).toFixed(3)}) = <span class="res">${pf(s.th)}</span><br>φ = arg(<i class="v">b</i> / <i class="v">a</i>) = <span class="res">${pf(s.ph)}</span></div>
+        <p>This MZI belongs to the <b>output side</b> of the mesh (position #${s.op + 1}, faded). Its phases are <b>not final</b>: at the end its inverse has to be moved through the diagonal <i class="v">D</i>, which changes them to (θ′, φ′).</p>`;
+    } else if (s.kind === 'diag0') {
+      before = mtab(s.before, 'W after all nullings', { diag: true });
+      after = mtab(s.after, 'D = diag(d₁ … d₄)', { diag: true });
+      txt = `<h4>Everything below the diagonal is zero</h4>
+        <p>After ${s.nR} right and ${s.nL} left nullings W is diagonal (by unitarity the upper triangle vanished too) and every |<i class="v">d</i><sub>k</sub>| = 1:</p>
+        <div class="f"><i class="v">T</i><sub>L${s.nL}</sub> ⋯ <i class="v">T</i><sub>L1</sub> · <i class="v">U</i> · <i class="v">T</i>†<sub>R1</sub> ⋯ <i class="v">T</i>†<sub>R${s.nR}</sub> = <i class="v">D</i><br>⇒ <i class="v">U</i> = <i class="v">T</i>†<sub>L1</sub> ⋯ <i class="v">T</i>†<sub>L${s.nL}</sub> · <i class="v">D</i> · <i class="v">T</i><sub>R${s.nR}</sub> ⋯ <i class="v">T</i><sub>R1</sub></div>
+        <p>The right factors already have the MZI form. The left ones appear as inverses on the <b>output</b> side of <i class="v">D</i>, but a physical mesh needs <i class="v">D</i> at the very end. The next ${s.nL} steps commute them through <i class="v">D</i>, starting with the one next to it (L${s.nL}).</p>`;
+    } else if (s.kind === 'commute') {
+      const m = s.m;
+      before = mtab(s.before, 'D before', { diag: true, rows: [m, m + 1], ab: [[m, m], [m + 1, m + 1]] });
+      after = mtab(s.after, 'D′ after', { diag: true, rows: [m, m + 1], ab: [[m, m], [m + 1, m + 1]] });
+      txt = `<h4>Commute T†<sub>L${s.l + 1}</sub> through D</h4>
+        <p>Left MZI L${s.l + 1} (rows ${m + 1}–${m + 2}, θ = ${pf(s.L.th)}, φ = ${pf(s.L.ph)}) meets the entries <i class="v">d</i><sub>${m + 1}</sub>, <i class="v">d</i><sub>${m + 2}</sub> of <i class="v">D</i>:</p>
+        <div class="f"><i class="v">V</i> = <i class="v">T</i>†(θ, φ) · diag(<i class="v">d</i><sub>${m + 1}</sub>, <i class="v">d</i><sub>${m + 2}</sub>) = ${smat2(s.V)}</div>
+        <p>Write it the other way round, <i class="v">V</i> = diag(<i class="v">d</i>′<sub>${m + 1}</sub>, <i class="v">d</i>′<sub>${m + 2}</sub>) · <i class="v">T</i>(θ′, φ′). Since |<i class="v">T</i><sub>12</sub>| = cos(θ′/2):</p>
+        <div class="f">θ′ = 2 acos|<i class="v">V</i><sub>12</sub>| = 2 acos(${cabs(s.V[0][1]).toFixed(3)}) = <span class="res">${pf(s.th)}</span><br>φ′ from <i class="v">V</i><sub>11</sub> and <i class="v">V</i><sub>12</sub>: <span class="res">${pf(s.ph)}</span><br><i class="v">d</i>′<sub>${m + 1}</sub> = ${cinl(s.dA[m])}, &nbsp;<i class="v">d</i>′<sub>${m + 2}</sub> = ${cinl(s.dA[m + 1])}</div>
+        <p>→ <b>MZI #${s.op + 1}</b> (${where}) · bar ${bar(s.th)} %. The new diagonal D′ is now on the left of every remaining factor.</p>`;
+    } else {
+      dDone = true;
+      const T = meshMatrix(ms, null); let e = 0; for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) e = Math.max(e, cabs(csub(T[i][j], EX[i][j])));
+      before = mtab(s.before, `Final D`, { diag: true });
+      after = `<table class="mt"><caption>Output phases δ<sub>k</sub> = arg d<sub>k</sub></caption>${s.d.map((z, i) => `<tr><th>${i + 1}</th><td class="dg">${pf(carg(z))}</td></tr>`).join('')}</table>`;
+      txt = `<h4>Done · the mesh is programmed</h4>
+        <p>${reck ? '<i class="v">U</i> = <i class="v">D</i> · <i class="v">T</i><sub>6</sub> ⋯ <i class="v">T</i><sub>1</sub>' : 'All six MZIs now stand on the input side of <i class="v">D</i>: <i class="v">U</i> = <i class="v">D</i> · <i class="v">T</i><sub>6</sub> ⋯ <i class="v">T</i><sub>1</sub>'}. The phases of <i class="v">D</i> are the output phase shifters. Phases found for each MZI:</p>
+        <table class="pt"><tr><th>MZI</th><th>waveguides</th><th>column</th><th>θ</th><th>φ</th><th>bar</th></tr>${ms.ops.map((o, i) => `<tr><td>#${i + 1}</td><td>${o.m + 1}–${o.m + 2}</td><td>${o.col + 1}</td><td>${pf(o.th)}</td><td>${pf(o.ph)}</td><td>${bar(o.th)} %</td></tr>`).join('')}</table>
+        <p>Check: rebuilding the matrix from these 16 parameters gives <i class="v">U</i> with max error ${e.toExponential(1)}. Press <b>Load this example into the mesh above</b> to see the light propagate.</p>`;
+      ms.ops.forEach((_, i) => done.add(i));
+    }
+  }
+  document.getElementById('mBefore').innerHTML = before; document.getElementById('mAfter').innerHTML = after; document.getElementById('stepText').innerHTML = txt;
+  drawMesh(document.getElementById('cStep'), ms, { light: false, sel, hover: -1, done, num: true, dDone });
+}
+function goStep(k) { ST.k = clamp(k, 0, ST.steps.length); renderStep(); }
 /* ------------------------------------------------ controls */
 const SL = [
   { id: 'sph', g: 'err', lab: 'Phase error σ (θ, φ, output)', min: 0, max: 0.3, step: 0.001, unit: 'rad', dec: 3, get: () => S.sph, set: v => S.sph = v, after: refreshErr },
@@ -611,7 +822,12 @@ const SL = [
 ];
 function buildInputs() { const s = document.getElementById('selIn'); s.innerHTML = Array.from({ length: S.N }, (_, k) => `<option value="${k}">Port ${k + 1}</option>`).join('') + '<option value="-1">All ports (equal power)</option>'; if (S.inp >= S.N) S.inp = 0; s.value = S.inp; }
 document.getElementById('selIn').onchange = e => { S.inp = +e.target.value; dirty = true; };
-document.getElementById('selTarget').onchange = e => { S.target = e.target.value; document.getElementById('routeWrap').classList.toggle('hide', S.target !== 'route'); program(); };
+document.getElementById('selTarget').onchange = e => { S.target = e.target.value; document.getElementById('routeWrap').classList.toggle('hide', S.target !== 'route'); if (S.target === 'example' && S.N !== 4) { S.N = 4; setSeg('segN', '4'); buildInputs(); } program(); };
+document.getElementById('bFirst').onclick = () => goStep(0);
+document.getElementById('bPrev').onclick = () => goStep(ST.k - 1);
+document.getElementById('bNext').onclick = () => goStep(ST.k + 1);
+document.getElementById('bLast').onclick = () => goStep(ST.steps.length);
+document.getElementById('bLoadEx').onclick = () => { S.target = 'example'; document.getElementById('selTarget').value = 'example'; document.getElementById('routeWrap').classList.add('hide'); S.N = 4; setSeg('segN', '4'); buildInputs(); program(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 document.getElementById('nRi').onchange = e => { S.ri = +e.target.value; if (S.target === 'route') program(); };
 document.getElementById('nRj').onchange = e => { S.rj = +e.target.value; if (S.target === 'route') program(); };
 document.getElementById('bProg').onclick = program;
@@ -620,7 +836,7 @@ document.getElementById('bRand').onclick = () => { S.randSeed++; S.target = 'ran
 document.getElementById('bSeed').onclick = () => { S.seed++; refreshErr(); };
 document.getElementById('bDesel').onclick = () => { S.sel = -1; dirty = true; };
 wireSeg('segPlot', v => S.plot = v);
-wireSeg('segN', v => { S.N = +v; buildInputs(); program(); });
+wireSeg('segN', v => { S.N = +v; if (S.target === 'example' && S.N !== 4) { S.target = 'dft'; document.getElementById('selTarget').value = 'dft'; } buildInputs(); program(); });
 const cMesh = document.getElementById('cMesh');
 const hit = e => { for (const b of boxes) if (e.offsetX >= b.x0 && e.offsetX <= b.x1 && e.offsetY >= b.y0 && e.offsetY <= b.y1) return b.i; return -1; };
 cMesh.addEventListener('pointermove', e => { hoverBox = hit(e); });
@@ -629,8 +845,8 @@ cMesh.addEventListener('click', e => { const i = hit(e); S.sel = i; SL.forEach(s
 function setView(v) {
   S.view = v; document.getElementById('selView').value = v;
   document.getElementById('vTheory').classList.toggle('hide', v !== 'theory'); document.getElementById('vSim').classList.toggle('hide', v === 'theory');
-  setTxt('viewNote', v === 'theory' ? 'Read the comparison, then pick a mesh to simulate it.' : v === 'reck' ? 'Triangular mesh: depth 2N−3, unequal path lengths.' : 'Rectangular mesh: depth N, balanced paths.');
-  if (v === 'theory') drawSchematics(); else { program(); SL.forEach(syncSlider); }
+  setTxt('viewNote', v === 'theory' ? 'Read the comparison, then pick a mesh to simulate it.' : (v === 'reck' ? 'Triangular mesh: depth 2N−3, unequal path lengths.' : 'Rectangular mesh: depth N, balanced paths.') + ' Step-by-step 4×4 example at the bottom.');
+  if (v === 'theory') drawSchematics(); else { program(); SL.forEach(syncSlider); renderStep(); }
   dirty = true;
 }
 document.getElementById('selView').onchange = e => setView(e.target.value);
@@ -639,7 +855,7 @@ function drawSchematics() {
   drawMesh(document.getElementById('schReck'), decompReck(U6), { light: false, labels: false, sel: -1, hover: -1 });
   drawMesh(document.getElementById('schClem'), decompClements(U6), { light: false, labels: false, sel: -1, hover: -1 });
 }
-window.addEventListener('resize', () => { if (S.view === 'theory') drawSchematics(); dirty = true; });
+window.addEventListener('resize', () => { if (S.view === 'theory') drawSchematics(); else renderStep(); dirty = true; });
 buildInputs(); document.getElementById('routeWrap').classList.add('hide');
 program(); buildSliders(); setView('theory');
 let tA = 0, last = performance.now();
