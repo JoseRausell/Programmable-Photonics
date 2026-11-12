@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Optical circuit switches</title>
+<style>
+
+:root{
+  --bg:#0c1016; --card:#141a22; --card2:#10151c; --line:#243041; --text:#e6edf3; --muted:#8b98a9;
+  --thr:#4aa8ff; --refl:#d58cff; --fw:#5fd38d; --bw:#ff8f6b; --accent:#ffcc66; --laser:#ff4d6d; --warn:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:14px 20px 6px}
+header h1{font-size:19px;margin:0;font-weight:650}
+header .sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:10px 20px 20px}
+@media (max-width:1100px){main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600}
+.view{height:min(54vh,560px);min-height:380px;display:flex;flex-direction:column}
+.view canvas{flex:1;width:100%;min-height:0;display:block;border-radius:8px}
+#c3d{background:radial-gradient(ellipse at 50% 35%,#18212d 0%,#0d1218 75%);cursor:grab;touch-action:none}
+#c3d:active{cursor:grabbing}
+#cPlot{background:var(--card2);cursor:crosshair;touch-action:none}
+#cP2{background:var(--card2);height:240px;width:100%;display:block;border-radius:8px;cursor:crosshair;touch-action:none}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;color:var(--muted);border:0;padding:4px 10px;font:inherit;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:#223046;color:var(--text)}
+.toolbar label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+input[type=number]{background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;width:86px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.group{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.group h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin:7px 0}
+.row.off{opacity:.35;pointer-events:none}
+.row .lab{color:var(--muted);font-size:12.5px}
+.row .val{font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
+.row input[type=range]{grid-column:1/3;width:100%;accent-color:var(--accent);margin:2px 0 0}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0;font-size:12.5px;color:var(--muted)}
+.btn{background:#1d2735;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn:hover{background:#26344a}
+.btn.primary{border-color:#6b5a2b;background:#2d2615;color:var(--accent)}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
+.ro{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ro .k{font-size:11.5px;color:var(--muted)}
+.ro .v{font-size:15.5px;font-variant-numeric:tabular-nums;font-weight:600}
+.ro .v small{font-size:12px;color:var(--muted);font-weight:500}
+.span2{grid-column:1/-1}
+/* theory */
+.theory{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
+.th{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.th h3{margin:0 0 8px;font-size:14px;color:var(--accent)}
+.th p{margin:6px 0;color:#c9d3de;font-size:13px}
+.eq{display:block;text-align:center;line-height:2.4;margin:8px 0;font:15px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 3px}
+.frac>span:first-child{border-bottom:1px solid #cfd8e3;padding:0 4px 2px}
+.frac>span:last-child{padding:2px 4px 0}
+.live{font:600 12.5px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);background:#1f1a0e;border:1px solid #4a3d1c;border-radius:5px;padding:1px 6px;white-space:nowrap}
+table.fm{width:100%;border-collapse:collapse;font-size:13px}
+table.fm td{padding:5px 6px;border-bottom:1px solid #1f2836;color:#c9d3de;vertical-align:middle}
+table.fm td.f{font:14px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+table.fm td.f small{display:block;font:11.5px system-ui,sans-serif;color:var(--muted)}
+table.fm td:last-child{text-align:right}
+i.v{font-family:"Cambria Math","Times New Roman",serif;font-style:italic}
+a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1c;background:#1f1a0e;border-radius:8px;padding:3px 10px;margin-right:4px}a.back:hover{background:#2d2615}
+
+.row .val{display:flex;align-items:center;justify-content:flex-end;gap:4px;text-align:right}
+.numin{width:78px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font:inherit;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.numin:focus{outline:none;border-color:var(--accent)}
+.row .unit{color:var(--muted);font-size:12px;min-width:18px;text-align:left}
+.row .extra{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.cfgsel{background:#1f1a0e;color:var(--accent);border:1px solid #6b5a2b;border-radius:9px;padding:6px 10px;font:inherit;font-size:13.5px;cursor:pointer}
+
+.smat{display:inline-grid;grid-template-columns:auto auto;gap:2px 14px;padding:2px 9px;vertical-align:middle;border-left:1.5px solid #cfd8e3;border-right:1.5px solid #cfd8e3;border-radius:7px;line-height:1.7;text-align:center}
+
+.cfgbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:4px 20px 2px;font-size:13px;color:var(--muted)}
+#cNet{width:100%;display:block;border-radius:8px;background:#0b0f15;cursor:pointer}
+#cPlot{width:100%;height:300px;display:block;border-radius:8px;background:var(--card2)}
+.hide{display:none!important}
+select.sm{background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;font-size:12.5px}
+input.ni{width:56px}
+.theory p, .theory li{color:#c9d3de;font-size:13px}
+table.cmp{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+table.cmp th,table.cmp td{border-bottom:1px solid #1f2836;padding:4px 6px;text-align:center;color:#c9d3de}
+table.cmp th{color:var(--muted);font-weight:500}
+table.cmp td:first-child{text-align:left;color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../index.html">← Component catalog</a>
+  <h1>Optical circuit switches</h1>
+  <span class="sub">N×N switch fabrics built from 2×2 MZI switches: architectures, routing algorithms, insertion loss, crosstalk and blocking. Part of the Programmable Photonics interactive lab.</span>
+</header>
+<nav class="cfgbar">
+  <span>Architecture</span>
+  <select id="selArch" class="cfgsel">
+    <option value="xbar">Crossbar (N² switches)</option>
+    <option value="benes" selected>Beneš (rearrangeably non-blocking)</option>
+    <option value="sb">Spanke–Beneš (N-stage planar)</option>
+    <option value="omega">Omega / Banyan (blocking, self-routing)</option>
+  </select>
+  <span>Ports N</span>
+  <span class="seg" id="segN"><button data-v="4">4</button><button data-v="8" class="on">8</button><button data-v="16">16</button><button data-v="32">32</button></span>
+  <span id="archNote"></span>
+</nav>
+<main>
+  <section class="card span2">
+    <div class="toolbar">
+      <span id="netTitle" style="color:var(--text);font-weight:600"></span>
+      <span>Hover a switch to see its state, click it to toggle bar ⇄ cross</span>
+      <span style="margin-left:auto">Glow</span><span class="seg" id="segGlow"><button data-v="lin" class="on">linear</button><button data-v="log">log (shows crosstalk)</button></span>
+    </div>
+    <canvas id="cNet"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>Controls</h2>
+    <div class="groups">
+      <div class="group" data-group="route"><h3>Connections</h3>
+        <div class="inline">Permutation <select id="selPerm" class="sm">
+          <option value="id">Identity (i → i)</option><option value="rev">Reverse (i → N+1−i)</option><option value="shift">Cyclic shift (i → i+1)</option>
+          <option value="shuf">Perfect shuffle</option><option value="bitrev">Bit reversal</option><option value="rand" selected>Random</option>
+        </select></div>
+        <div class="inline"><button class="btn" id="bRand">New random</button><button class="btn primary" id="bRoute">Re-route</button></div>
+        <div class="inline">Connect in <input type="number" id="nRi" class="ni" min="1" value="1"> → out <input type="number" id="nRj" class="ni" min="1" value="2"><button class="btn" id="bConn">Connect</button></div>
+        <div class="inline after">Light into <select id="selIn" class="sm"></select></div>
+      </div>
+      <div class="group" data-group="imp"><h3>Component performance</h3></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Figures of merit</h2>
+    <div class="readouts" id="ro"></div>
+    <div id="connList" style="font-size:12px;color:var(--muted);line-height:1.6"></div>
+  </section>
+
+  <section class="card span2">
+    <div class="toolbar">
+      <div class="seg" id="segPlot"><button data-v="out" class="on">Signal and crosstalk per output</button><button data-v="il">Worst insertion loss vs N</button><button data-v="xt">Worst crosstalk vs N</button><button data-v="cnt">Switch count vs N</button></div>
+      <span id="plotNote"></span>
+    </div>
+    <canvas id="cPlot"></canvas>
+  </section>
+
+  <section class="card span2">
+    <h2>Theory</h2>
+    <div class="theory">
+      <div class="th">
+        <h3>1 · Optical circuit switching</h3>
+        <p>An N×N optical circuit switch connects every input to one output, following a permutation, without converting the light to electronics. It is built from 2×2 elements, here MZIs used in two digital states:</p>
+        <div class="eq">bar (θ = π): &nbsp;in₁ → out₁, in₂ → out₂ &nbsp;&nbsp;·&nbsp;&nbsp; cross (θ = 0): &nbsp;in₁ → out₂, in₂ → out₁</div>
+        <p>The architecture fixes how many switches are needed, how many each signal crosses (loss, crosstalk) and which permutations can be set up:</p>
+        <ul style="margin:4px 0 0 18px;padding:0">
+          <li><b>strictly non-blocking</b>: a new connection never disturbs the existing ones (crossbar);</li>
+          <li><b>rearrangeably non-blocking</b>: every permutation is possible, but adding a connection may require re-routing others (Beneš, Spanke–Beneš);</li>
+          <li><b>blocking</b>: some permutations are impossible (Omega).</li>
+        </ul>
+      </div>
+      <div class="th">
+        <h3>2 · Crossbar</h3>
+        <p>An N×N grid: inputs run along the rows and outputs along the columns. The switch at (i, j) is set to <b>drop</b> to connect input i to output j; all the others let the light pass straight. Routing is trivial and the fabric is strictly non-blocking, but it needs <b>N²</b> switches and the path length depends on the connection:</p>
+        <div class="eq"><i class="v">n</i><sub>sw</sub>(<i class="v">i</i> → <i class="v">j</i>) = <i class="v">j</i> + <i class="v">N</i> − <i class="v">i</i>, &nbsp; from 1 to 2<i class="v">N</i> − 1</div>
+        <p>so the insertion loss is very non-uniform for large N.</p>
+      </div>
+      <div class="th">
+        <h3>3 · Beneš</h3>
+        <p>A recursive network: a column of N/2 switches, two Beneš networks of size N/2, and another column of N/2 switches. It needs only (N/2)(2 log₂N − 1) switches and every path crosses exactly 2 log₂N − 1 of them.</p>
+        <p>It is programmed with the <b>looping algorithm</b>: the two inputs of a first-column switch must go to different sub-networks (upper / lower), and so must the two outputs of a last-column switch. Starting from one input, assign it to the upper half, send the partner of its output to the lower half, then the partner of that input to the upper half, and so on until the loop closes. Then repeat inside each half.</p>
+        <p>The shuffle connections between columns create many <b>waveguide crossings</b>, which add loss and crosstalk.</p>
+      </div>
+      <div class="th">
+        <h3>4 · Spanke–Beneš (N-stage planar)</h3>
+        <p>N columns of switches between neighbouring waveguides, alternately on pairs (1,2), (3,4)… and (2,3), (4,5)…, with N(N−1)/2 switches in total. There are <b>no waveguide crossings</b>, which makes it attractive for integrated photonics.</p>
+        <p>Routing is an <b>odd–even transposition sort</b>: label every signal with its destination; each switch crosses its two signals if they are in the wrong order. After N columns the labels are sorted, so every signal reaches its output. Paths cross between N/2 and N switches.</p>
+      </div>
+      <div class="th">
+        <h3>5 · Omega / Banyan</h3>
+        <p>log₂N columns of N/2 switches, each preceded by a perfect shuffle. It has the minimum number of switches, (N/2) log₂N, and is <b>self-routing</b>: at column s a switch sends the signal up or down according to bit s of the destination address (most significant first).</p>
+        <p>There is a single path between any input and output, so two signals often compete for the same switch output: the Omega network is <b>blocking</b>. Only N^(N/2) of the N! permutations are possible; shifts are, most random permutations are not.</p>
+      </div>
+      <div class="th">
+        <h3>6 · Loss, crosstalk and comparison</h3>
+        <p>A switch in either state leaks a fraction ε = 10<sup>−ER/10</sup> to the wrong output (ER = extinction ratio). To first order, the crosstalk at an output grows with the number of switches the unwanted signals share with the path:</p>
+        <div class="eq">IL = <i class="v">n</i><sub>sw</sub> · IL<sub>sw</sub> + <i class="v">n</i><sub>x</sub> · IL<sub>x</sub>, &nbsp;&nbsp; XT ≈ 10 log₁₀(<i class="v">n</i><sub>leak</sub> ε)</div>
+        <table class="cmp"><tr><th></th><th>switches</th><th>stages</th><th>crossings</th><th>blocking</th></tr>
+          <tr><td>Crossbar</td><td>N²</td><td>2N−1 (path)</td><td>—</td><td>strictly NB</td></tr>
+          <tr><td>Beneš</td><td>(N/2)(2log₂N−1)</td><td>2log₂N−1</td><td>many</td><td>rearrangeable</td></tr>
+          <tr><td>Spanke–Beneš</td><td>N(N−1)/2</td><td>N</td><td>0</td><td>rearrangeable</td></tr>
+          <tr><td>Omega</td><td>(N/2)log₂N</td><td>log₂N</td><td>many</td><td>blocking</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+"use strict";
+const PI = Math.PI;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+let dirty = true;
+function f3(v) { const a = Math.abs(v); return !isFinite(v) ? '∞' : a >= 1000 ? v.toFixed(0) : a >= 100 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : a >= 1 ? v.toFixed(3) : v.toFixed(4); }
+const dB = p => 10 * Math.log10(Math.max(p, 1e-12));
+const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+function fitCanvas(c) {
+  const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  const W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); return { ctx, w: r.width, h: r.height };
+}
+function niceTicks(a, b, n) {
+  const span = b - a; if (!(span > 0)) return [a];
+  const s0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(s0))), q = s0 / mag;
+  const st = (q < 1.5 ? 1 : q < 3 ? 2 : q < 7 ? 5 : 10) * mag, t = [];
+  for (let v = Math.ceil(a / st - 1e-9) * st; v <= b + 1e-9; v += st) t.push(+v.toFixed(12));
+  return t;
+}
+function tickFmt(v, step) { const d = Math.max(0, Math.min(6, -Math.floor(Math.log10(step || 1) + 1e-9))); return v.toFixed(d); }
+function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
+  ctx.font = FONT; const w = ctx.measureText(text).width + 10, x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
+  ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
+  ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + 0.5);
+}
+/* colour maps: 'light' (dark → red → white, for optical intensity) and 'heat' (dark blue → red → yellow) */
+const CMAPS = {
+  light: [[0, [8, 10, 16]], [0.25, [90, 10, 40]], [0.5, [210, 40, 80]], [0.75, [255, 120, 120]], [1, [255, 235, 230]]],
+  heat: [[0, [14, 22, 48]], [0.25, [60, 30, 110]], [0.5, [180, 40, 90]], [0.75, [245, 120, 40]], [1, [255, 240, 150]]]
+};
+function cmap(name, t) {
+  const st = CMAPS[name]; t = clamp(t, 0, 1);
+  for (let i = 1; i < st.length; i++) if (t <= st[i][0]) { const u = (t - st[i - 1][0]) / (st[i][0] - st[i - 1][0]), a = st[i - 1][1], b = st[i][1]; return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u]; }
+  return st[st.length - 1][1];
+}
+/* ------------------------------------------------ sliders with editable numeric boxes */
+const LOGN = 2000;
+const toSlider = (c, v) => Math.round(LOGN * Math.log(v / c.min) / Math.log(c.max / c.min));
+const fromSlider = (c, u) => c.min * Math.pow(c.max / c.min, u / LOGN);
+const SLid = id => SL.find(c => c.id === id);
+const maxOf = c => typeof c.max === 'function' ? c.max() : c.max;
+function buildSliders() {
+  for (const c of SL) {
+    const host = document.querySelector(`[data-group="${c.g}"]`);
+    const row = document.createElement('div'); row.className = 'row'; row.id = 'row_' + c.id;
+    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val"><input type="text" inputmode="decimal" class="numin" id="n_${c.id}"><span class="unit">${c.unit ?? ''}</span><span class="extra" id="x_${c.id}"></span></span><input type="range" id="s_${c.id}">`;
+    const inl = host.querySelector('.inline.after'); if (inl) host.insertBefore(row, inl); else host.appendChild(row);
+    const s = row.querySelector('input[type=range]');
+    if (c.log) { s.min = 0; s.max = LOGN; s.step = 1; } else { s.min = c.min; s.max = maxOf(c); s.step = c.step; }
+    s.addEventListener('input', () => { c.set(c.log ? fromSlider(c, +s.value) : +s.value); if (c.after) c.after(); syncOut(c); dirty = true; });
+    const n = row.querySelector('.numin');
+    n.addEventListener('change', () => { let v = parseFloat(String(n.value).replace(',', '.')); if (isFinite(v)) { c.set(clamp(v, c.min, maxOf(c))); if (c.after) c.after(); syncSlider(c); dirty = true; } else syncOut(c); });
+    n.addEventListener('keydown', e => { if (e.key === 'Enter') n.blur(); });
+  }
+  SL.forEach(syncSlider);
+}
+function syncOut(c) {
+  const n = document.getElementById('n_' + c.id);
+  if (document.activeElement !== n) n.value = +c.get().toFixed(c.dec ?? 3);
+  document.getElementById('x_' + c.id).textContent = c.extra ? c.extra(c.get()) : '';
+}
+function syncSlider(c) {
+  const s = document.getElementById('s_' + c.id);
+  if (c.log) s.value = toSlider(c, c.get()); else { s.max = maxOf(c); s.value = c.get(); }
+  syncOut(c);
+}
+function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+function wireSeg(id, fn) { document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { fn(b.dataset.v); setSeg(id, b.dataset.v); dirty = true; }); }
+function readouts(id, items) { document.getElementById(id).innerHTML = items.map(([k, v]) => `<div class="ro"><div class="k">${k}</div><div class="v">${v}</div></div>`).join(''); }
+const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
+/* ------------------------------------------------ generic line plot
+   o = { x0, x1, y0, y1, xlabel, ylabel, series:[{x:[], y:[], color, width, dash}], vlines:[{x, color, label, dash}],
+         legend:[{color, label, dash}], yfmt, ylog } */
+function linePlot(canvas, o) {
+  const { ctx, w, h } = fitCanvas(canvas); ctx.clearRect(0, 0, w, h);
+  const m = { l: 60, r: 16, t: 30, b: 42 }, pw = w - m.l - m.r, ph = h - m.t - m.b; if (pw < 60 || ph < 40) return;
+  const ty = v => o.ylog ? Math.log10(Math.max(v, 1e-30)) : v;
+  const Y0 = ty(o.y0), Y1 = ty(o.y1);
+  const X = v => m.l + (v - o.x0) / (o.x1 - o.x0) * pw, Y = v => m.t + (1 - (ty(v) - Y0) / (Y1 - Y0)) * ph;
+  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  const xt = niceTicks(o.x0, o.x1, Math.max(3, Math.round(pw / 90))), xst = xt.length > 1 ? xt[1] - xt[0] : 1;
+  let yt; if (o.ylog) { yt = []; for (let d = Math.ceil(Y0); d <= Math.floor(Y1); d++) yt.push(Math.pow(10, d)); } else yt = niceTicks(o.y0, o.y1, Math.max(3, Math.round(ph / 55)));
+  const yst = !o.ylog && yt.length > 1 ? yt[1] - yt[0] : 1;
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
+  for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
+  for (const b of (o.bands || [])) { ctx.fillStyle = b.color; ctx.fillRect(X(b.x0), m.t, X(b.x1) - X(b.x0), ph); }
+  for (const v of (o.vlines || [])) {
+    if (v.x < o.x0 || v.x > o.x1) continue;
+    ctx.strokeStyle = v.color; ctx.lineWidth = 1.2; ctx.setLineDash(v.dash || [4, 4]);
+    ctx.beginPath(); ctx.moveTo(X(v.x), m.t); ctx.lineTo(X(v.x), m.t + ph); ctx.stroke(); ctx.setLineDash([]);
+    if (v.label) { ctx.font = FONT; ctx.fillStyle = v.color; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(v.label, X(v.x), m.t + 4 + (v.row || 0) * 14); }
+  }
+  for (const s of o.series) {
+    ctx.beginPath(); let pen = false;
+    for (let i = 0; i < s.x.length; i++) { const y = s.y[i]; if (!isFinite(y)) { pen = false; continue; } const px = X(s.x[i]), py = Y(y); if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py); }
+    ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 2; ctx.setLineDash(s.dash || []); ctx.lineJoin = 'round'; ctx.stroke(); ctx.setLineDash([]);
+  }
+  for (const p of (o.points || [])) { if (p.x < o.x0 || p.x > o.x1) continue; ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 5, 0, 2 * PI); ctx.fillStyle = p.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); }
+  ctx.restore();
+  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of xt) ctx.fillText(o.xfmt ? o.xfmt(t) : tickFmt(t, xst), X(t), m.t + ph + 6);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const t of yt) ctx.fillText(o.yfmt ? o.yfmt(t) : (o.ylog ? (t >= 1 ? String(t) : t.toExponential(0)) : tickFmt(t, yst)), m.l - 6, Y(t));
+  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
+  ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText(o.ylabel, 0, 0); ctx.restore();
+  let lx = m.l; const ly = 14; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
+  return { X, Y, m, pw, ph };
+}
+
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const S = { arch: 'benes', N: 8, perm: 'rand', seed: 3, inp: -1, il: 0.3, xl: 0.05, er: 25, xx: 40, glow: 'lin', plot: 'out', edited: false, ri: 1, rj: 2 };
+let P = null, NET = null, SIM = null, boxes = [], hoverBox = -1;
+const ARCH = { xbar: 'Crossbar', benes: 'Beneš', sb: 'Spanke–Beneš', omega: 'Omega' };
+const lg = N => Math.round(Math.log2(N));
+/* ------------------------------------------------ permutations (P[i] = output of input i, 0-based) */
+function makePerm(N, kind, seed) {
+  const n = lg(N), id = [...Array(N).keys()];
+  switch (kind) {
+    case 'id': return id;
+    case 'rev': return id.map(i => N - 1 - i);
+    case 'shift': return id.map(i => (i + 1) % N);
+    case 'shuf': return id.map(i => ((i << 1) | (i >> (n - 1))) & (N - 1));
+    case 'bitrev': return id.map(i => { let r = 0; for (let b = 0; b < n; b++) if (i & (1 << b)) r |= 1 << (n - 1 - b); return r; });
+    default: { const r = rng(seed * 7919 + N), p = id.slice(); for (let i = N - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; } return p; }
+  }
+}
+/* ------------------------------------------------ networks: staged = list of layers {t:'sw', pairs:[{a, st}]} or {t:'perm', p:[]} */
+function swLayer(N, start) { const pairs = []; for (let a = start; a + 1 < N; a += 2) pairs.push({ a, st: 0 }); return { t: 'sw', pairs }; }
+function buildBenes(N) {
+  const n = lg(N), L = [];
+  for (let l = 0; l < 2 * n - 1; l++) {
+    L.push(swLayer(N, 0));
+    if (l < 2 * n - 2) {
+      const m = l <= n - 2 ? N >> l : N >> (2 * n - 3 - l), h = m / 2, p = Array(N);
+      for (let b = 0; b < N; b += m) for (let k = 0; k < h; k++) for (let e = 0; e < 2; e++) {
+        if (l <= n - 2) p[b + 2 * k + e] = b + e * h + k; else p[b + e * h + k] = b + 2 * k + e;
+      }
+      L.push({ t: 'perm', p });
+    }
+  }
+  return { N, kind: 'staged', layers: L, swIdx: L.map((x, i) => x.t === 'sw' ? i : -1).filter(i => i >= 0) };
+}
+function routeBenes(net, perm) {
+  const N = net.N, n = lg(N), SW = net.swIdx;
+  const set = (layer, row, st) => { const pr = net.layers[SW[layer]].pairs.find(q => q.a === row); pr.st = st; };
+  (function rec(p, depth, off) {
+    const m = p.length;
+    if (m === 2) { set(n - 1, off, p[0] === 0 ? 0 : 1); return; }
+    const inv = Array(m); p.forEach((o, i) => inv[o] = i);
+    const as = Array(m).fill(-1);
+    for (let s = 0; s < m; s++) {
+      if (as[s] >= 0) continue; let i = s;
+      while (true) { as[i] = 0; const j = inv[p[i] ^ 1]; as[j] = 1; const i2 = j ^ 1; if (as[i2] >= 0) break; i = i2; }
+    }
+    const h = m / 2, pu = Array(h), pl = Array(h);
+    for (let k = 0; k < h; k++) {
+      const up = as[2 * k] === 0 ? 2 * k : 2 * k + 1, lo = up ^ 1;
+      set(depth, off + 2 * k, up === 2 * k ? 0 : 1);
+      pu[k] = p[up] >> 1; pl[k] = p[lo] >> 1;
+    }
+    for (let mm = 0; mm < h; mm++) { const iu = p.findIndex((o, i) => as[i] === 0 && (o >> 1) === mm); set(2 * n - 2 - depth, off + 2 * mm, p[iu] === 2 * mm ? 0 : 1); }
+    rec(pu, depth + 1, off); rec(pl, depth + 1, off + h);
+  })(perm.slice(), 0, 0);
+  return 0;
+}
+function buildSB(N) { const L = []; for (let l = 0; l < N; l++) L.push(swLayer(N, l % 2)); return { N, kind: 'staged', layers: L }; }
+function routeSB(net, perm) {
+  const lab = perm.slice();   // destination of the signal currently on each row
+  for (const ly of net.layers) for (const q of ly.pairs) { if (lab[q.a] > lab[q.a + 1]) { q.st = 1; [lab[q.a], lab[q.a + 1]] = [lab[q.a + 1], lab[q.a]]; } else q.st = 0; }
+  return 0;
+}
+function buildOmega(N) {
+  const n = lg(N), L = [], sh = [...Array(N).keys()].map(i => ((i << 1) | (i >> (n - 1))) & (N - 1));
+  for (let s = 0; s < n; s++) { L.push({ t: 'perm', p: sh.slice() }); L.push(swLayer(N, 0)); }
+  return { N, kind: 'staged', layers: L };
+}
+function routeOmega(net, perm) {
+  const N = net.N, n = lg(N); let row = [...Array(N).keys()];   // row[i] = current row of signal i
+  const blocked = new Set(); let s = 0;
+  for (const ly of net.layers) {
+    if (ly.t === 'perm') { row = row.map(r => ly.p[r]); continue; }
+    const at = Array(N).fill(-1); row.forEach((r, i) => at[r] = i);
+    for (const q of ly.pairs) {
+      const top = at[q.a], bot = at[q.a + 1], bit = i => (perm[i] >> (n - 1 - s)) & 1;
+      let st = 0;
+      if (top >= 0 && !blocked.has(top)) { st = bit(top) === 0 ? 0 : 1; if (bot >= 0 && !blocked.has(bot) && bit(bot) === bit(top)) blocked.add(bot); }
+      else if (bot >= 0 && !blocked.has(bot)) st = bit(bot) === 1 ? 0 : 1;
+      q.st = st;
+      if (st) { if (top >= 0) row[top] = q.a + 1; if (bot >= 0) row[bot] = q.a; }
+    }
+    s++;
+  }
+  return row.filter((r, i) => r !== perm[i]).length;
+}
+function buildXbar(N, perm) { return { N, kind: 'xbar', cell: Array.from({ length: N }, (_, i) => Array.from({ length: N }, (_, j) => perm[i] === j ? 1 : 0)) }; }
+function buildNet() {
+  const N = S.N; P = makePerm(N, S.perm, S.seed); S.edited = false;
+  if (S.arch === 'xbar') NET = buildXbar(N, P);
+  else { NET = S.arch === 'benes' ? buildBenes(N) : S.arch === 'sb' ? buildSB(N) : buildOmega(N); ({ benes: routeBenes, sb: routeSB, omega: routeOmega })[S.arch](NET, P); }
+  runSim();
+}
+function reroute() {
+  if (S.arch === 'xbar') NET = buildXbar(S.N, P); else { for (const ly of NET.layers) if (ly.t === 'sw') ly.pairs.forEach(q => q.st = 0); ({ benes: routeBenes, sb: routeSB, omega: routeOmega })[S.arch](NET, P); }
+  S.edited = false; runSim();
+}
+/* crossings of a perm layer drawn with straight-ish lines: pairs (i, j) with (i − j)(p_i − p_j) < 0 */
+function crossPairs(p) { const c = []; for (let i = 0; i < p.length; i++) for (let j = i + 1; j < p.length; j++) if ((p[i] - p[j]) * (i - j) < 0) c.push([i, j]); return c; }
+/* follow the switch states: output reached by input i (−1 = lost in a crossbar terminator) */
+function trace(net, i) {
+  const N = net.N;
+  if (net.kind === 'xbar') { let r = i, c = 0, down = false; while (true) { const d = net.cell[r][c]; if (d) down = !down; if (down) { r++; if (r >= N) return c; } else { c++; if (c >= N) return -1; } } }
+  let r = i; for (const ly of net.layers) { if (ly.t === 'perm') { r = ly.p[r]; continue; } const q = ly.pairs.find(q => q.a === r || q.a + 1 === r); if (q && q.st) r = r === q.a ? q.a + 1 : q.a; } return r;
+}
+const okConn = i => trace(NET, i) === P[i];
+/* ------------------------------------------------ incoherent power simulation: M[row][src] */
+function simulate(net, o) {
+  const N = net.N, eps = Math.pow(10, -o.er / 10), eta = Math.pow(10, -o.il / 10), ex = Math.pow(10, -o.xl / 10), xx = Math.pow(10, -o.xx / 10);
+  if (net.kind === 'xbar') {
+    const out = Array.from({ length: N }, () => Array(N).fill(0)), hin = [], vin = [], nsw = Array(N).fill(0);
+    for (let src = 0; src < N; src++) {
+      const v = Array(N).fill(0), H = [], V = [];
+      for (let i = 0; i < N; i++) {
+        let h = i === src ? 1 : 0; const Hr = [], Vr = [];
+        for (let j = 0; j < N; j++) {
+          Hr.push(h); Vr.push(v[j]); const vi = v[j], d = net.cell[i][j];
+          const oh = d ? eta * ((1 - eps) * vi + eps * h) : eta * ((1 - eps) * h + eps * vi), ov = d ? eta * ((1 - eps) * h + eps * vi) : eta * ((1 - eps) * vi + eps * h);
+          h = oh; v[j] = ov;
+        }
+        Hr.push(h); H.push(Hr); V.push(Vr);
+      }
+      for (let j = 0; j < N; j++) out[j][src] = v[j];
+      hin.push(H); vin.push(V);
+    }
+    return { out, hin, vin };
+  }
+  let M = Array.from({ length: N }, (_, r) => Array.from({ length: N }, (_, s) => r === s ? 1 : 0));
+  const rows = [M.map(r => r.slice())], arms = [];
+  for (const ly of net.layers) {
+    const nM = M.map(r => r.slice());
+    if (ly.t === 'sw') {
+      const la = [];
+      for (const q of ly.pairs) {
+        const a = q.a, b = a + 1, A = [], B = [];
+        for (let s = 0; s < N; s++) {
+          const pa = M[a][s], pb = M[b][s], same = 1 - eps;
+          nM[a][s] = eta * (q.st ? same * pb + eps * pa : same * pa + eps * pb);
+          nM[b][s] = eta * (q.st ? same * pa + eps * pb : same * pb + eps * pa);
+        }
+        la.push(q);
+      }
+      arms.push(la);
+    } else {
+      const cr = crossPairs(ly.p), nx = Array(N).fill(0); cr.forEach(([i, j]) => { nx[i]++; nx[j]++; });
+      for (let i = 0; i < N; i++) for (let s = 0; s < N; s++) nM[ly.p[i]][s] = M[i][s] * Math.pow(ex, nx[i]);
+      if (o.xx < 99) for (const [i, j] of cr) for (let s = 0; s < N; s++) { nM[ly.p[j]][s] += xx * M[i][s]; nM[ly.p[i]][s] += xx * M[j][s]; }
+      ly.nx = nx;
+    }
+    M = nM; rows.push(M.map(r => r.slice()));
+  }
+  return { out: M, rows };
+}
+function runSim() { SIM = simulate(NET, S); dirty = true; }
+function stats(net, perm, sim) {
+  const N = net.N, il = [], xt = [];
+  for (let i = 0; i < N; i++) { const j = perm[i], sig = sim.out[j][i]; let x = 0; for (let s = 0; s < N; s++) if (s !== i) x += sim.out[j][s]; il.push(-dB(sig)); xt.push(dB(x) - dB(sig)); }
+  return { il, xt };
+}
+function counts(net) {
+  if (net.kind === 'xbar') return { sw: net.N * net.N, stages: 2 * net.N - 1, cross: 0 };
+  let sw = 0, stages = 0, cross = 0; for (const ly of net.layers) { if (ly.t === 'sw') { sw += ly.pairs.length; stages++; } else cross += crossPairs(ly.p).length; }
+  return { sw, stages, cross };
+}
+/* number of switches crossed by each connection (follow the actual states) */
+function pathSwitches(net, perm) {
+  const N = net.N;
+  if (net.kind === 'xbar') return perm.map((j, i) => j + (N - i));
+  return [...Array(N).keys()].map(i => { let r = i, c = 0; for (const ly of net.layers) { if (ly.t === 'perm') { r = ly.p[r]; continue; } const q = ly.pairs.find(q => q.a === r || q.a + 1 === r); if (q) { c++; if (q.st) r = r === q.a ? q.a + 1 : q.a; } } return c; });
+}
+/* ------------------------------------------------ drawing */
+const cNet = document.getElementById('cNet');
+const glowT = p => S.glow === 'log' ? clamp((dB(p) + 45) / 45, 0, 1) : Math.sqrt(clamp(p, 0, 1));
+const glowCol = t => `rgb(${60 + 195 * t | 0},${76 - 20 * t | 0},${98 + 6 * t | 0})`;
+function wgStroke(ctx, path, p, t, thin) {
+  const g = glowT(Math.min(p, 1)), lit = g > 0.003, base = thin ? 1.6 : 2.4;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = lit ? glowCol(g) : '#3c495c'; ctx.lineWidth = lit ? base + (thin ? 1.6 : 3) * g : base; path(); ctx.stroke();
+  if (g > 0.05) { ctx.save(); ctx.strokeStyle = `rgba(255,225,232,${0.55 * g})`; ctx.lineWidth = thin ? 1 : 1.5; ctx.setLineDash([5, 12]); ctx.lineDashOffset = -t * 40; path(); ctx.stroke(); ctx.restore(); }
+}
+function heater(ctx, x0, x1, y, on) {
+  if (on) { ctx.save(); ctx.shadowColor = 'rgba(255,150,60,0.8)'; ctx.shadowBlur = 8; }
+  ctx.fillStyle = on ? 'rgba(255,190,90,0.95)' : 'rgba(255,190,90,0.28)'; roundRect(ctx, x0, y - 5.5, x1 - x0, 3.5, 1.5); ctx.fill();
+  if (on) ctx.restore();
+}
+function drawPD(ctx, x, y, p, pmax, compact, hasSig) {
+  const t = Math.sqrt(clamp(p / Math.max(pmax, 1e-9), 0, 1)), r = compact ? 6 : 8.5;
+  if (!compact) {
+    const bw = 34, bh = 26, x0 = x, y0 = y - bh / 2, gr = ctx.createLinearGradient(x0, y0, x0, y0 + bh);
+    gr.addColorStop(0, '#3a475d'); gr.addColorStop(0.5, '#232c3a'); gr.addColorStop(1, '#151b24');
+    ctx.fillStyle = gr; roundRect(ctx, x0, y0, bw, bh, 7); ctx.fill(); ctx.strokeStyle = 'rgba(160,180,210,0.55)'; ctx.lineWidth = 1; roundRect(ctx, x0 + 0.5, y0 + 0.5, bw - 1, bh - 1, 7); ctx.stroke();
+    ctx.fillStyle = '#ffcc66'; ctx.fillRect(x0 + bw - 6, y0 + 4, 2.5, 2.5); ctx.fillRect(x0 + bw - 6, y0 + bh - 6.5, 2.5, 2.5);
+    x = x0 + bw / 2 - 2;
+  } else x = x + r;
+  ctx.fillStyle = '#0b0f15'; ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * PI); ctx.fill();
+  const rg = ctx.createRadialGradient(x, y, 0, x, y, r * 1.35);
+  rg.addColorStop(0, `rgba(255,${215 + 40 * t | 0},${225 + 30 * t | 0},${0.15 + 0.85 * t})`); rg.addColorStop(0.5, `rgba(255,70,110,${0.1 + 0.8 * t})`); rg.addColorStop(1, 'rgba(255,40,90,0)');
+  ctx.save(); if (t > 0.05) { ctx.shadowColor = `rgba(255,77,109,${t})`; ctx.shadowBlur = 16 * t; } ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(x, y, r * 1.35, 0, 2 * PI); ctx.fill(); ctx.restore();
+  ctx.strokeStyle = hasSig === false ? '#ff6b6b' : 'rgba(200,215,240,0.7)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * PI); ctx.stroke();
+  return x + r * 1.35;
+}
+function drawStaged(ctx, w, h, t) {
+  const N = NET.N, rowsP = SIM.rows, L = NET.layers, big = N >= 16;
+  const m = { l: 62, r: big ? 110 : 150, t: 26, b: 18 }, dy = (h - m.t - m.b) / N, yk = k => m.t + (k + 0.5) * dy;
+  const wsum = L.reduce((s, ly) => s + (ly.t === 'sw' ? 1 : 0.85), 0), unit = (w - m.l - m.r - 30) / wsum;
+  let x = m.l + 10; const xs = L.map(ly => { const a = x; x += (ly.t === 'sw' ? 1 : 0.85) * unit; return [a, x]; }), xEnd = x;
+  const pw = (l, r) => S.inp >= 0 ? rowsP[l][r][S.inp] : rowsP[l][r].reduce((a, b) => a + b, 0);
+  const detailed = unit >= 46 && dy >= 26;
+  boxes = [];
+  // waveguide stubs at the start and end
+  for (let k = 0; k < N; k++) { wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(big ? m.l + 2 : 8, yk(k)); ctx.lineTo(m.l + 10, yk(k)); }, pw(0, k), t, big); wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(xEnd, yk(k)); ctx.lineTo(w - m.r + 8, yk(k)); }, pw(L.length, k), t, big); }
+  let swCount = 0;
+  L.forEach((ly, li) => {
+    const [L0, R0] = xs[li];
+    if (ly.t === 'perm') {
+      for (let i = 0; i < N; i++) { const ya = yk(i), yb = yk(ly.p[i]); wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(L0, ya); ctx.bezierCurveTo((L0 + R0) / 2, ya, (L0 + R0) / 2, yb, R0, yb); }, pw(li, i), t, big); }
+      return;
+    }
+    const used = new Set(); ly.pairs.forEach(q => { used.add(q.a); used.add(q.a + 1); });
+    for (let k = 0; k < N; k++) if (!used.has(k)) wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(L0, yk(k)); ctx.lineTo(R0, yk(k)); }, pw(li, k), t, big);
+    for (const q of ly.pairs) {
+      const ya = yk(q.a), yb = yk(q.a + 1), ym = (ya + yb) / 2, cw = R0 - L0, f = u => L0 + u * cw, pin = [pw(li, q.a), pw(li, q.a + 1)], pout = [pw(li + 1, q.a), pw(li + 1, q.a + 1)];
+      const sb = (xa, y1, xb, y2) => ctx.bezierCurveTo((xa + xb) / 2, y1, (xa + xb) / 2, y2, xb, y2);
+      const idx = swCount++;
+      if (detailed) {
+        const g = 3.2, pa = (pin[0] + pin[1]) / 2;
+        for (const [y, sgn, k] of [[ya, 1, 0], [yb, -1, 1]]) {
+          const yc = ym - sgn * g;
+          wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(L0, y); ctx.lineTo(f(0.12), y); sb(f(0.12), y, f(0.24), yc); ctx.lineTo(f(0.3), yc); }, pin[k], t);
+          wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(f(0.3), yc); sb(f(0.3), yc, f(0.4), y); ctx.lineTo(f(0.6), y); sb(f(0.6), y, f(0.7), yc); }, pa, t);
+          wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(f(0.7), yc); ctx.lineTo(f(0.76), yc); sb(f(0.76), yc, f(0.88), y); ctx.lineTo(R0, y); }, pout[k], t);
+        }
+        heater(ctx, f(0.42), f(0.58), ya, q.st === 0);
+      } else {
+        // compact glyph: the actual light path (bar = straight, cross = X) inside a switch outline
+        const xa = f(0.18), xb = f(0.82);
+        wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(L0, ya); ctx.lineTo(xa, ya); }, pin[0], t, big); wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(L0, yb); ctx.lineTo(xa, yb); }, pin[1], t, big);
+        wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(xb, ya); ctx.lineTo(R0, ya); }, pout[0], t, big); wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(xb, yb); ctx.lineTo(R0, yb); }, pout[1], t, big);
+        if (q.st) { wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(xa, ya); sb(xa, ya, xb, yb); }, pin[0], t, big); wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(xa, yb); sb(xa, yb, xb, ya); }, pin[1], t, big); }
+        else { wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xb, ya); }, pin[0], t, big); wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(xa, yb); ctx.lineTo(xb, yb); }, pin[1], t, big); }
+        ctx.strokeStyle = q.st ? 'rgba(255,149,72,0.55)' : 'rgba(74,168,255,0.55)'; ctx.lineWidth = 1; roundRect(ctx, xa - 2, ya - Math.min(7, dy * 0.3), xb - xa + 4, yb - ya + 2 * Math.min(7, dy * 0.3), 4); ctx.stroke();
+      }
+      const bx = { i: idx, li, q, x0: L0 + 1, x1: R0 - 1, y0: ya - Math.min(12, dy * 0.45), y1: yb + Math.min(10, dy * 0.45) };
+      boxes.push(bx);
+      if (hoverBox === idx) { ctx.save(); ctx.strokeStyle = 'rgba(255,204,102,0.8)'; ctx.setLineDash([4, 3]); ctx.lineWidth = 1.3; roundRect(ctx, bx.x0, bx.y0, bx.x1 - bx.x0, bx.y1 - bx.y0, 6); ctx.stroke(); ctx.restore(); }
+    }
+  });
+  drawPorts(ctx, w, m, yk, dy, (j) => pw(L.length, j), big);
+  if (hoverBox >= 0 && boxes[hoverBox]) { const b = boxes[hoverBox]; tag(ctx, clamp((b.x0 + b.x1) / 2, 150, w - 150), b.y0 - 10, `switch ${b.i + 1} · stage ${NET.layers.slice(0, b.li + 1).filter(l => l.t === 'sw').length} · waveguides ${b.q.a + 1}–${b.q.a + 2} · ${b.q.st ? 'CROSS (θ = 0)' : 'BAR (θ = π)'}`, '#fff', 'rgba(8,11,16,0.92)'); }
+}
+function drawPorts(ctx, w, m, yk, dy, outP, big) {
+  const N = S.N, inv = Array(N), outs = [...Array(N).keys()].map(outP), pmax = Math.max(...outs, 1e-12); P.forEach((o, i) => inv[o] = i);
+  ctx.font = big ? '10.5px system-ui,sans-serif' : FONT; ctx.textBaseline = 'middle';
+  for (let k = 0; k < N; k++) {
+    const lit = S.inp < 0 || S.inp === k; ctx.textAlign = 'right'; ctx.fillStyle = lit ? '#ff8fa8' : '#5c6c84'; ctx.fillText(`in ${k + 1}${big ? '' : ` → ${P[k] + 1}`}`, m.l - (big ? 2 : 2), yk(k) - (big ? 0 : 9));
+    const expect = S.inp < 0 || P[S.inp] === k;
+    const xr = drawPD(ctx, w - m.r + 8, yk(k), outs[k], pmax, big || dy < 34, expect ? okConn(inv[k]) : undefined);
+    if (dy >= 13) { ctx.textAlign = 'left'; ctx.fillStyle = outs[k] > 1e-3 ? '#e6edf3' : '#5c6c84'; ctx.fillText(S.glow === 'log' ? `${dB(outs[k]).toFixed(1)} dB` : `${(outs[k] * 100).toFixed(big ? 0 : 1)}%`, xr + 4, yk(k)); }
+  }
+}
+function drawXbar(ctx, w, h, t) {
+  const N = NET.N, big = N >= 16, m = { l: 96, r: 30, t: 22, b: 78 };
+  const dy = (h - m.t - m.b) / N, dx = Math.min((w - m.l - m.r - 30) / N, dy * 2.2), x0 = Math.max(m.l + 10, (w - N * dx) / 2), yk = i => m.t + (i + 0.5) * dy, xk = j => x0 + (j + 0.5) * dx;
+  const hin = SIM.hin, vin = SIM.vin, src = S.inp >= 0 ? [S.inp] : [...Array(N).keys()], nrm = 1;
+  const H = (i, j) => src.reduce((s, q) => s + hin[q][i][j], 0) / nrm, V = (i, j) => src.reduce((s, q) => s + vin[q][i][j], 0) / nrm, O = j => src.reduce((s, q) => s + SIM.out[j][q], 0) / nrm;
+  const yBot = m.t + N * dy + 6, thin = big;
+  boxes = [];
+  for (let i = 0; i < N; i++) {
+    wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(x0 - 40, yk(i)); ctx.lineTo(xk(0), yk(i)); }, H(i, 0), t, thin);
+    for (let j = 0; j < N; j++) {
+      if (j < N - 1) wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(xk(j), yk(i)); ctx.lineTo(xk(j + 1), yk(i)); }, H(i, j + 1), t, thin);
+    }
+    wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(xk(N - 1), yk(i)); ctx.lineTo(xk(N - 1) + dx * 0.6, yk(i)); }, H(i, N), t, thin);
+    ctx.fillStyle = '#26303f'; ctx.fillRect(xk(N - 1) + dx * 0.6, yk(i) - 3, 5, 6);   // terminator (light absorber)
+  }
+  for (let j = 0; j < N; j++) {
+    for (let i = 1; i < N; i++) wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(xk(j), yk(i - 1)); ctx.lineTo(xk(j), yk(i)); }, V(i, j), t, thin);
+    wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(xk(j), yk(N - 1)); ctx.lineTo(xk(j), yBot + 8); }, O(j), t, thin);
+  }
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    const d = NET.cell[i][j], x = xk(j), y = yk(i), r = Math.min(dx, dy) * 0.32, idx = i * N + j;
+    if (d) {
+      wgStroke(ctx, () => { ctx.beginPath(); ctx.moveTo(x - r * 1.2, y); ctx.quadraticCurveTo(x, y, x, y + r * 1.2); }, H(i, j), t, thin);
+      ctx.save(); ctx.shadowColor = 'rgba(255,150,60,0.8)'; ctx.shadowBlur = 8; ctx.strokeStyle = 'rgba(255,190,90,0.95)'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * PI); ctx.stroke(); ctx.restore();
+    } else { ctx.strokeStyle = 'rgba(120,140,170,0.35)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, r * 0.75, 0, 2 * PI); ctx.stroke(); }
+    boxes.push({ i: idx, r: i, c: j, x0: x - dx / 2, x1: x + dx / 2, y0: y - dy / 2, y1: y + dy / 2 });
+    if (hoverBox === idx) { ctx.strokeStyle = 'rgba(255,204,102,0.9)'; ctx.setLineDash([3, 3]); ctx.strokeRect(x - dx / 2 + 1, y - dy / 2 + 1, dx - 2, dy - 2); ctx.setLineDash([]); }
+  }
+  const outs = [...Array(N).keys()].map(O), pmax = Math.max(...outs, 1e-12), inv = Array(N); P.forEach((o, i) => inv[o] = i);
+  ctx.font = big ? '10.5px system-ui,sans-serif' : FONT;
+  for (let i = 0; i < N; i++) { ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillStyle = S.inp < 0 || S.inp === i ? '#ff8fa8' : '#5c6c84'; ctx.fillText(`in ${i + 1} → ${P[i] + 1}`, x0 - 46, yk(i)); }
+  ctx.textBaseline = 'top';
+  for (let j = 0; j < N; j++) {
+    const expect = S.inp < 0 || P[S.inp] === j;
+    drawPD(ctx, xk(j) - 6, yBot + 20, outs[j], pmax, true, expect ? okConn(inv[j]) : undefined);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = outs[j] > 1e-3 ? '#e6edf3' : '#5c6c84';
+    if (dx > 34) ctx.fillText(S.glow === 'log' ? `${dB(outs[j]).toFixed(0)}` : `${(outs[j] * 100).toFixed(0)}%`, xk(j), yBot + 32);
+    ctx.fillStyle = '#8b98a9'; if (dx > 22 || j % 2 === 0) ctx.fillText(`${j + 1}`, xk(j), yBot + (dx > 34 ? 46 : 32));
+  }
+  ctx.textAlign = 'left'; ctx.fillStyle = '#8b98a9'; ctx.textBaseline = 'top'; ctx.fillText('outputs ↓', xk(N - 1) + dx * 0.8, yBot + 14);
+  if (hoverBox >= 0 && boxes[hoverBox]) { const b = boxes[hoverBox]; tag(ctx, clamp((b.x0 + b.x1) / 2, 150, w - 150), b.y0 - 8, `switch (${b.r + 1}, ${b.c + 1}) · ${NET.cell[b.r][b.c] ? 'DROP: in ' + (b.r + 1) + ' → out ' + (b.c + 1) : 'pass'}`, '#fff', 'rgba(8,11,16,0.92)'); }
+}
+function netHeight() { return { 4: 330, 8: 470, 16: 640, 32: 860 }[S.N] + (S.arch === 'xbar' && S.N >= 16 ? 60 : 0); }
+function drawNet(t) {
+  cNet.style.height = netHeight() + 'px';
+  const { ctx, w, h } = fitCanvas(cNet); ctx.clearRect(0, 0, w, h);
+  if (NET.kind === 'xbar') drawXbar(ctx, w, h, t); else drawStaged(ctx, w, h, t);
+}
+/* ------------------------------------------------ plots */
+const cPlot = document.getElementById('cPlot'), COL = { xbar: '#d58cff', benes: '#ff9548', sb: '#5fd38d', omega: '#4aa8ff' };
+let sweepCache = null;
+function sweep() {
+  const key = [S.il, S.xl, S.er, S.xx].join('|'); if (sweepCache && sweepCache.key === key) return sweepCache;
+  const Ns = [4, 8, 16, 32, 64], res = { key, Ns };
+  for (const a of ['xbar', 'benes', 'sb', 'omega']) {
+    res[a] = { il: [], xt: [], sw: [] };
+    for (const N of Ns) {
+      const p = makePerm(N, a === 'omega' ? 'shift' : 'rand', 5);
+      let net; if (a === 'xbar') net = buildXbar(N, p); else { net = a === 'benes' ? buildBenes(N) : a === 'sb' ? buildSB(N) : buildOmega(N); ({ benes: routeBenes, sb: routeSB, omega: routeOmega })[a](net, p); }
+      const sm = simulate(net, S), st = stats(net, p, sm);
+      res[a].il.push(Math.max(...st.il)); res[a].xt.push(Math.max(...st.xt)); res[a].sw.push(counts(net).sw);
+    }
+  }
+  return sweepCache = res;
+}
+function drawPlot() {
+  if (S.plot === 'out') {
+    const st = stats(NET, P, SIM), xs = [...Array(S.N).keys()].map(i => i + 1), inv = Array(S.N); P.forEach((o, i) => inv[o] = i);
+    const sig = xs.map((_, j) => -st.il[inv[j]]), xt = xs.map((_, j) => st.xt[inv[j]] + sig[j]);
+    const lo = Math.max(-90, Math.floor(Math.min(...xt.filter(isFinite), ...sig) / 10) * 10 - 5);
+    setTxt('plotNote', 'Power reaching each output from its intended input (signal) and from all the other inputs (crosstalk), 1 mW per input');
+    linePlot(cPlot, { x0: 0.5, x1: S.N + 0.5, y0: lo, y1: 3, xlabel: 'Output port', ylabel: 'Power (dB rel. to input)',
+      series: [{ x: xs, y: sig, color: '#5fd38d', width: 2 }, { x: xs, y: xt, color: '#ff6b6b', width: 2 }],
+      points: xs.map((x, j) => ({ x, y: sig[j], color: '#5fd38d' })).concat(xs.map((x, j) => ({ x, y: Math.max(lo, xt[j]), color: '#ff6b6b' }))),
+      legend: [{ color: '#5fd38d', label: 'signal' }, { color: '#ff6b6b', label: 'total crosstalk' }] });
+    return;
+  }
+  const sw = sweep(), xs = sw.Ns.map(Math.log2), key = S.plot === 'il' ? 'il' : S.plot === 'xt' ? 'xt' : 'sw';
+  const series = Object.keys(COL).map(a => ({ x: xs, y: key === 'sw' ? sw[a].sw : sw[a][key], color: COL[a], width: a === S.arch ? 3 : 1.6 }));
+  const all = series.flatMap(s => s.y);
+  setTxt('plotNote', key === 'sw' ? 'Number of 2×2 switches' : `Worst connection of a random permutation (Omega: cyclic shift, which it can route) with the current component values`);
+  linePlot(cPlot, { x0: 1.8, x1: 6.2, y0: key === 'sw' ? 1 : Math.floor(Math.min(...all) - 1), y1: key === 'sw' ? 1e4 : Math.ceil(Math.max(...all) + 1), ylog: key === 'sw',
+    xlabel: 'Number of ports N', xfmt: v => Math.abs(v - Math.round(v)) < 1e-6 ? String(2 ** Math.round(v)) : '', ylabel: key === 'il' ? 'Worst insertion loss (dB)' : key === 'xt' ? 'Worst crosstalk (dB)' : 'Switches',
+    series, points: series.flatMap(s => s.x.map((x, i) => ({ x, y: s.y[i], color: s.color }))), vlines: [{ x: Math.log2(S.N), color: 'rgba(255,255,255,0.5)', label: `N = ${S.N}` }],
+    legend: Object.keys(COL).map(a => ({ color: COL[a], label: ARCH[a] })) });
+}
+/* ------------------------------------------------ readouts */
+function update() {
+  const c = counts(NET), st0 = stats(NET, P, SIM), ps = pathSwitches(NET, P), N = S.N, okI = [...Array(N).keys()].filter(okConn);
+  const st = okI.length ? { il: okI.map(i => st0.il[i]), xt: okI.map(i => st0.xt[i]) } : { il: [NaN], xt: [NaN] };
+  const inv = Array(N); P.forEach((o, i) => inv[o] = i);
+  let blocked = 0; for (let i = 0; i < N; i++) if (!okConn(i)) blocked++;
+  readouts('ro', [
+    ['2×2 switches', `${c.sw}`],
+    [S.arch === 'xbar' ? 'Switches per path' : 'Stages · switches per path', S.arch === 'xbar' ? `${Math.min(...ps)} – ${Math.max(...ps)}` : `${c.stages} <small>·</small> ${Math.min(...ps)}${Math.min(...ps) !== Math.max(...ps) ? '–' + Math.max(...ps) : ''}`],
+    ['Waveguide crossings', S.arch === 'xbar' ? '<small>in every pass cell</small>' : `${c.cross}`],
+    [okI.length < N ? 'IL best · worst (routed)' : 'Insertion loss best · worst', `${Math.min(...st.il).toFixed(2)} <small>·</small> ${Math.max(...st.il).toFixed(2)} <small>dB</small>`],
+    ['Loss spread', `${(Math.max(...st.il) - Math.min(...st.il)).toFixed(2)} <small>dB</small>`],
+    ['Worst crosstalk', `${Math.max(...st.xt).toFixed(1)} <small>dB</small>`],
+    ['Failed connections', blocked ? `<span style="color:var(--warn)">${blocked}</span> <small>of ${N}${S.arch === 'omega' && !S.edited ? ' (blocking)' : ''}</small>` : `0 <small>of ${N}</small>`],
+    ['Hand edits', S.edited ? '<span style="color:var(--accent)">yes</span>' : '<small>none</small>']
+  ]);
+  document.getElementById('connList').innerHTML = 'Requested: ' + P.map((o, i) => `<span style="color:${!okConn(i) ? 'var(--warn)' : '#c9d3de'}">${i + 1}→${o + 1}</span>`).join(' · ');
+  setTxt('netTitle', `${ARCH[S.arch]} · ${N}×${N} · ${c.sw} switches`);
+}
+/* ------------------------------------------------ controls */
+const SL = [
+  { id: 'il', g: 'imp', lab: 'Insertion loss per switch', min: 0, max: 1.5, step: 0.01, unit: 'dB', dec: 2, get: () => S.il, set: v => S.il = v, after: () => { sweepCache = null; runSim(); } },
+  { id: 'xl', g: 'imp', lab: 'Loss per waveguide crossing', min: 0, max: 0.5, step: 0.005, unit: 'dB', dec: 3, get: () => S.xl, set: v => S.xl = v, after: () => { sweepCache = null; runSim(); } },
+  { id: 'er', g: 'imp', lab: 'Switch extinction ratio', min: 10, max: 50, step: 0.5, unit: 'dB', dec: 1, get: () => S.er, set: v => S.er = v, after: () => { sweepCache = null; runSim(); } },
+  { id: 'xx', g: 'imp', lab: 'Crossing crosstalk', min: 20, max: 60, step: 0.5, unit: 'dB', dec: 1, get: () => S.xx, set: v => S.xx = v, after: () => { sweepCache = null; runSim(); } }
+];
+function buildInputs() { const s = document.getElementById('selIn'); s.innerHTML = '<option value="-1">All inputs (1 mW each)</option>' + Array.from({ length: S.N }, (_, k) => `<option value="${k}">Input ${k + 1} only</option>`).join(''); if (S.inp >= S.N) S.inp = -1; s.value = S.inp; }
+const NOTE = { xbar: 'Strictly non-blocking, N² switches, path-dependent loss.', benes: 'Minimum switch count for a rearrangeably non-blocking fabric; many crossings.', sb: 'Planar: no crossings, N stages.', omega: 'Fewest switches, self-routing, but blocking.' };
+function setArch(a) { S.arch = a; setTxt('archNote', NOTE[a]); buildNet(); }
+document.getElementById('selArch').onchange = e => setArch(e.target.value);
+wireSeg('segN', v => { S.N = +v; buildInputs(); buildNet(); });
+wireSeg('segGlow', v => S.glow = v);
+wireSeg('segPlot', v => S.plot = v);
+document.getElementById('selPerm').onchange = e => { S.perm = e.target.value; buildNet(); };
+document.getElementById('bRand').onclick = () => { S.seed++; S.perm = 'rand'; document.getElementById('selPerm').value = 'rand'; buildNet(); };
+document.getElementById('bRoute').onclick = reroute;
+document.getElementById('bConn').onclick = () => {
+  const i = clamp(+document.getElementById('nRi').value, 1, S.N) - 1, j = clamp(+document.getElementById('nRj').value, 1, S.N) - 1, k = P.indexOf(j);
+  P[k] = P[i]; P[i] = j; reroute();
+};
+document.getElementById('selIn').onchange = e => { S.inp = +e.target.value; dirty = true; };
+const hit = e => { for (const b of boxes) if (e.offsetX >= b.x0 && e.offsetX <= b.x1 && e.offsetY >= b.y0 && e.offsetY <= b.y1) return b.i; return -1; };
+cNet.addEventListener('pointermove', e => { hoverBox = hit(e); });
+cNet.addEventListener('pointerleave', () => { hoverBox = -1; });
+cNet.addEventListener('click', e => {
+  const i = hit(e); if (i < 0) return; const b = boxes[i];
+  if (NET.kind === 'xbar') NET.cell[b.r][b.c] ^= 1; else b.q.st ^= 1;
+  S.edited = true; runSim();
+});
+window.addEventListener('resize', () => dirty = true);
+buildInputs(); buildSliders(); setArch('benes');
+let tA = 0, last = performance.now();
+(function loop(now) {
+  now = now || performance.now(); tA += Math.min(0.05, (now - last) / 1000); last = now;
+  drawNet(tA);
+  if (dirty) { dirty = false; drawPlot(); update(); SL.forEach(syncOut); }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Microring weight bank</title>
+<style>
+
+:root{
+  --bg:#0c1016; --card:#141a22; --card2:#10151c; --line:#243041; --text:#e6edf3; --muted:#8b98a9;
+  --thr:#4aa8ff; --refl:#d58cff; --fw:#5fd38d; --bw:#ff8f6b; --accent:#ffcc66; --laser:#ff4d6d; --warn:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:14px 20px 6px}
+header h1{font-size:19px;margin:0;font-weight:650}
+header .sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:10px 20px 20px}
+@media (max-width:1100px){main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600}
+.view{height:min(54vh,560px);min-height:380px;display:flex;flex-direction:column}
+.view canvas{flex:1;width:100%;min-height:0;display:block;border-radius:8px}
+#c3d{background:radial-gradient(ellipse at 50% 35%,#18212d 0%,#0d1218 75%);cursor:grab;touch-action:none}
+#c3d:active{cursor:grabbing}
+#cPlot{background:var(--card2);cursor:crosshair;touch-action:none}
+#cP2{background:var(--card2);height:240px;width:100%;display:block;border-radius:8px;cursor:crosshair;touch-action:none}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;color:var(--muted);border:0;padding:4px 10px;font:inherit;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:#223046;color:var(--text)}
+.toolbar label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+input[type=number]{background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;width:86px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.group{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.group h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin:7px 0}
+.row.off{opacity:.35;pointer-events:none}
+.row .lab{color:var(--muted);font-size:12.5px}
+.row .val{font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
+.row input[type=range]{grid-column:1/3;width:100%;accent-color:var(--accent);margin:2px 0 0}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0;font-size:12.5px;color:var(--muted)}
+.btn{background:#1d2735;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn:hover{background:#26344a}
+.btn.primary{border-color:#6b5a2b;background:#2d2615;color:var(--accent)}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
+.ro{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ro .k{font-size:11.5px;color:var(--muted)}
+.ro .v{font-size:15.5px;font-variant-numeric:tabular-nums;font-weight:600}
+.ro .v small{font-size:12px;color:var(--muted);font-weight:500}
+.span2{grid-column:1/-1}
+/* theory */
+.theory{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
+.th{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.th h3{margin:0 0 8px;font-size:14px;color:var(--accent)}
+.th p{margin:6px 0;color:#c9d3de;font-size:13px}
+.eq{display:block;text-align:center;line-height:2.4;margin:8px 0;font:15px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 3px}
+.frac>span:first-child{border-bottom:1px solid #cfd8e3;padding:0 4px 2px}
+.frac>span:last-child{padding:2px 4px 0}
+.live{font:600 12.5px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);background:#1f1a0e;border:1px solid #4a3d1c;border-radius:5px;padding:1px 6px;white-space:nowrap}
+table.fm{width:100%;border-collapse:collapse;font-size:13px}
+table.fm td{padding:5px 6px;border-bottom:1px solid #1f2836;color:#c9d3de;vertical-align:middle}
+table.fm td.f{font:14px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+table.fm td.f small{display:block;font:11.5px system-ui,sans-serif;color:var(--muted)}
+table.fm td:last-child{text-align:right}
+i.v{font-family:"Cambria Math","Times New Roman",serif;font-style:italic}
+a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1c;background:#1f1a0e;border-radius:8px;padding:3px 10px;margin-right:4px}a.back:hover{background:#2d2615}
+
+.row .val{display:flex;align-items:center;justify-content:flex-end;gap:4px;text-align:right}
+.numin{width:78px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font:inherit;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.numin:focus{outline:none;border-color:var(--accent)}
+.row .unit{color:var(--muted);font-size:12px;min-width:18px;text-align:left}
+.row .extra{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.cfgsel{background:#1f1a0e;color:var(--accent);border:1px solid #6b5a2b;border-radius:9px;padding:6px 10px;font:inherit;font-size:13.5px;cursor:pointer}
+
+.smat{display:inline-grid;grid-template-columns:auto auto;gap:2px 14px;padding:2px 9px;vertical-align:middle;border-left:1.5px solid #cfd8e3;border-right:1.5px solid #cfd8e3;border-radius:7px;line-height:1.7;text-align:center}
+
+#cSch{width:100%;height:400px;display:block;border-radius:8px;background:#0b0f15}
+#cPlot{width:100%;height:340px;display:block;border-radius:8px;background:var(--card2)}
+.hide{display:none!important}
+.theory p, .theory li{color:#c9d3de;font-size:13px}
+.chgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../index.html">← Component catalog</a>
+  <h1>Microring weight bank</h1>
+  <span class="sub">WDM dot product in photonics: input values encoded by all-pass ring modulators, weights set by add-drop rings, summation by balanced photodetection. Part of the Programmable Photonics interactive lab.</span>
+</header>
+<main>
+  <section class="card span2">
+    <div class="toolbar">
+      <span id="schTitle" style="color:var(--text);font-weight:600"></span>
+      <span>ring colour = wavelength channel · ring glow = power removed from the bus · heater glow = applied detuning</span>
+    </div>
+    <canvas id="cSch"></canvas>
+  </section>
+
+  <section class="card span2">
+    <div class="toolbar">
+      <div class="seg" id="segPlot"><button data-v="spec" class="on">Spectra</button><button data-v="w">Target vs realized</button><button data-v="tf">Weight vs detuning</button><button data-v="sp">Error vs channel spacing</button></div>
+      <span id="plotNote"></span>
+    </div>
+    <canvas id="cPlot"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>Controls</h2>
+    <div class="inline" style="margin-bottom:8px">
+      Channels M <span class="seg" id="segM"><button data-v="2">2</button><button data-v="4" class="on">4</button><button data-v="8">8</button></span>
+      Calibration <span class="seg" id="segCal"><button data-v="none" class="on">independent rings</button><button data-v="comp">crosstalk-compensated</button></span>
+    </div>
+    <div class="inline" style="margin-bottom:10px">
+      <button class="btn" id="bRx">Random inputs</button><button class="btn" id="bRw">Random weights</button><button class="btn" id="bW1">All weights +1</button><button class="btn" id="bWm">Alternate ±1</button>
+    </div>
+    <div class="groups">
+      <div class="group" data-group="dev"><h3>Rings and channels</h3></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Figures of merit</h2>
+    <div class="readouts" id="ro"></div>
+  </section>
+
+  <section class="card span2">
+    <h2>Inputs x<sub>k</sub> and weights w<sub>k</sub></h2>
+    <div class="chgrid">
+      <div class="group" data-group="x"><h3>Inputs x (optical power per channel, 0 … 1)</h3></div>
+      <div class="group" data-group="w"><h3>Weights w (−1 … +1)</h3></div>
+    </div>
+  </section>
+
+  <section class="card span2">
+    <h2>Theory</h2>
+    <div class="theory">
+      <div class="th">
+        <h3>1 · Broadcast-and-weight</h3>
+        <p>Each input value <i class="v">x</i><sub>k</sub> travels on its own wavelength λ<sub>k</sub>. All the channels share one waveguide (wavelength-division multiplexing), so a single photodetector can add them up. The weighted sum is a dot product, the core operation of a neural-network neuron:</p>
+        <div class="eq"><i class="v">y</i> = Σ<sub>k</sub> <i class="v">w</i><sub>k</sub> <i class="v">x</i><sub>k</sub> <span class="live" id="lvY"></span></div>
+        <p>Each operation happens at the speed of light, with no data movement between memory and processor.</p>
+      </div>
+      <div class="th">
+        <h3>2 · Inputs: all-pass ring modulators</h3>
+        <p>A ring next to the bus removes power near its resonance. Detuning the ring from its channel with a heater (or a carrier-depletion junction) sets the transmitted power:</p>
+        <div class="eq"><i class="v">T</i><sub>ap</sub>(φ) = <span class="frac"><span><i class="v">a</i>² − 2<i class="v">ra</i> cos φ + <i class="v">r</i>²</span><span>1 − 2<i class="v">ar</i> cos φ + (<i class="v">ra</i>)²</span></span>, &nbsp; φ = 2π <span class="frac"><span>λ<sub>res</sub> − λ</span><span>FSR</span></span></div>
+        <p>Here the modulators are assumed critically coupled (<i class="v">a</i> = <i class="v">r</i>), so <i class="v">T</i><sub>ap</sub> goes from 0 on resonance to ≈ 1 far away and covers the full range of <i class="v">x</i>.</p>
+      </div>
+      <div class="th">
+        <h3>3 · Weights: add-drop rings and balanced detection</h3>
+        <p>In the weight bank every add-drop ring splits its channel between the drop port and the through port:</p>
+        <div class="eq"><i class="v">D</i> = <span class="frac"><span>(1 − <i class="v">r</i>²)² <i class="v">a</i></span><span>1 − 2<i class="v">r</i>²<i class="v">a</i> cos φ + <i class="v">r</i>⁴<i class="v">a</i>²</span></span>, &nbsp;&nbsp; <i class="v">T</i> = <span class="frac"><span><i class="v">r</i>²(1 + <i class="v">a</i>² − 2<i class="v">a</i> cos φ)</span><span>1 − 2<i class="v">r</i>²<i class="v">a</i> cos φ + <i class="v">r</i>⁴<i class="v">a</i>²</span></span></div>
+        <p>A balanced photodetector subtracts the through port from the drop port, so each channel is multiplied by</p>
+        <div class="eq"><i class="v">w</i><sub>k</sub> = <i class="v">D</i>(λ<sub>k</sub>) − <i class="v">T</i>(λ<sub>k</sub>) ∈ [≈ −1, <i class="v">D</i><sub>0</sub> − <i class="v">T</i><sub>0</sub>] <span class="live" id="lvW"></span></div>
+        <p>On resonance most of the light goes to the drop port (positive weight); far from resonance it stays in the through port (weight −1). Negative weights come for free with balanced detection.</p>
+      </div>
+      <div class="th">
+        <h3>4 · Inter-channel crosstalk and calibration</h3>
+        <p>The Lorentzian tails of each ring also act on the neighbouring channels. If each ring is set as if it were alone, the realized weights deviate from the targets, more so when the channel spacing is only a few linewidths:</p>
+        <div class="eq">FWHM ≈ <span class="frac"><span>FSR</span><span>𝓕</span></span>, &nbsp; 𝓕 = <span class="frac"><span>π √(<i class="v">r</i>²<i class="v">a</i>)</span><span>1 − <i class="v">r</i>²<i class="v">a</i></span></span> <span class="live" id="lvF"></span></div>
+        <p>Practical weight banks calibrate the whole bank together: the detunings are adjusted iteratively using a model (or measurements) of all the rings, so that the <i class="v">realized</i> weights match the targets. Switch on <b>crosstalk-compensated</b> to see it.</p>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+"use strict";
+const PI = Math.PI;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+let dirty = true;
+function f3(v) { const a = Math.abs(v); return !isFinite(v) ? '∞' : a >= 1000 ? v.toFixed(0) : a >= 100 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : a >= 1 ? v.toFixed(3) : v.toFixed(4); }
+const dB = p => 10 * Math.log10(Math.max(p, 1e-12));
+const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+function fitCanvas(c) {
+  const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  const W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); return { ctx, w: r.width, h: r.height };
+}
+function niceTicks(a, b, n) {
+  const span = b - a; if (!(span > 0)) return [a];
+  const s0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(s0))), q = s0 / mag;
+  const st = (q < 1.5 ? 1 : q < 3 ? 2 : q < 7 ? 5 : 10) * mag, t = [];
+  for (let v = Math.ceil(a / st - 1e-9) * st; v <= b + 1e-9; v += st) t.push(+v.toFixed(12));
+  return t;
+}
+function tickFmt(v, step) { const d = Math.max(0, Math.min(6, -Math.floor(Math.log10(step || 1) + 1e-9))); return v.toFixed(d); }
+function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
+  ctx.font = FONT; const w = ctx.measureText(text).width + 10, x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
+  ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
+  ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + 0.5);
+}
+/* colour maps: 'light' (dark → red → white, for optical intensity) and 'heat' (dark blue → red → yellow) */
+const CMAPS = {
+  light: [[0, [8, 10, 16]], [0.25, [90, 10, 40]], [0.5, [210, 40, 80]], [0.75, [255, 120, 120]], [1, [255, 235, 230]]],
+  heat: [[0, [14, 22, 48]], [0.25, [60, 30, 110]], [0.5, [180, 40, 90]], [0.75, [245, 120, 40]], [1, [255, 240, 150]]]
+};
+function cmap(name, t) {
+  const st = CMAPS[name]; t = clamp(t, 0, 1);
+  for (let i = 1; i < st.length; i++) if (t <= st[i][0]) { const u = (t - st[i - 1][0]) / (st[i][0] - st[i - 1][0]), a = st[i - 1][1], b = st[i][1]; return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u]; }
+  return st[st.length - 1][1];
+}
+/* ------------------------------------------------ sliders with editable numeric boxes */
+const LOGN = 2000;
+const toSlider = (c, v) => Math.round(LOGN * Math.log(v / c.min) / Math.log(c.max / c.min));
+const fromSlider = (c, u) => c.min * Math.pow(c.max / c.min, u / LOGN);
+const SLid = id => SL.find(c => c.id === id);
+const maxOf = c => typeof c.max === 'function' ? c.max() : c.max;
+function buildSliders() {
+  for (const c of SL) {
+    const host = document.querySelector(`[data-group="${c.g}"]`);
+    const row = document.createElement('div'); row.className = 'row'; row.id = 'row_' + c.id;
+    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val"><input type="text" inputmode="decimal" class="numin" id="n_${c.id}"><span class="unit">${c.unit ?? ''}</span><span class="extra" id="x_${c.id}"></span></span><input type="range" id="s_${c.id}">`;
+    const inl = host.querySelector('.inline.after'); if (inl) host.insertBefore(row, inl); else host.appendChild(row);
+    const s = row.querySelector('input[type=range]');
+    if (c.log) { s.min = 0; s.max = LOGN; s.step = 1; } else { s.min = c.min; s.max = maxOf(c); s.step = c.step; }
+    s.addEventListener('input', () => { c.set(c.log ? fromSlider(c, +s.value) : +s.value); if (c.after) c.after(); syncOut(c); dirty = true; });
+    const n = row.querySelector('.numin');
+    n.addEventListener('change', () => { let v = parseFloat(String(n.value).replace(',', '.')); if (isFinite(v)) { c.set(clamp(v, c.min, maxOf(c))); if (c.after) c.after(); syncSlider(c); dirty = true; } else syncOut(c); });
+    n.addEventListener('keydown', e => { if (e.key === 'Enter') n.blur(); });
+  }
+  SL.forEach(syncSlider);
+}
+function syncOut(c) {
+  const n = document.getElementById('n_' + c.id);
+  if (document.activeElement !== n) n.value = +c.get().toFixed(c.dec ?? 3);
+  document.getElementById('x_' + c.id).textContent = c.extra ? c.extra(c.get()) : '';
+}
+function syncSlider(c) {
+  const s = document.getElementById('s_' + c.id);
+  if (c.log) s.value = toSlider(c, c.get()); else { s.max = maxOf(c); s.value = c.get(); }
+  syncOut(c);
+}
+function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+function wireSeg(id, fn) { document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { fn(b.dataset.v); setSeg(id, b.dataset.v); dirty = true; }); }
+function readouts(id, items) { document.getElementById(id).innerHTML = items.map(([k, v]) => `<div class="ro"><div class="k">${k}</div><div class="v">${v}</div></div>`).join(''); }
+const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
+/* ------------------------------------------------ generic line plot
+   o = { x0, x1, y0, y1, xlabel, ylabel, series:[{x:[], y:[], color, width, dash}], vlines:[{x, color, label, dash}],
+         legend:[{color, label, dash}], yfmt, ylog } */
+function linePlot(canvas, o) {
+  const { ctx, w, h } = fitCanvas(canvas); ctx.clearRect(0, 0, w, h);
+  const m = { l: 60, r: 16, t: 30, b: 42 }, pw = w - m.l - m.r, ph = h - m.t - m.b; if (pw < 60 || ph < 40) return;
+  const ty = v => o.ylog ? Math.log10(Math.max(v, 1e-30)) : v;
+  const Y0 = ty(o.y0), Y1 = ty(o.y1);
+  const X = v => m.l + (v - o.x0) / (o.x1 - o.x0) * pw, Y = v => m.t + (1 - (ty(v) - Y0) / (Y1 - Y0)) * ph;
+  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  const xt = niceTicks(o.x0, o.x1, Math.max(3, Math.round(pw / 90))), xst = xt.length > 1 ? xt[1] - xt[0] : 1;
+  let yt; if (o.ylog) { yt = []; for (let d = Math.ceil(Y0); d <= Math.floor(Y1); d++) yt.push(Math.pow(10, d)); } else yt = niceTicks(o.y0, o.y1, Math.max(3, Math.round(ph / 55)));
+  const yst = !o.ylog && yt.length > 1 ? yt[1] - yt[0] : 1;
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
+  for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
+  for (const b of (o.bands || [])) { ctx.fillStyle = b.color; ctx.fillRect(X(b.x0), m.t, X(b.x1) - X(b.x0), ph); }
+  for (const v of (o.vlines || [])) {
+    if (v.x < o.x0 || v.x > o.x1) continue;
+    ctx.strokeStyle = v.color; ctx.lineWidth = 1.2; ctx.setLineDash(v.dash || [4, 4]);
+    ctx.beginPath(); ctx.moveTo(X(v.x), m.t); ctx.lineTo(X(v.x), m.t + ph); ctx.stroke(); ctx.setLineDash([]);
+    if (v.label) { ctx.font = FONT; ctx.fillStyle = v.color; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(v.label, X(v.x), m.t + 4 + (v.row || 0) * 14); }
+  }
+  for (const s of o.series) {
+    ctx.beginPath(); let pen = false;
+    for (let i = 0; i < s.x.length; i++) { const y = s.y[i]; if (!isFinite(y)) { pen = false; continue; } const px = X(s.x[i]), py = Y(y); if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py); }
+    ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 2; ctx.setLineDash(s.dash || []); ctx.lineJoin = 'round'; ctx.stroke(); ctx.setLineDash([]);
+  }
+  for (const p of (o.points || [])) { if (p.x < o.x0 || p.x > o.x1) continue; ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 5, 0, 2 * PI); ctx.fillStyle = p.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); }
+  ctx.restore();
+  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of xt) ctx.fillText(o.xfmt ? o.xfmt(t) : tickFmt(t, xst), X(t), m.t + ph + 6);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const t of yt) ctx.fillText(o.yfmt ? o.yfmt(t) : (o.ylog ? (t >= 1 ? String(t) : t.toExponential(0)) : tickFmt(t, yst)), m.l - 6, Y(t));
+  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
+  ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText(o.ylabel, 0, 0); ctx.restore();
+  let lx = m.l; const ly = 14; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
+  return { X, Y, m, pw, ph };
+}
+
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const S = { M: 4, dl: 0.8, R: 8, ng: 4.2, loss: 3, r: 0.98, rin: 0.985, cal: 'none', plot: 'spec', x: [0.9, 0.4, 0.7, 0.2, 0.5, 0.8, 0.3, 0.6], w: [0.6, -0.5, 0.2, -0.9, 0.8, -0.2, 0.4, -0.7], seed: 1 };
+const LAM0 = 1550;
+const chCol = (k, M, a = 1) => `hsla(${(190 + 300 * k / Math.max(M, 2)) % 360},85%,62%,${a})`;
+function geom(o = S) {
+  const L = 2 * PI * o.R, FSR = (LAM0 * 1e-9) ** 2 / (o.ng * L * 1e-6) * 1e9, a = Math.pow(10, -o.loss * L * 1e-4 / 20);
+  const lam = Array.from({ length: o.M }, (_, k) => LAM0 + (k - (o.M - 1) / 2) * o.dl);
+  const F = PI * Math.sqrt(o.r * o.r * a) / (1 - o.r * o.r * a), Fin = PI * o.rin / (1 - o.rin * o.rin);
+  return { L, FSR, a, lam, F, fwhm: FSR / F, fwhmIn: FSR / Fin };
+}
+const phiOf = (lres, l, FSR) => 2 * PI * (lres - l) / FSR;
+const Tap = (ph, r) => { const a = r, c = Math.cos(ph); return (a * a - 2 * r * a * c + r * r) / (1 - 2 * a * r * c + (r * a) ** 2); };
+function adddrop(ph, r, a) { const c = Math.cos(ph), den = 1 - 2 * r * r * a * c + r ** 4 * a * a; return { D: (1 - r * r) ** 2 * a / den, T: r * r * (1 + a * a - 2 * a * c) / den }; }
+/* invert a single ring (no crosstalk): detuning δλ ≥ 0 (red shift by heating) */
+function bisect(f, target, lo, hi) { for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if ((f(m) - target) * (f(lo) - target) > 0) lo = m; else hi = m; } return (lo + hi) / 2; }
+function detIn(x, g) { const T0 = Tap(0, S.rin); if (x <= T0) return 0; const xm = Tap(PI, S.rin); if (x >= xm) return g.FSR / 2; return bisect(ph => Tap(ph, S.rin), x, 0, PI) * g.FSR / (2 * PI); }
+function wRange(g) { const a = adddrop(0, S.r, g.a), b = adddrop(PI, S.r, g.a); return [b.D - b.T, a.D - a.T]; }
+function detW(w, g) { const [lo, hi] = wRange(g); w = clamp(w, lo, hi); return bisect(ph => { const q = adddrop(ph, S.r, g.a); return q.D - q.T; }, w, 0, PI) * g.FSR / (2 * PI); }
+/* full model with every ring acting on every channel */
+function inputsAt(l, din, g) { let t = 1; for (let j = 0; j < S.M; j++) t *= Tap(phiOf(g.lam[j] + din[j], l, g.FSR), S.rin); return t; }
+function bankAt(l, dw, g) { let T = 1, D = 0; for (let j = 0; j < S.M; j++) { const q = adddrop(phiOf(g.lam[j] + dw[j], l, g.FSR), S.r, g.a); D += T * q.D; T *= q.T; } return { D, T, w: D - T }; }
+function solve() {
+  const g = geom(), M = S.M, xt = S.x.slice(0, M), [wlo, whi] = wRange(g), wt = S.w.slice(0, M).map(w => clamp(w, wlo, whi));
+  let din = xt.map(x => detIn(x, g)), dw = wt.map(w => detW(w, g));
+  let xs = xt.slice(), ws = wt.slice();
+  if (S.cal === 'comp') {
+    for (let it = 0; it < 60; it++) {
+      const xr = g.lam.map(l => inputsAt(l, din, g)), wr = g.lam.map(l => bankAt(l, dw, g).w);
+      xs = xs.map((v, k) => clamp(v * (xt[k] + 1e-6) / (xr[k] + 1e-6), 0, 1)); ws = ws.map((v, k) => clamp(v + 0.8 * (wt[k] - wr[k]), wlo, whi));
+      din = xs.map(x => detIn(x, g)); dw = ws.map(w => detW(w, g));
+    }
+  }
+  const xr = g.lam.map(l => inputsAt(l, din, g)), bk = g.lam.map(l => bankAt(l, dw, g)), wr = bk.map(b => b.w);
+  const yT = xt.reduce((s, x, k) => s + x * wt[k], 0), yR = xr.reduce((s, x, k) => s + x * wr[k], 0);
+  return { g, xt, wt, din, dw, xr, wr, bk, yT, yR, wlo, whi, werr: Math.sqrt(wr.reduce((s, w, k) => s + (w - wt[k]) ** 2, 0) / M), xerr: Math.sqrt(xr.reduce((s, x, k) => s + (x - xt[k]) ** 2, 0) / M) };
+}
+let SOL = null;
+/* ------------------------------------------------ schematic */
+const cSch = document.getElementById('cSch');
+const glowCol = t => `rgb(${60 + 195 * t | 0},${76 - 20 * t | 0},${98 + 6 * t | 0})`;
+function wg(ctx, path, p, t) {
+  const g = Math.sqrt(clamp(p, 0, 1)); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = g > 0.01 ? glowCol(g) : '#3c495c'; ctx.lineWidth = 2.4 + 3 * g; path(); ctx.stroke();
+  if (g > 0.05) { ctx.save(); ctx.strokeStyle = `rgba(255,225,232,${0.55 * g})`; ctx.lineWidth = 1.5; ctx.setLineDash([5, 12]); ctx.lineDashOffset = -t * 40; path(); ctx.stroke(); ctx.restore(); }
+}
+function ring(ctx, x, y, R, col, glow, heat) {
+  if (glow > 0.02) { ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 16 * glow; }
+  ctx.strokeStyle = col; ctx.globalAlpha = 0.35 + 0.65 * Math.max(glow, 0.15); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, R, 0, 2 * PI); ctx.stroke(); ctx.globalAlpha = 1;
+  if (glow > 0.02) ctx.restore();
+  // heater: arc on the outer side
+  ctx.save(); if (heat > 0.03) { ctx.shadowColor = `rgba(255,150,60,${heat})`; ctx.shadowBlur = 10 * heat; }
+  ctx.strokeStyle = `rgba(255,190,90,${0.25 + 0.7 * heat})`; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.arc(x, y, R + 6, -PI * 0.85, -PI * 0.15); ctx.stroke(); ctx.restore();
+}
+function pd(ctx, x, y, p, label) {
+  const bw = 34, bh = 26, gr = ctx.createLinearGradient(x, y - bh / 2, x, y + bh / 2); gr.addColorStop(0, '#3a475d'); gr.addColorStop(1, '#151b24');
+  ctx.fillStyle = gr; roundRect(ctx, x, y - bh / 2, bw, bh, 7); ctx.fill(); ctx.strokeStyle = 'rgba(160,180,210,0.55)'; ctx.lineWidth = 1; roundRect(ctx, x + 0.5, y - bh / 2 + 0.5, bw - 1, bh - 1, 7); ctx.stroke();
+  const t = Math.sqrt(clamp(p, 0, 1)), cx0 = x + bw / 2 - 2, rg = ctx.createRadialGradient(cx0, y, 0, cx0, y, 11);
+  rg.addColorStop(0, `rgba(255,235,240,${0.15 + 0.85 * t})`); rg.addColorStop(0.5, `rgba(255,70,110,${0.1 + 0.8 * t})`); rg.addColorStop(1, 'rgba(255,40,90,0)');
+  ctx.fillStyle = '#0b0f15'; ctx.beginPath(); ctx.arc(cx0, y, 8.5, 0, 2 * PI); ctx.fill(); ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(cx0, y, 11, 0, 2 * PI); ctx.fill();
+  ctx.strokeStyle = 'rgba(200,215,240,0.7)'; ctx.beginPath(); ctx.arc(cx0, y, 8.5, 0, 2 * PI); ctx.stroke();
+  ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, x + bw + 6, y);
+}
+function drawSch(t) {
+  const { ctx, w, h } = fitCanvas(cSch); ctx.clearRect(0, 0, w, h);
+  const sl = SOL, g = sl.g, M = S.M, xEnd = w - 230, xL = 120, xm0 = 180, sp = clamp((xEnd - xm0 - 150) / (2 * M), 46, 120), R = clamp(sp * 0.3, 11, 22), gap = 5;
+  const yB = h * 0.68, xw0 = xm0 + M * sp + 110, xw1 = xw0 + M * sp, yD = yB - 2 * R - 2 * gap, yTop = 50;
+  // per-channel optical power along the bus (normalized by M)
+  const inMod = Array.from({ length: M + 1 }, (_, s) => g.lam.reduce((acc, l, k) => { let p = 1; for (let j = 0; j < s; j++) p *= Tap(phiOf(g.lam[j] + sl.din[j], l, g.FSR), S.rin); return acc + p; }, 0) / M);
+  const thr = Array.from({ length: M + 1 }, (_, s) => g.lam.reduce((acc, l, k) => { let p = sl.xr[k]; for (let j = 0; j < s; j++) p *= adddrop(phiOf(g.lam[j] + sl.dw[j], l, g.FSR), S.r, g.a).T; return acc + p; }, 0) / M);
+  const drp = Array.from({ length: M + 1 }, (_, s) => g.lam.reduce((acc, l, k) => { let p = sl.xr[k], d = 0; for (let j = 0; j < M; j++) { const q = adddrop(phiOf(g.lam[j] + sl.dw[j], l, g.FSR), S.r, g.a); if (j >= s) d += p * q.D; p *= q.T; } return acc + d; }, 0) / M);
+  // lasers → MUX
+  for (let k = 0; k < M; k++) {
+    const y = yTop + 10 + k * (yB - yTop - 30) / Math.max(1, M - 1) * (M > 1 ? 1 : 0) + (M === 1 ? yB - yTop : 0);
+    ctx.fillStyle = chCol(k, M); ctx.save(); ctx.shadowColor = chCol(k, M); ctx.shadowBlur = 10; roundRect(ctx, 14, y - 7, 26, 14, 4); ctx.fill(); ctx.restore();
+    ctx.strokeStyle = chCol(k, M, 0.8); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(40, y); ctx.bezierCurveTo(80, y, 80, yB, xL, yB); ctx.stroke();
+    ctx.fillStyle = '#8b98a9'; ctx.font = '11px system-ui,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText(`λ${k + 1}`, 14, y - 8);
+  }
+  ctx.fillStyle = '#8b98a9'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('lasers', 27, h - 12); ctx.fillText('MUX', xL - 10, yB + 22);
+  // bus through the input modulators
+  for (let s = 0; s <= M; s++) { const xa = s === 0 ? xL : xm0 + (s - 0.5) * sp, xb = s === M ? xw0 - 30 : xm0 + (s + 0.5) * sp; wg(ctx, () => { ctx.beginPath(); ctx.moveTo(xa, yB); ctx.lineTo(xb, yB); }, inMod[s], t); }
+  for (let k = 0; k < M; k++) {
+    const x = xm0 + (k + 0.5) * sp, y = yB - R - gap, rem = (1 - Tap(phiOf(g.lam[k] + sl.din[k], g.lam[k], g.FSR), S.rin));
+    ring(ctx, x, y, R, chCol(k, M), rem, clamp(sl.din[k] / (g.fwhmIn * 4), 0, 1));
+    ctx.fillStyle = chCol(k, M); ctx.font = '600 11.5px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(`x${k + 1}=${sl.xr[k].toFixed(2)}`, x, yB + 10);
+  }
+  ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('input modulators (all-pass)', xm0 + M * sp / 2, yD - 26);
+  // weight bank
+  for (let s = 0; s <= M; s++) { const xa = s === 0 ? xw0 - 30 : xw0 + (s - 0.5) * sp, xb = s === M ? xEnd : xw0 + (s + 0.5) * sp; wg(ctx, () => { ctx.beginPath(); ctx.moveTo(xa, yB); ctx.lineTo(xb, yB); }, thr[s], t); }
+  // drop bus: light travels right → left, then loops over the top to the drop photodiode
+  for (let s = 0; s < M; s++) { const xa = xw0 + (s - 0.5) * sp, xb = xw0 + (s + 0.5) * sp; wg(ctx, () => { ctx.beginPath(); ctx.moveTo(xb, yD); ctx.lineTo(xa, yD); }, drp[s] - (s === 0 ? 0 : 0), t); }
+  wg(ctx, () => { ctx.beginPath(); ctx.moveTo(xw0 + (M - 0.5) * sp + 10, yD); ctx.lineTo(xw0 + (M - 0.5) * sp, yD); }, 0, t);
+  wg(ctx, () => { ctx.beginPath(); ctx.moveTo(xw0 - 0.5 * sp, yD); ctx.bezierCurveTo(xw0 - sp * 1.4, yD, xw0 - sp * 1.4, yTop, xw0 - 0.5 * sp + 30, yTop); ctx.lineTo(xEnd, yTop); }, drp[0], t);
+  for (let k = 0; k < M; k++) {
+    const x = xw0 + (k + 0.5) * sp, y = (yB + yD) / 2, q = adddrop(phiOf(g.lam[k] + sl.dw[k], g.lam[k], g.FSR), S.r, g.a);
+    ring(ctx, x, y, R, chCol(k, M), q.D, clamp(sl.dw[k] / (g.fwhm * 4), 0, 1));
+    ctx.fillStyle = chCol(k, M); ctx.font = '600 11.5px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(`w${k + 1}=${sl.wr[k] >= 0 ? '+' : ''}${sl.wr[k].toFixed(2)}`, x, yB + 10);
+  }
+  ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('weight bank (add-drop)', xw0 + M * sp / 2, yD - 26);
+  // balanced photodetector
+  const Pd = drp[0], Pt = thr[M], xp = xEnd + 4;
+  pd(ctx, xp, yTop, Pd * M / Math.max(1, M) , `drop  ${(Pd * M).toFixed(2)}`); pd(ctx, xp, yB, Pt, `through  ${(Pt * M).toFixed(2)}`);
+  ctx.strokeStyle = '#c9a75a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(xp + 15, yTop + 13); ctx.lineTo(xp + 15, yB - 13); ctx.stroke();
+  const ym = (yTop + yB) / 2; ctx.fillStyle = '#1d2735'; ctx.beginPath(); ctx.arc(xp + 15, ym, 13, 0, 2 * PI); ctx.fill(); ctx.strokeStyle = '#c9a75a'; ctx.stroke();
+  ctx.fillStyle = '#ffcc66'; ctx.font = '600 15px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('−', xp + 15, ym);
+  ctx.strokeStyle = '#c9a75a'; ctx.beginPath(); ctx.moveTo(xp + 28, ym); ctx.lineTo(xp + 60, ym); ctx.stroke();
+  tag(ctx, xp + 120, ym, `y = ${sl.yR.toFixed(3)}`, '#5fd38d', 'rgba(8,11,16,0.92)');
+  ctx.fillStyle = '#8b98a9'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('balanced PD', xp + 60, h - 12);
+  ctx.fillText('powers in units of one laser', xp + 60, h - 30);
+}
+/* ------------------------------------------------ plots */
+const cPlot = document.getElementById('cPlot');
+function drawPlot() {
+  const sl = SOL, g = sl.g, M = S.M;
+  if (S.plot === 'spec') {
+    const l0 = g.lam[0] - 1.6 * S.dl - 0.4, l1 = g.lam[M - 1] + 1.6 * S.dl + 0.4, xs = [], ti = [], dd = [], tt = [];
+    for (let i = 0; i <= 900; i++) { const l = l0 + (l1 - l0) * i / 900, b = bankAt(l, sl.dw, g); xs.push(l); ti.push(inputsAt(l, sl.din, g)); dd.push(b.D); tt.push(b.T); }
+    setTxt('plotNote', 'Input-modulator transmission and weight-bank drop/through spectra · vertical lines = laser channels (height = input power x_k)');
+    const r = linePlot(cPlot, { x0: l0, x1: l1, y0: 0, y1: 1.08, xlabel: 'Wavelength (nm)', ylabel: 'Transmission',
+      series: [{ x: xs, y: ti, color: '#ffcc66', dash: [6, 4], width: 1.6 }, { x: xs, y: tt, color: '#4aa8ff', width: 2 }, { x: xs, y: dd, color: '#5fd38d', width: 2 }],
+      legend: [{ color: '#ffcc66', label: 'input modulators', dash: [6, 4] }, { color: '#4aa8ff', label: 'weight bank through' }, { color: '#5fd38d', label: 'weight bank drop' }] });
+    if (r) { const { ctx } = fitCanvas(cPlot); g.lam.forEach((l, k) => { ctx.strokeStyle = chCol(k, M); ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(r.X(l), r.Y(0)); ctx.lineTo(r.X(l), r.Y(sl.xr[k])); ctx.stroke(); ctx.fillStyle = chCol(k, M); ctx.beginPath(); ctx.arc(r.X(l), r.Y(sl.xr[k]), 4.5, 0, 2 * PI); ctx.fill(); }); }
+  } else if (S.plot === 'w') {
+    const xs = g.lam.map((_, k) => k + 1);
+    setTxt('plotNote', `Rings set ${S.cal === 'comp' ? 'together, compensating crosstalk' : 'one by one, ignoring the other rings'} · open = target, filled = realized`);
+    linePlot(cPlot, { x0: 0.5, x1: M + 0.5, y0: -1.1, y1: 1.1, xlabel: 'Channel k', ylabel: 'Value', xfmt: v => Number.isInteger(v) && v >= 1 && v <= M ? String(v) : '',
+      series: [{ x: xs, y: sl.wt, color: 'rgba(95,211,141,0.5)', dash: [4, 4], width: 1.2 }, { x: xs, y: sl.wr, color: '#5fd38d', width: 2 }, { x: xs, y: sl.xt, color: 'rgba(255,204,102,0.5)', dash: [4, 4], width: 1.2 }, { x: xs, y: sl.xr, color: '#ffcc66', width: 2 }],
+      points: xs.map((x, k) => ({ x, y: sl.wr[k], color: '#5fd38d' })).concat(xs.map((x, k) => ({ x, y: sl.xr[k], color: '#ffcc66' }))),
+      legend: [{ color: '#5fd38d', label: 'weight w (dashed = target)' }, { color: '#ffcc66', label: 'input x (dashed = target)' }] });
+  } else if (S.plot === 'tf') {
+    const xs = [], wv = [], dv = [], tv = [], dm = Math.min(g.FSR / 2, 12 * g.fwhm);
+    for (let i = 0; i <= 400; i++) { const d = dm * i / 400, q = adddrop(2 * PI * d / g.FSR, S.r, g.a); xs.push(d * 1000); wv.push(q.D - q.T); dv.push(q.D); tv.push(q.T); }
+    setTxt('plotNote', 'Single add-drop ring: weight as a function of the detuning of its resonance from the channel');
+    linePlot(cPlot, { x0: 0, x1: dm * 1000, y0: -1.05, y1: 1.05, xlabel: 'Resonance detuning δλ (pm)', ylabel: 'Value',
+      series: [{ x: xs, y: dv, color: '#5fd38d', dash: [6, 4], width: 1.4 }, { x: xs, y: tv, color: '#4aa8ff', dash: [6, 4], width: 1.4 }, { x: xs, y: wv, color: '#fff', width: 2.4 }],
+      points: sl.dw.map((d, k) => ({ x: d * 1000, y: (q => q.D - q.T)(adddrop(2 * PI * d / g.FSR, S.r, g.a)), color: chCol(k, M) })),
+      vlines: [{ x: g.fwhm * 500, color: 'rgba(255,204,102,0.6)', label: 'HWHM' }],
+      legend: [{ color: '#fff', label: 'w = D − T' }, { color: '#5fd38d', label: 'drop D', dash: [6, 4] }, { color: '#4aa8ff', label: 'through T', dash: [6, 4] }] });
+  } else {
+    const xs = [], e0 = [], e1 = [], keep = { dl: S.dl, cal: S.cal };
+    for (let i = 0; i <= 24; i++) {
+      const ratio = 1 + 11 * i / 24; S.dl = ratio * g.fwhm; xs.push(ratio);
+      S.cal = 'none'; e0.push(solve().werr); S.cal = 'comp'; e1.push(solve().werr);
+    }
+    Object.assign(S, keep);
+    setTxt('plotNote', `RMS weight error for the current target weights, versus channel spacing in units of the ring linewidth (${(g.fwhm * 1000).toFixed(0)} pm)`);
+    linePlot(cPlot, { x0: 1, x1: 12, y0: 1e-4, y1: 1, ylog: true, xlabel: 'Channel spacing / FWHM', ylabel: 'RMS weight error',
+      series: [{ x: xs, y: e0.map(v => Math.max(v, 1e-4)), color: '#ff9548', width: 2.2 }, { x: xs, y: e1.map(v => Math.max(v, 1e-4)), color: '#5fd38d', width: 2.2 }],
+      vlines: [{ x: S.dl / g.fwhm, color: 'rgba(255,255,255,0.6)', label: 'current' }],
+      legend: [{ color: '#ff9548', label: 'independent rings' }, { color: '#5fd38d', label: 'crosstalk-compensated' }] });
+  }
+}
+/* ------------------------------------------------ readouts */
+function update() {
+  const sl = SOL, g = sl.g;
+  readouts('ro', [
+    ['FSR · ring FWHM', `${g.FSR.toFixed(2)} <small>nm ·</small> ${(g.fwhm * 1000).toFixed(0)} <small>pm</small>`],
+    ['Finesse · loaded Q', `${g.F.toFixed(0)} <small>·</small> ${(LAM0 / g.fwhm / 1000).toFixed(1)}<small>k</small>`],
+    ['Spacing / FWHM', `${(S.dl / g.fwhm).toFixed(1)}`],
+    ['Weight range', `${sl.wlo.toFixed(2)} <small>…</small> +${sl.whi.toFixed(2)}`],
+    ['Target y = Σ w·x', `${sl.yT.toFixed(4)}`],
+    ['Realized y', `${sl.yR.toFixed(4)}`],
+    ['Error in y', (e => `${e >= 0 ? '+' : ''}${e.toFixed(4)}`)(Math.abs(sl.yR - sl.yT) < 5e-5 ? 0 : sl.yR - sl.yT)],
+    ['RMS error w · x', `${sl.werr.toFixed(4)} <small>·</small> ${sl.xerr.toFixed(4)}`]
+  ]);
+  setTxt('lvY', `y = ${sl.yR.toFixed(3)} (target ${sl.yT.toFixed(3)})`); setTxt('lvW', `range ${sl.wlo.toFixed(2)} … +${sl.whi.toFixed(2)}`); setTxt('lvF', `𝓕 = ${g.F.toFixed(0)}, FWHM = ${(g.fwhm * 1000).toFixed(0)} pm`);
+  setTxt('schTitle', `${S.M} channels · spacing ${S.dl.toFixed(2)} nm · ring radius ${S.R} µm`);
+}
+/* ------------------------------------------------ controls (per-channel sliders are rebuilt when M changes) */
+const DEV = [
+  { id: 'dl', g: 'dev', lab: 'Channel spacing Δλ', min: 0.05, max: 3, step: 0.01, unit: 'nm', dec: 2, get: () => S.dl, set: v => S.dl = v, extra: v => `${(v * 124.8).toFixed(0)} GHz` },
+  { id: 'R', g: 'dev', lab: 'Ring radius', min: 3, max: 30, step: 0.1, unit: 'µm', dec: 1, get: () => S.R, set: v => S.R = v },
+  { id: 'r', g: 'dev', lab: 'Weight-ring self-coupling r', min: 0.8, max: 0.998, step: 0.001, unit: '', dec: 3, get: () => S.r, set: v => S.r = v },
+  { id: 'loss', g: 'dev', lab: 'Waveguide loss', min: 0, max: 30, step: 0.1, unit: 'dB/cm', dec: 1, get: () => S.loss, set: v => S.loss = v },
+  { id: 'rin', g: 'dev', lab: 'Modulator self-coupling r (= a)', min: 0.8, max: 0.998, step: 0.001, unit: '', dec: 3, get: () => S.rin, set: v => S.rin = v }
+];
+let SL = [];
+function rebuild() {
+  document.querySelectorAll('[data-group] .row').forEach(e => e.remove());
+  SL = DEV.slice();
+  for (let k = 0; k < S.M; k++) {
+    SL.push({ id: 'x' + k, g: 'x', lab: `x${k + 1} · λ${k + 1}`, min: 0, max: 1, step: 0.001, unit: '', dec: 3, get: () => S.x[k], set: v => S.x[k] = v });
+    SL.push({ id: 'w' + k, g: 'w', lab: `w${k + 1} · λ${k + 1}`, min: -1, max: 1, step: 0.001, unit: '', dec: 3, get: () => S.w[k], set: v => S.w[k] = v, extra: () => SOL && SOL.wr[k] !== undefined ? `realized ${SOL.wr[k] >= 0 ? '+' : ''}${SOL.wr[k].toFixed(3)}` : '' });
+  }
+  buildSliders();
+  for (let k = 0; k < S.M; k++) ['x', 'w'].forEach(p => { const lab = document.querySelector(`#row_${p}${k} .lab`); lab.style.color = chCol(k, S.M); });
+  dirty = true;
+}
+wireSeg('segM', v => { S.M = +v; rebuild(); });
+wireSeg('segCal', v => S.cal = v);
+wireSeg('segPlot', v => S.plot = v);
+const rr = () => rng(++S.seed * 131);
+document.getElementById('bRx').onclick = () => { const r = rr(); S.x = S.x.map(() => +r().toFixed(3)); SL.forEach(syncSlider); dirty = true; };
+document.getElementById('bRw').onclick = () => { const r = rr(); S.w = S.w.map(() => +(2 * r() - 1).toFixed(3)); SL.forEach(syncSlider); dirty = true; };
+document.getElementById('bW1').onclick = () => { S.w = S.w.map(() => 1); SL.forEach(syncSlider); dirty = true; };
+document.getElementById('bWm').onclick = () => { S.w = S.w.map((_, k) => k % 2 ? -1 : 1); SL.forEach(syncSlider); dirty = true; };
+window.addEventListener('resize', () => dirty = true);
+rebuild();
+let tA = 0, last = performance.now();
+(function loop(now) {
+  now = now || performance.now(); tA += Math.min(0.05, (now - last) / 1000); last = now;
+  if (dirty) { SOL = solve(); dirty = false; drawPlot(); update(); SL.forEach(syncOut); }
+  drawSch(tA);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

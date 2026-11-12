@@ -124,9 +124,24 @@ const COMPONENTS = [
   { id: 'adddrop', name: 'Add-drop ring & racetrack', category: 'Building blocks', status: 'available',
     href: 'components/adddrop.html', icon: 'adddrop', tags: ['drop port', 'filter', 'backscattering'],
     summary: 'Double-bus ring and racetrack filter: through and drop responses, critical coupling, Q factor, backscattering (reflection and add port) and thermal tuning with a side-wall heater.' },
+  { id: 'pd',   name: 'Photodetector', category: 'Building blocks', status: 'available',
+    href: 'components/pd.html', icon: 'pd', tags: ['Ge-on-Si', 'responsivity', 'bandwidth', 'noise'],
+    summary: 'Germanium waveguide photodiode: absorption and responsivity versus wavelength and length, dark current, transit-time and RC bandwidth, shot and thermal noise, I–V curve.' },
+  { id: 'bpd',  name: 'Balanced photodetector', category: 'Building blocks', status: 'available',
+    href: 'components/bpd.html', icon: 'bpd', tags: ['CMRR', 'RIN cancellation', 'local oscillator'],
+    summary: 'Two photodiodes in series: subtraction of photocurrents, common-mode rejection, laser-noise cancellation and interferometric detection of a signal with a local oscillator.' },
+  { id: 'coh',  name: 'Coherent detection · 90° hybrid', category: 'Building blocks', status: 'available',
+    href: 'components/coh.html', icon: 'coh', tags: ['I/Q', 'constellation', 'QPSK · 16-QAM'],
+    summary: 'Signal and LO mixed in a 2×4 optical hybrid and two balanced detectors: recovering I and Q, constellations, frequency offset, phase noise, hybrid phase error and I/Q imbalance.' },
   { id: 'ff',   name: 'Feed-forward mesh (Reck / Clements)', category: 'Programmable circuits', status: 'available',
     href: 'components/ff.html', icon: 'ff', tags: ['unitary', 'Reck · Clements', 'fidelity'],
     summary: 'Triangular (Reck) and rectangular (Clements) MZI meshes for arbitrary N×N unitaries: theory, decomposition, programming, hand editing of each MZI and robustness to errors and loss.' },
+  { id: 'osw',  name: 'Optical circuit switches', category: 'Programmable circuits', status: 'available',
+    href: 'components/osw.html', icon: 'osw', tags: ['crossbar', 'Beneš', 'Spanke–Beneš', 'Omega'],
+    summary: 'N×N switch fabrics of 2×2 MZI switches (N = 4 to 32): crossbar, Beneš, Spanke–Beneš and Omega architectures, routing algorithms, blocking, insertion loss and crosstalk.' },
+  { id: 'wb',   name: 'Microring weight bank', category: 'Programmable circuits', status: 'available',
+    href: 'components/wb.html', icon: 'wb', tags: ['WDM', 'dot product', 'balanced detection'],
+    summary: 'Photonic dot product: inputs on WDM channels set by all-pass ring modulators, weights by add-drop rings, summation by balanced photodetection, inter-channel crosstalk and calibration.' },
   { id: 'hex',  name: 'Hexagonal recirculating mesh', category: 'Programmable circuits', status: 'soon',
     icon: 'hex', tags: ['routing', 'synthesized resonators'],
     summary: 'Recirculating hexagonal waveguide mesh: routing light and synthesizing ring resonators by programming TBUs.' }
@@ -162,6 +177,36 @@ const ICONS = {
        <rect x="40" y="38" width="22" height="34" rx="2" fill="#2a3546" stroke="${WG}"/><rect x="178" y="38" width="22" height="34" rx="2" fill="#2a3546" stroke="${WG}"/>
        <rect x="98" y="15" width="44" height="7" rx="2" fill="${HT}"/><rect x="98" y="88" width="44" height="7" rx="2" fill="${HT}"/></svg>`,
   ff: `<svg viewBox="0 0 240 110" class="ffsvg"></svg>`,
+  pd: `<svg viewBox="0 0 240 110"><defs><linearGradient id="gge" x1="0" x2="1"><stop offset="0" stop-color="#ff7a9a"/><stop offset="1" stop-color="#5c5674"/></linearGradient></defs>
+       <path d="M10 58 H92" stroke="${WG}" stroke-width="4" fill="none"/><path d="M10 58 H92" stroke="${LT}" stroke-width="3" class="flow" fill="none"/>
+       <path d="M92 52 L104 46 H104 V70 L92 64 Z" fill="#3b4a60"/><rect x="104" y="44" width="72" height="28" rx="3" fill="url(#gge)"/>
+       <rect x="104" y="30" width="72" height="8" rx="2" fill="${AU}"/><rect x="104" y="78" width="72" height="8" rx="2" fill="${AU}"/><rect x="134" y="54" width="44" height="8" rx="2" fill="${AU}" opacity=".9"/>
+       <rect x="190" y="26" width="34" height="16" rx="2" fill="${AU}"/><rect x="190" y="50" width="34" height="16" rx="2" fill="${AU}"/><rect x="190" y="74" width="34" height="16" rx="2" fill="${AU}"/>
+       <path d="M176 34 H190 M178 58 H190 M176 82 H190" stroke="${AU}" stroke-width="3"/><text x="140" y="104" fill="#8b98a9" font-size="11" text-anchor="middle" font-family="system-ui">Ge</text></svg>`,
+  bpd: `<svg viewBox="0 0 240 110"><g fill="none" stroke-width="4" stroke-linecap="round">
+       <path d="M8 30 C40 30 45 50 70 50 H95 C120 50 125 24 150 24 H160 M8 80 C40 80 45 60 70 60 H95 C120 60 125 86 150 86 H160" stroke="${WG}"/>
+       <path d="M8 30 C40 30 45 50 70 50 H95 C120 50 125 24 150 24 H160 M8 80 C40 80 45 60 70 60 H95 C120 60 125 86 150 86 H160" stroke="${LT}" stroke-width="3" class="flow"/></g>
+       <rect x="160" y="14" width="26" height="20" rx="3" fill="#7a5a74"/><rect x="160" y="76" width="26" height="20" rx="3" fill="#7a5a74"/>
+       <path d="M186 24 H200 V86 H186 M200 55 H226" stroke="${AU}" stroke-width="3" fill="none"/><circle cx="200" cy="55" r="9" fill="#1d2735" stroke="${AU}" stroke-width="2"/>
+       <text x="200" y="59.5" fill="#ffcc66" font-size="13" text-anchor="middle" font-family="system-ui">−</text><text x="12" y="20" fill="#8b98a9" font-size="10.5" font-family="system-ui">signal</text><text x="12" y="100" fill="#8b98a9" font-size="10.5" font-family="system-ui">LO</text></svg>`,
+  coh: `<svg viewBox="0 0 240 110"><g fill="none" stroke-width="3.5" stroke-linecap="round">
+       <path d="M8 32 C35 32 40 46 62 46 M8 78 C35 78 40 64 62 64" stroke="${LT}" class="flow"/>
+       <path d="M128 40 C150 40 152 16 172 16 M128 50 C150 50 152 40 172 40 M128 60 C150 60 152 70 172 70 M128 70 C150 70 152 94 172 94" stroke="${LT}" class="flow" opacity=".85"/></g>
+       <rect x="62" y="34" width="66" height="42" rx="4" fill="#3b2d40" stroke="#ff7a9a" stroke-opacity=".5"/><text x="95" y="59" fill="#e6edf3" font-size="12" text-anchor="middle" font-family="system-ui">90°</text>
+       <g fill="#7a5a74"><rect x="172" y="9" width="18" height="14" rx="2"/><rect x="172" y="33" width="18" height="14" rx="2"/><rect x="172" y="63" width="18" height="14" rx="2"/><rect x="172" y="87" width="18" height="14" rx="2"/></g>
+       <path d="M190 16 H200 V40 H190 M200 28 H214 M190 70 H200 V94 H190 M200 82 H214" stroke="${AU}" stroke-width="2.5" fill="none"/>
+       <text x="226" y="32" fill="#4aa8ff" font-size="12" text-anchor="middle" font-family="system-ui">I</text><text x="226" y="86" fill="#ff9548" font-size="12" text-anchor="middle" font-family="system-ui">Q</text></svg>`,
+  osw: `<svg viewBox="0 0 240 110"><g fill="none" stroke-width="3" stroke-linecap="round" stroke="${WG}">
+       <path d="M8 20 H40 M8 43 H40 M8 66 H40 M8 89 H40"/><path d="M68 20 H96 M68 43 C82 43 82 66 96 66 M68 66 C82 66 82 43 96 43 M68 89 H96"/>
+       <path d="M124 20 C138 20 138 43 152 43 M124 43 C138 43 138 20 152 20 M124 66 H152 M124 89 H152"/><path d="M180 20 H232 M180 43 H232 M180 66 H232 M180 89 H232"/></g>
+       <g fill="none" stroke="${LT}" stroke-width="3" class="flow"><path d="M8 66 H40 L68 66 C82 66 82 43 96 43 H124 C138 43 138 20 152 20 H232"/></g>
+       <g fill="#2a3546" stroke="${WG}"><rect x="40" y="12" width="28" height="39" rx="4"/><rect x="40" y="58" width="28" height="39" rx="4"/><rect x="96" y="12" width="28" height="39" rx="4"/><rect x="96" y="58" width="28" height="39" rx="4"/><rect x="152" y="12" width="28" height="39" rx="4"/><rect x="152" y="58" width="28" height="39" rx="4"/></g>
+       <g fill="${HT}"><rect x="47" y="64" width="14" height="4" rx="1.5"/><rect x="103" y="18" width="14" height="4" rx="1.5"/><rect x="159" y="64" width="14" height="4" rx="1.5"/></g></svg>`,
+  wb: `<svg viewBox="0 0 240 110"><g fill="none" stroke-width="3.5"><path d="M8 84 H200" stroke="${LT}" class="flow"/><path d="M196 30 H40" stroke="${LT}" class="flow" opacity=".8"/>
+       <circle cx="70" cy="57" r="17" stroke="#4fd1ff"/><circle cx="114" cy="57" r="17" stroke="#a46bff"/><circle cx="158" cy="57" r="17" stroke="#ff6b9a"/></g>
+       <rect x="200" y="74" width="20" height="20" rx="3" fill="#7a5a74"/><rect x="196" y="20" width="20" height="20" rx="3" fill="#7a5a74"/>
+       <path d="M216 30 H228 V84 H220" stroke="${AU}" stroke-width="2.5" fill="none"/><circle cx="228" cy="57" r="7" fill="#1d2735" stroke="${AU}" stroke-width="2"/><text x="228" y="61" fill="#ffcc66" font-size="11" text-anchor="middle" font-family="system-ui">−</text>
+       <g font-size="10.5" font-family="system-ui" text-anchor="middle"><text x="70" y="106" fill="#4fd1ff">w₁</text><text x="114" y="106" fill="#a46bff">w₂</text><text x="158" y="106" fill="#ff6b9a">w₃</text></g></svg>`,
   hex: `<svg viewBox="0 0 240 110" class="hexsvg"></svg>`
 };
 
