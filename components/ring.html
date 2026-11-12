@@ -132,7 +132,7 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
     <h2>Figures of merit</h2>
     <div class="readouts" id="ro"></div>
     <div class="toolbar" style="margin-top:4px">
-      <div class="seg" id="segP2"><button data-v="pow" class="on">Intra-ring power</button><button data-v="phase">Through phase</button></div>
+      <h2 style="margin:0">Through phase</h2>
       <span id="p2note"></span>
     </div>
     <canvas id="cP2"></canvas>
@@ -203,7 +203,7 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const S = {
   shape: 'ring', R: 10, Lc: 15, neff: 2.4, ng: 4.2, loss: 3, r: 0.997, rho: 0,
   Rh: 0.5, Ppi: 12, I: 0, Imax: 10, lam0: 1550, lamC: 1550, span: null,
-  mode: 'lam', ymode: 'db', xI: 'I', showT: true, showR: true, p2: 'pow', playing: false, hover: null
+  mode: 'lam', ymode: 'db', xI: 'I', showT: true, showR: true, p2: 'phase', playing: false, hover: null
 };
 let dirty = true, geoDirty = true;
 
