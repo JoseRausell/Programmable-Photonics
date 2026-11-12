@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ring & Racetrack Resonator Lab – single bus (all-pass)</title>
+<style>
+:root{
+  --bg:#0c1016; --card:#141a22; --card2:#10151c; --line:#243041; --text:#e6edf3; --muted:#8b98a9;
+  --thr:#4aa8ff; --refl:#d58cff; --fw:#5fd38d; --bw:#ff8f6b; --accent:#ffcc66; --laser:#ff4d6d; --warn:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:14px 20px 6px}
+header h1{font-size:19px;margin:0;font-weight:650}
+header .sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:10px 20px 20px}
+@media (max-width:1100px){main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600}
+.view{height:min(54vh,560px);min-height:380px;display:flex;flex-direction:column}
+.view canvas{flex:1;width:100%;min-height:0;display:block;border-radius:8px}
+#c3d{background:radial-gradient(ellipse at 50% 35%,#18212d 0%,#0d1218 75%);cursor:grab;touch-action:none}
+#c3d:active{cursor:grabbing}
+#cPlot{background:var(--card2);cursor:crosshair;touch-action:none}
+#cP2{background:var(--card2);height:240px;width:100%;display:block;border-radius:8px;cursor:crosshair;touch-action:none}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;color:var(--muted);border:0;padding:4px 10px;font:inherit;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:#223046;color:var(--text)}
+.toolbar label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+input[type=number]{background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;width:86px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.group{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.group h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin:7px 0}
+.row.off{opacity:.35;pointer-events:none}
+.row .lab{color:var(--muted);font-size:12.5px}
+.row .val{font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
+.row input[type=range]{grid-column:1/3;width:100%;accent-color:var(--accent);margin:2px 0 0}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0;font-size:12.5px;color:var(--muted)}
+.btn{background:#1d2735;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn:hover{background:#26344a}
+.btn.primary{border-color:#6b5a2b;background:#2d2615;color:var(--accent)}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
+.ro{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ro .k{font-size:11.5px;color:var(--muted)}
+.ro .v{font-size:15.5px;font-variant-numeric:tabular-nums;font-weight:600}
+.ro .v small{font-size:12px;color:var(--muted);font-weight:500}
+.span2{grid-column:1/-1}
+/* theory */
+.theory{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
+.th{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.th h3{margin:0 0 8px;font-size:14px;color:var(--accent)}
+.th p{margin:6px 0;color:#c9d3de;font-size:13px}
+.eq{display:block;text-align:center;line-height:2.4;margin:8px 0;font:15px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 3px}
+.frac>span:first-child{border-bottom:1px solid #cfd8e3;padding:0 4px 2px}
+.frac>span:last-child{padding:2px 4px 0}
+.live{font:600 12.5px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);background:#1f1a0e;border:1px solid #4a3d1c;border-radius:5px;padding:1px 6px;white-space:nowrap}
+table.fm{width:100%;border-collapse:collapse;font-size:13px}
+table.fm td{padding:5px 6px;border-bottom:1px solid #1f2836;color:#c9d3de;vertical-align:middle}
+table.fm td.f{font:14px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+table.fm td.f small{display:block;font:11.5px system-ui,sans-serif;color:var(--muted)}
+table.fm td:last-child{text-align:right}
+i.v{font-family:"Cambria Math","Times New Roman",serif;font-style:italic}
+a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1c;background:#1f1a0e;border-radius:8px;padding:3px 10px;margin-right:4px}a.back:hover{background:#2d2615}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../index.html">← Component catalog</a>
+  <h1>Ring &amp; racetrack resonators · single bus (all-pass)</h1>
+  <span class="sub">Ideal transfer-matrix model with propagation loss, backscattering and thermal tuning. Part of the Programmable Photonics interactive lab.</span>
+</header>
+
+<main>
+  <section class="card view">
+    <h2>Device (3D)</h2>
+    <canvas id="c3d"></canvas>
+  </section>
+
+  <section class="card view">
+    <div class="toolbar">
+      <div class="seg" id="segMode"><button data-v="lam" class="on">Wavelength sweep</button><button data-v="cur">Single λ · sweep current</button></div>
+      <div class="seg" id="segY"><button data-v="db" class="on">dB</button><button data-v="lin">Linear</button></div>
+      <span id="xIwrap" style="display:none">x: <span class="seg" id="segXI"><button data-v="I" class="on">I</button><button data-v="P">P</button></span></span>
+      <label><input type="checkbox" id="chkT" checked> <span style="color:var(--thr)">Through</span></label>
+      <label><input type="checkbox" id="chkR" checked> <span style="color:var(--refl)">Reflection</span></label>
+    </div>
+    <div class="toolbar" id="lamTools">
+      <span>Window: centre <input type="number" id="nLamC" step="0.01"> nm · span <input type="number" id="nSpan" step="0.1"> nm</span>
+      <button class="btn" id="bAuto">Auto (3 FSR)</button>
+      <button class="btn" id="bZoom">Zoom on resonance</button>
+    </div>
+    <canvas id="cPlot"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>Controls</h2>
+    <div class="inline" style="margin-bottom:10px">
+      <span>Presets:</span>
+      <button class="btn" id="pRing">Si ring R = 10 µm</button>
+      <button class="btn" id="pRace">Si racetrack</button>
+      <button class="btn primary" id="pCrit">Critical coupling (r = a)</button>
+      <button class="btn" id="pView">Reset 3D view</button>
+    </div>
+    <div class="groups">
+      <div class="group" data-group="geo"><h3>Geometry</h3>
+        <div class="inline">Shape <span class="seg" id="segShape"><button data-v="ring" class="on">Ring</button><button data-v="race">Racetrack</button></span></div>
+      </div>
+      <div class="group" data-group="wg"><h3>Waveguide</h3></div>
+      <div class="group" data-group="cpl"><h3>Coupler &amp; backscattering</h3></div>
+      <div class="group" data-group="th"><h3>Thermal tuning (heater on the ring)</h3>
+        <div class="inline">I<sub>max</sub> <input type="number" id="nImax" min="0.1" step="0.5"> mA <button class="btn" id="btnPlay">▶ Sweep current</button></div>
+      </div>
+      <div class="group" data-group="laser"><h3>Laser</h3>
+        <div class="inline">λ₀ <input type="number" id="nLam0" step="0.001"> nm <span>· click the λ plot to move the laser</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Figures of merit</h2>
+    <div class="readouts" id="ro"></div>
+    <div class="toolbar" style="margin-top:4px">
+      <div class="seg" id="segP2"><button data-v="pow" class="on">Intra-ring power</button><button data-v="phase">Through phase</button></div>
+      <span id="p2note"></span>
+    </div>
+    <canvas id="cP2"></canvas>
+  </section>
+
+  <section class="card span2">
+    <h2>Transfer function and parameters</h2>
+    <div class="theory">
+      <div class="th">
+        <h3>1 · Geometry and round trip</h3>
+        <p>Round-trip length (a ring has L<sub>c</sub> = 0):</p>
+        <div class="eq"><i class="v">L</i> = 2π<i class="v">R</i> + 2<i class="v">L</i><sub>c</sub> <span class="live" id="lvL"></span></div>
+        <p>Round-trip phase, with an effective index that varies with wavelength through the group index (the reference is λ<sub>ref</sub> = 1550 nm):</p>
+        <div class="eq"><i class="v">φ</i>(λ) = <span class="frac"><span>2π</span><span>λ</span></span> <i class="v">n</i><sub>eff</sub>(λ) <i class="v">L</i> + Δ<i class="v">φ</i><sub>th</sub>,&nbsp;&nbsp; <i class="v">n</i><sub>eff</sub>(λ) = <i class="v">n</i><sub>eff</sub> − (<i class="v">n</i><sub>g</sub> − <i class="v">n</i><sub>eff</sub>)<span class="frac"><span>λ − λ<sub>ref</sub></span><span>λ<sub>ref</sub></span></span></div>
+        <p>Round-trip field transmission, with the loss α given in dB/cm:</p>
+        <div class="eq"><i class="v">a</i> = 10<sup>−α<i class="v">L</i>/20</sup> <span class="live" id="lva"></span></div>
+      </div>
+      <div class="th">
+        <h3>2 · All-pass transfer function</h3>
+        <p>The lossless coupler has self-coupling <i class="v">r</i> and cross-coupling <i class="v">κ</i>, with <i class="v">r</i>² + <i class="v">κ</i>² = 1. Adding up all the round trips gives:</p>
+        <div class="eq"><i class="v">t</i> = <span class="frac"><span><i class="v">E</i><sub>through</sub></span><span><i class="v">E</i><sub>in</sub></span></span> = <span class="frac"><span><i class="v">r</i> − <i class="v">a</i> e<sup>−j<i class="v">φ</i></sup></span><span>1 − <i class="v">r a</i> e<sup>−j<i class="v">φ</i></sup></span></span></div>
+        <div class="eq"><i class="v">T</i> = |<i class="v">t</i>|² = <span class="frac"><span><i class="v">a</i>² − 2<i class="v">r a</i> cos<i class="v">φ</i> + <i class="v">r</i>²</span><span>1 − 2<i class="v">r a</i> cos<i class="v">φ</i> + (<i class="v">r a</i>)²</span></span></div>
+        <p>Resonance occurs when <i class="v">φ</i> = 2π<i class="v">m</i>, which gives λ<sub><i class="v">m</i></sub> = <i class="v">n</i><sub>eff</sub><i class="v">L</i>/<i class="v">m</i>. At resonance, the transmission and the power circulating in the ring are:</p>
+        <div class="eq"><i class="v">T</i><sub>min</sub> = <span class="frac"><span>(<i class="v">r</i> − <i class="v">a</i>)²</span><span>(1 − <i class="v">r a</i>)²</span></span> <span class="live" id="lvTmin"></span>&nbsp;&nbsp; <span class="frac"><span><i class="v">P</i><sub>ring</sub></span><span><i class="v">P</i><sub>in</sub></span></span> = <span class="frac"><span><i class="v">κ</i>²</span><span>(1 − <i class="v">r a</i>)²</span></span> <span class="live" id="lvB"></span></div>
+      </div>
+      <div class="th">
+        <h3>3 · Figures of merit</h3>
+        <table class="fm">
+          <tr><td class="f"><small>Free spectral range</small>FSR = λ²/(<i class="v">n</i><sub>g</sub><i class="v">L</i>)</td><td><span class="live" id="lvFSR"></span></td></tr>
+          <tr><td class="f"><small>Linewidth (FWHM)</small>(1 − <i class="v">ra</i>) λ² / (π <i class="v">n</i><sub>g</sub><i class="v">L</i> √(<i class="v">ra</i>))</td><td><span class="live" id="lvFW"></span></td></tr>
+          <tr><td class="f"><small>Finesse</small>ℱ = FSR / FWHM</td><td><span class="live" id="lvF"></span></td></tr>
+          <tr><td class="f"><small>Loaded Q</small><i class="v">Q</i><sub>L</sub> = λ / FWHM</td><td><span class="live" id="lvQ"></span></td></tr>
+          <tr><td class="f"><small>Intrinsic Q</small><i class="v">Q</i><sub>i</sub> = 2π<i class="v">n</i><sub>g</sub> / (λ α<sub>lin</sub>)</td><td><span class="live" id="lvQi"></span></td></tr>
+          <tr><td class="f"><small>Photon lifetime</small>τ = <i class="v">Q</i><sub>L</sub> λ / (2π<i class="v">c</i>)</td><td><span class="live" id="lvTau"></span></td></tr>
+        </table>
+      </div>
+      <div class="th">
+        <h3>4 · Coupling regimes</h3>
+        <p><b>Under-coupled</b> (<i class="v">r</i> &gt; <i class="v">a</i>): the coupler lets in less light than the ring loses per round trip. The through phase only wobbles around zero.</p>
+        <p><b>Critically coupled</b> (<i class="v">r</i> = <i class="v">a</i>): coupling equals loss and <i class="v">T</i><sub>min</sub> = 0, so all the light is dissipated in the ring.</p>
+        <p><b>Over-coupled</b> (<i class="v">r</i> &lt; <i class="v">a</i>): the coupling dominates. The dip is broader and shallower, and the phase makes a full 2π jump.</p>
+        <p>The same dip depth can come from either regime. The phase plot (or a measurement of the loss) is what tells them apart. Current regime: <span class="live" id="lvReg"></span></p>
+      </div>
+      <div class="th">
+        <h3>5 · Backscattering and resonance splitting</h3>
+        <p>Sidewall roughness reflects a small part of the light into the counter-propagating mode. Here it is modelled as a point reflector inside the ring, with field reflection <i class="v">ρ</i> and transmission <i class="v">τ</i> = √(1 − <i class="v">ρ</i>²). The forward and backward modes couple, and the round trip becomes a 2×2 matrix:</p>
+        <div class="eq"><i class="v">a</i>e<sup>−j<i class="v">φ</i></sup> [ <i class="v">τ</i> &nbsp; j<i class="v">ρ</i> ; j<i class="v">ρ</i> &nbsp; <i class="v">τ</i> ] &nbsp;→&nbsp; eigenvalues &nbsp;<i class="v">τ</i> ± j<i class="v">ρ</i> = e<sup>±j·asin <i class="v">ρ</i></sup></div>
+        <p>The standing-wave supermodes resonate at <i class="v">φ</i> = 2π<i class="v">m</i> ± asin <i class="v">ρ</i>, so each resonance splits:</p>
+        <div class="eq">Δλ<sub>split</sub> = FSR · <span class="frac"><span>asin <i class="v">ρ</i></span><span>π</span></span> <span class="live" id="lvSp"></span></div>
+        <p>The doublet is resolved when Δλ<sub>split</sub> &gt; FWHM, so high-Q rings show splitting first. Part of the light comes back to the input port (purple curve).</p>
+      </div>
+      <div class="th">
+        <h3>6 · Thermal tuning</h3>
+        <p>A heater on the ring adds a phase proportional to the dissipated electrical power:</p>
+        <div class="eq">Δ<i class="v">φ</i><sub>th</sub> = π <span class="frac"><span><i class="v">P</i></span><span><i class="v">P</i><sub>π</sub></span></span>,&nbsp;&nbsp; <i class="v">P</i> = <i class="v">I</i>²<i class="v">R</i><sub>h</sub></div>
+        <p>Every resonance red-shifts by the same fraction of the FSR:</p>
+        <div class="eq">Δλ<sub>res</sub> = FSR · <span class="frac"><span>Δ<i class="v">φ</i><sub>th</sub></span><span>2π</span></span> &nbsp;→&nbsp; <span class="frac"><span>dλ</span><span>d<i class="v">P</i></span></span> = <span class="frac"><span>FSR</span><span>2<i class="v">P</i><sub>π</sub></span></span> <span class="live" id="lvTun"></span></div>
+        <p>A power of 2<i class="v">P</i><sub>π</sub> shifts the comb by exactly one FSR. With the laser fixed at λ₀, sweeping the current scans the resonances across the laser: that is the “single λ” mode.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const PI = Math.PI, C0 = 299792458, LREF = 1.55; // µm
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const S = {
+  shape: 'ring', R: 10, Lc: 15, neff: 2.4, ng: 4.2, loss: 3, r: 0.997, rho: 0,
+  Rh: 0.5, Ppi: 12, I: 0, Imax: 10, lam0: 1550, lamC: 1550, span: null,
+  mode: 'lam', ymode: 'db', xI: 'I', showT: true, showR: true, p2: 'pow', playing: false, hover: null
+};
+let dirty = true, geoDirty = true;
+
+/* ================================================================ physics */
+const Lum = () => 2 * PI * S.R + (S.shape === 'race' ? 2 * S.Lc : 0);
+const aRT = () => Math.pow(10, -S.loss * Lum() * 1e-4 / 20);
+const Pel = I => I * I * S.Rh;                 // mW (I in mA, Rh in kΩ)
+const dphiTh = I => PI * Pel(I) / S.Ppi;
+function phiLam(lamNm, I) {                     // round-trip phase
+  const lam = lamNm / 1000, n = S.neff - (S.ng - S.neff) * (lam - LREF) / LREF;
+  return 2 * PI * n * Lum() / lam + dphiTh(I);
+}
+// complex helpers
+const cx = (re, im) => ({ re, im }), cmul = (a, b) => cx(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re);
+const cadd = (a, b) => cx(a.re + b.re, a.im + b.im), csub = (a, b) => cx(a.re - b.re, a.im - b.im);
+const cdiv = (a, b) => { const d = b.re * b.re + b.im * b.im; return cx((a.re * b.re + a.im * b.im) / d, (a.im * b.re - a.re * b.im) / d); };
+const cabs2 = a => a.re * a.re + a.im * a.im, csc = (a, s) => cx(a.re * s, a.im * s);
+const J = cx(0, 1);
+/* Single-bus ring with a point back-reflector (rho) inside the ring.
+   h2 = a e^{-jφ} (one round trip), g = r h2, κ = sqrt(1-r²), τ = sqrt(1-ρ²)          */
+function resp(phi) {
+  const a = aRT(), r = S.r, k = Math.sqrt(1 - r * r), rho = S.rho, tau = Math.sqrt(1 - rho * rho);
+  const h2 = cx(a * Math.cos(phi), -a * Math.sin(phi)), g = csc(h2, r);
+  const omg = cx(1 - g.re * tau, -g.im * tau);                 // 1 - gτ
+  const g2 = cmul(g, g), D = cadd(cmul(omg, omg), csc(g2, rho * rho));
+  const acw = cdiv(cmul(cx(0, k), omg), D);                   // jκ(1-gτ)/D
+  const accw = cdiv(csc(g, -k * rho), D);                     // -κ g ρ / D
+  const bcw = cmul(h2, cadd(csc(acw, tau), cmul(cx(0, rho), accw)));
+  const bccw = cmul(h2, cadd(csc(accw, tau), cmul(cx(0, rho), acw)));
+  const t = cadd(cx(r, 0), cmul(cx(0, k), bcw)), rb = cmul(cx(0, k), bccw);
+  return { T: cabs2(t), Rr: cabs2(rb), ph: Math.atan2(t.im, t.re), Pf: cabs2(acw), Pb: cabs2(accw) };
+}
+function figures() {
+  const L = Lum(), a = aRT(), r = S.r, lam = S.lam0 / 1000, ra = r * a;
+  const FSR = lam * lam / (S.ng * L) * 1000;                          // nm
+  const FW = (1 - ra) * lam * lam / (PI * S.ng * L * Math.sqrt(ra)) * 1000; // nm
+  const alin = S.loss * 100 / (10 / Math.LN10);                       // 1/m (power)
+  const Qi = alin > 0 ? 2 * PI * S.ng / (lam * 1e-6 * alin) : Infinity;
+  const QL = S.lam0 / FW, tau = QL * lam * 1e-6 / (2 * PI * C0);
+  const Tmin = (r - a) ** 2 / (1 - ra) ** 2, B = (1 - r * r) / (1 - ra) ** 2;
+  const split = FSR * Math.asin(S.rho) / PI;
+  const reg = Math.abs(r - a) < 2e-5 ? 'critical' : (r > a ? 'under-coupled' : 'over-coupled');
+  return { L, a, FSR, FW, F: FSR / FW, QL, Qi, tau, Tmin, B, split, reg, FSRGHz: C0 / (S.ng * L * 1e-6) / 1e9, tun: FSR / (2 * S.Ppi) };
+}
+// resonance wavelengths (φ = 2πm) inside [l1,l2]
+function resonances(l1, l2, I) {
+  const p1 = phiLam(l1, I), p2 = phiLam(l2, I);  // φ decreases with λ
+  const out = []; const mHi = Math.floor(p1 / (2 * PI)), mLo = Math.ceil(p2 / (2 * PI));
+  for (let m = mLo; m <= mHi && out.length < 400; m++) {
+    let a = l1, b = l2;
+    for (let i = 0; i < 60; i++) { const c = (a + b) / 2; if (phiLam(c, I) > 2 * PI * m) a = c; else b = c; }
+    out.push({ m, lam: (a + b) / 2 });
+  }
+  return out.sort((x, y) => x.lam - y.lam);
+}
+function nearestRes(lam, I) { const f = figures(); const rs = resonances(lam - f.FSR, lam + f.FSR, I); let best = null; for (const q of rs) if (!best || Math.abs(q.lam - lam) < Math.abs(best.lam - lam)) best = q; return best; }
+
+/* ================================================================ formatting */
+function f3(v) { const a = Math.abs(v); return a >= 1000 ? v.toFixed(0) : a >= 100 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : a >= 1 ? v.toFixed(3) : v.toFixed(4); }
+function fLen(nm) { const a = Math.abs(nm); if (a < 1e-9) return '0 nm'; return a >= 1 ? f3(nm) + ' nm' : a >= 1e-3 ? f3(nm * 1000) + ' pm' : f3(nm * 1e6) + ' fm'; }
+function fQ(q) { return !isFinite(q) ? '∞' : q >= 1e6 ? (q / 1e6).toFixed(2) + '·10⁶' : q >= 1e3 ? (q / 1e3).toFixed(1) + 'k' : q.toFixed(0); }
+function fTime(s) { return s >= 1e-9 ? (s * 1e9).toFixed(2) + ' ns' : (s * 1e12).toFixed(1) + ' ps'; }
+const dB = p => 10 * Math.log10(Math.max(p, 1e-9));
+
+/* ================================================================ sliders */
+const SL = [
+  { id: 'R', g: 'geo', lab: 'Radius R', log: true, min: 2, max: 200, get: () => S.R, set: v => S.R = v, fmt: v => f3(v) + ' µm', geo: 1 },
+  { id: 'Lc', g: 'geo', lab: 'Straight length Lc (racetrack)', min: 0, max: 200, step: 0.1, get: () => S.Lc, set: v => S.Lc = v, fmt: v => f3(v) + ' µm', geo: 1 },
+  { id: 'neff', g: 'wg', lab: 'Effective index n_eff (at 1550 nm)', min: 1.5, max: 3.2, step: 0.001, get: () => S.neff, set: v => S.neff = v, fmt: v => v.toFixed(3) },
+  { id: 'ng', g: 'wg', lab: 'Group index n_g', min: 1.5, max: 5, step: 0.001, get: () => S.ng, set: v => S.ng = v, fmt: v => v.toFixed(3) },
+  { id: 'loss', g: 'wg', lab: 'Propagation loss α', min: 0, max: 30, step: 0.05, get: () => S.loss, set: v => S.loss = v, fmt: v => v.toFixed(2) + ' dB/cm' },
+  { id: 'r', g: 'cpl', lab: 'Self-coupling r', log: true, inv: true, min: 1e-5, max: 0.6, get: () => S.r, set: v => S.r = v, fmt: v => 'r = ' + v.toFixed(v > 0.999 ? 5 : 4) + ' · κ² = ' + ((1 - v * v) * 100).toPrecision(3) + ' %' },
+  { id: 'rho', g: 'cpl', lab: 'Backscatter reflection ρ (field)', min: 0, max: 0.15, step: 0.0001, get: () => S.rho, set: v => S.rho = v, fmt: v => v.toFixed(4) + ' · |ρ|² = ' + (v * v * 100).toPrecision(2) + ' %' },
+  { id: 'Rh', g: 'th', lab: 'Heater resistance R_h', log: true, min: 0.02, max: 20, get: () => S.Rh, set: v => S.Rh = v, fmt: v => v >= 1 ? f3(v) + ' kΩ' : (v * 1000).toFixed(0) + ' Ω' },
+  { id: 'Ppi', g: 'th', lab: 'Pπ (power for π round-trip phase)', log: true, min: 0.5, max: 100, get: () => S.Ppi, set: v => S.Ppi = v, fmt: v => f3(v) + ' mW' },
+  { id: 'I', g: 'th', lab: 'Heater current I', min: 0, max: () => S.Imax, step: 0.001, get: () => S.I, set: v => S.I = v, fmt: v => v.toFixed(3) + ' mA · P = ' + f3(Pel(v)) + ' mW' },
+  { id: 'lam0', g: 'laser', lab: 'Laser wavelength λ₀', min: 1500, max: 1600, step: 0.001, get: () => S.lam0, set: v => S.lam0 = v, fmt: v => v.toFixed(3) + ' nm' }
+];
+const LOGN = 2000;
+function toSlider(c, v) { const x = c.inv ? 1 - v : v; return Math.round(LOGN * Math.log(x / c.min) / Math.log(c.max / c.min)); }
+function fromSlider(c, u) { const x = c.min * Math.pow(c.max / c.min, u / LOGN); return c.inv ? 1 - x : x; }
+function buildSliders() {
+  for (const c of SL) {
+    const host = document.querySelector(`[data-group="${c.g}"]`);
+    const row = document.createElement('div'); row.className = 'row'; row.id = 'row_' + c.id;
+    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val" id="o_${c.id}"></span><input type="range" id="s_${c.id}">`;
+    const inl = host.querySelector('.inline'); if (c.id === 'I' || c.id === 'lam0') host.insertBefore(row, inl); else host.appendChild(row);
+    const s = row.querySelector('input');
+    if (c.log) { s.min = 0; s.max = LOGN; s.step = 1; if (c.inv) s.style.direction = 'rtl'; }
+    else { s.min = c.min; s.max = typeof c.max === 'function' ? c.max() : c.max; s.step = c.step; }
+    s.addEventListener('input', () => {
+      c.set(c.log ? fromSlider(c, +s.value) : +s.value);
+      if (c.id === 'I') { S.playing = false; updPlay(); }
+      if (c.id === 'lam0') document.getElementById('nLam0').value = S.lam0.toFixed(3);
+      if (c.geo) geoDirty = true;
+      syncOut(c); dirty = true;
+    });
+  }
+}
+function syncOut(c) { document.getElementById('o_' + c.id).textContent = c.fmt(c.get()); }
+function syncSlider(c) {
+  const s = document.getElementById('s_' + c.id);
+  if (c.log) s.value = toSlider(c, c.get()); else { if (typeof c.max === 'function') s.max = c.max(); s.value = c.get(); }
+  syncOut(c);
+}
+const SLid = id => SL.find(c => c.id === id);
+function syncUI() {
+  SL.forEach(syncSlider);
+  document.getElementById('row_Lc').classList.toggle('off', S.shape !== 'race');
+  document.getElementById('nImax').value = S.Imax;
+  document.getElementById('nLam0').value = S.lam0.toFixed(3);
+  setSeg('segShape', S.shape); setSeg('segMode', S.mode); setSeg('segY', S.ymode); setSeg('segXI', S.xI); setSeg('segP2', S.p2);
+  document.getElementById('lamTools').style.display = S.mode === 'lam' ? '' : 'none';
+  document.getElementById('xIwrap').style.display = S.mode === 'cur' ? '' : 'none';
+  dirty = true;
+}
+function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+
+/* ================================================================ canvas helpers */
+function fitCanvas(c) {
+  const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  const W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); return { ctx, w: r.width, h: r.height };
+}
+function niceTicks(a, b, n) {
+  const span = b - a; if (!(span > 0)) return [a];
+  const s0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(s0))), q = s0 / mag;
+  const st = (q < 1.5 ? 1 : q < 3 ? 2 : q < 7 ? 5 : 10) * mag, t = [];
+  for (let v = Math.ceil(a / st - 1e-9) * st; v <= b + 1e-9; v += st) t.push(+v.toFixed(12));
+  return t;
+}
+function tickFmt(v, step) { const d = Math.max(0, Math.min(6, -Math.floor(Math.log10(step || 1) + 1e-9))); return v.toFixed(d); }
+const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
+  ctx.font = FONT; const w = ctx.measureText(text).width + 10, x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
+  ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
+  ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + 0.5);
+}
+
+/* ================================================================ sweep definition (shared by both plots) */
+function sweep() {
+  const f = figures();
+  if (S.mode === 'lam') {
+    const span = S.span ?? Math.min(100, 3 * f.FSR);
+    const x0 = S.lamC - span / 2, x1 = S.lamC + span / 2;
+    const N = Math.round(clamp(span / Math.max(f.FW, 1e-9) * 24, 1500, 60000));
+    return { kind: 'lam', x0, x1, N, phi: x => phiLam(x, S.I), label: 'Wavelength λ (nm)', f };
+  }
+  const Imax = S.Imax, Pmax = Pel(Imax);
+  const cyc = Pmax / (2 * S.Ppi), N = Math.round(clamp(cyc * f.F * 30, 1500, 60000));
+  const base = phiLam(S.lam0, 0);
+  if (S.xI === 'I') return { kind: 'cur', x0: 0, x1: Imax, N, phi: x => base + dphiTh(x), label: `Heater current I (mA) · laser fixed at λ₀ = ${S.lam0.toFixed(3)} nm`, f, toI: x => x };
+  return { kind: 'cur', x0: 0, x1: Pmax, N, phi: x => base + PI * x / S.Ppi, label: `Heater power P (mW) · laser fixed at λ₀ = ${S.lam0.toFixed(3)} nm`, f, toI: x => Math.sqrt(x / S.Rh) };
+}
+let cache = null;
+function computeSweep() {
+  const sw = sweep(), n = sw.N, xs = new Float64Array(n + 1), T = new Float64Array(n + 1), Rr = new Float64Array(n + 1), Ph = new Float64Array(n + 1), Pf = new Float64Array(n + 1), Pb = new Float64Array(n + 1);
+  for (let i = 0; i <= n; i++) { const x = sw.x0 + (sw.x1 - sw.x0) * i / n, q = resp(sw.phi(x)); xs[i] = x; T[i] = q.T; Rr[i] = q.Rr; Ph[i] = q.ph; Pf[i] = q.Pf; Pb[i] = q.Pb; }
+  cache = { sw, xs, T, Rr, Ph, Pf, Pb };
+}
+// draws a dense trace with per-pixel min/max decimation
+function trace(ctx, xs, ys, X, Y, color, lw, ymap) {
+  ctx.beginPath(); let col = null, fv = 0, lv = 0, mn = 0, mx = 0, started = false;
+  const flush = () => {
+    if (col === null) return;
+    if (!started) { ctx.moveTo(col, Y(fv)); started = true; } else ctx.lineTo(col, Y(fv));
+    if (mn !== mx) { ctx.lineTo(col, Y(mn)); ctx.lineTo(col, Y(mx)); }
+    ctx.lineTo(col, Y(lv));
+  };
+  for (let i = 0; i < xs.length; i++) {
+    const px = Math.round(X(xs[i]) * 2) / 2, v = ymap(ys[i]);
+    if (px !== col) { flush(); col = px; fv = lv = mn = mx = v; }
+    else { lv = v; if (v < mn) mn = v; if (v > mx) mx = v; }
+  }
+  flush(); ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.stroke();
+}
+
+/* ================================================================ MAIN PLOT */
+const cPlot = document.getElementById('cPlot'); let pg = null;
+function drawPlot() {
+  const { ctx, w, h } = fitCanvas(cPlot); ctx.clearRect(0, 0, w, h);
+  const m = { l: 58, r: 16, t: 34, b: 44 }, pw = w - m.l - m.r, ph = h - m.t - m.b; if (pw < 60 || ph < 60) return;
+  const { sw, xs, T, Rr } = cache, f = sw.f, lin = S.ymode === 'lin';
+  const y0 = lin ? 0 : -40, y1 = lin ? 1.06 : 3;
+  const X = v => m.l + (v - sw.x0) / (sw.x1 - sw.x0) * pw, Y = v => m.t + (1 - (v - y0) / (y1 - y0)) * ph;
+  const ym = p => lin ? p : Math.max(-40, dB(p));
+  pg = { m, pw, ph, sw, X };
+  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
+  // resonance markers
+  let res = [];
+  if (sw.kind === 'lam') {
+    res = resonances(sw.x0, sw.x1, S.I);
+    for (const q of res) {
+      const A = X(q.lam - f.FW / 2), B = X(q.lam + f.FW / 2);
+      ctx.fillStyle = 'rgba(95,211,141,0.13)'; ctx.fillRect(A, m.t, Math.max(1, B - A), ph);
+      if (S.rho > 0 && f.split > 0) { ctx.fillStyle = 'rgba(213,140,255,0.08)'; const a2 = X(q.lam - f.split / 2), b2 = X(q.lam + f.split / 2); ctx.fillRect(a2, m.t, Math.max(1, b2 - a2), ph); }
+    }
+  } else {
+    // currents where φ = 2πm
+    const base = phiLam(S.lam0, 0), toX = P => S.xI === 'I' ? Math.sqrt(P / S.Rh) : P;
+    const pmax = Pel(S.Imax), m0 = Math.ceil(base / (2 * PI));
+    for (let k = m0; k < m0 + 400; k++) { const P = (2 * PI * k - base) * S.Ppi / PI; if (P > pmax) break; res.push({ x: toX(P) }); }
+    ctx.strokeStyle = 'rgba(95,211,141,0.45)'; ctx.setLineDash([4, 4]);
+    for (const q of res) { ctx.beginPath(); ctx.moveTo(X(q.x), m.t); ctx.lineTo(X(q.x), m.t + ph); ctx.stroke(); }
+    ctx.setLineDash([]);
+  }
+  // grid
+  const xt = niceTicks(sw.x0, sw.x1, Math.max(3, Math.round(pw / 95))), xstep = xt.length > 1 ? xt[1] - xt[0] : 1;
+  const yt = lin ? [0, 0.2, 0.4, 0.6, 0.8, 1.0] : [-40, -30, -20, -10, 0];
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
+  for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
+  // traces
+  if (S.showR && S.rho > 0) trace(ctx, xs, Rr, X, Y, '#d58cff', 1.8, ym);
+  if (S.showT) trace(ctx, xs, T, X, Y, '#4aa8ff', 2.1, ym);
+  // operating point
+  let xo, qo;
+  if (sw.kind === 'lam') { xo = S.lam0; qo = resp(phiLam(S.lam0, S.I)); }
+  else { xo = S.xI === 'I' ? S.I : Pel(S.I); qo = resp(phiLam(S.lam0, S.I)); }
+  if (xo >= sw.x0 && xo <= sw.x1) {
+    const px = X(xo);
+    ctx.strokeStyle = sw.kind === 'lam' ? 'rgba(255,77,109,0.9)' : 'rgba(255,255,255,0.75)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.moveTo(px, m.t); ctx.lineTo(px, m.t + ph); ctx.stroke(); ctx.setLineDash([]);
+    const dot = (v, c) => { ctx.beginPath(); ctx.arc(px, Y(ym(v)), 5, 0, 2 * PI); ctx.fillStyle = c; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); };
+    if (S.showR && S.rho > 0) dot(qo.Rr, '#d58cff');
+    if (S.showT) dot(qo.T, '#4aa8ff');
+    if (sw.kind === 'lam') tag(ctx, px, m.t + ph - 12, 'laser λ₀', '#ff8fa8');
+  }
+  // annotations: FSR arrow + FWHM
+  if (sw.kind === 'lam' && res.length) {
+    const ctr = (sw.x0 + sw.x1) / 2; let k = 0;
+    for (let i = 0; i < res.length; i++) if (Math.abs(res[i].lam - ctr) < Math.abs(res[k].lam - ctr)) k = i;
+    const yA = m.t + 22;
+    if (res.length >= 2) {
+      const j = k + 1 < res.length ? k + 1 : k - 1, A = X(Math.min(res[k].lam, res[j].lam)), B = X(Math.max(res[k].lam, res[j].lam));
+      if (B - A > 40) {
+        ctx.strokeStyle = '#ffcc66'; ctx.fillStyle = '#ffcc66'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(A + 2, yA); ctx.lineTo(B - 2, yA); ctx.stroke();
+        for (const [x, d] of [[A + 1, 1], [B - 1, -1]]) { ctx.beginPath(); ctx.moveTo(x, yA); ctx.lineTo(x + 7 * d, yA - 4); ctx.lineTo(x + 7 * d, yA + 4); ctx.closePath(); ctx.fill(); }
+        tag(ctx, (A + B) / 2, yA, `FSR = ${fLen(Math.abs(res[j].lam - res[k].lam))}`, '#ffcc66', 'rgba(30,24,10,0.92)');
+      }
+    }
+    const fwPx = X(res[k].lam + f.FW / 2) - X(res[k].lam - f.FW / 2);
+    let txt = `FWHM = ${fLen(f.FW)} · Q = ${fQ(f.QL)}`;
+    if (S.rho > 0) txt += ` · split = ${fLen(f.split)}` + (f.split > f.FW ? ' (resolved)' : ' (hidden)');
+    tag(ctx, clamp(X(res[k].lam), m.l + 150, m.l + pw - 150), m.t + 48, txt, '#5fd38d');
+    if (fwPx < 1 && S.span == null) tag(ctx, m.l + pw / 2, m.t + ph - 36, 'Resonances narrower than a pixel – use “Zoom on resonance”', '#c9d3de');
+  }
+  // hover
+  if (S.hover && S.hover.x > m.l && S.hover.x < m.l + pw && S.hover.y > m.t && S.hover.y < m.t + ph) {
+    const xv = sw.x0 + (S.hover.x - m.l) / pw * (sw.x1 - sw.x0), q = resp(sw.phi(xv));
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(S.hover.x, m.t); ctx.lineTo(S.hover.x, m.t + ph); ctx.stroke();
+    const lines = [
+      sw.kind === 'lam' ? `λ = ${xv.toFixed(4)} nm` : (S.xI === 'I' ? `I = ${xv.toFixed(3)} mA  (P = ${f3(Pel(xv))} mW)` : `P = ${f3(xv)} mW  (I = ${f3(Math.sqrt(xv / S.Rh))} mA)`),
+      `φ mod 2π = ${(((sw.phi(xv) % (2 * PI)) + 2 * PI) % (2 * PI) / PI).toFixed(3)}π`,
+      `Through ${(q.T * 100).toFixed(2)} % (${dB(q.T).toFixed(2)} dB)`
+    ];
+    if (S.rho > 0) lines.push(`Reflection ${(q.Rr * 100).toFixed(2)} % (${dB(q.Rr).toFixed(1)} dB)`);
+    ctx.font = FONT; const bw = Math.max(...lines.map(l => ctx.measureText(l).width)) + 14, bh = 16 * lines.length + 8;
+    let bx = S.hover.x + 12, by = S.hover.y + 12; if (bx + bw > m.l + pw) bx = S.hover.x - bw - 12; if (by + bh > m.t + ph) by = S.hover.y - bh - 12;
+    ctx.fillStyle = 'rgba(8,11,16,0.92)'; roundRect(ctx, bx, by, bw, bh, 6); ctx.fill(); ctx.strokeStyle = '#2c3a4f'; ctx.stroke();
+    ctx.fillStyle = '#dfe7ef'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; lines.forEach((l, i) => ctx.fillText(l, bx + 7, by + 5 + 16 * i));
+  }
+  ctx.restore();
+  // axes
+  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of xt) ctx.fillText(tickFmt(t, xstep), X(t), m.t + ph + 6);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; for (const t of yt) ctx.fillText(lin ? t.toFixed(1) : t, m.l - 6, Y(t));
+  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(sw.label, m.l + pw / 2, h - 8);
+  ctx.save(); ctx.translate(15, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText(lin ? 'Normalized power' : 'Power (dB)', 0, 0); ctx.restore();
+  // legend
+  let lx = m.l; const ly = 15; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const leg = (c, t, box) => { if (box) { ctx.fillStyle = c; ctx.fillRect(lx, ly - 6, 16, 12); } else { ctx.strokeStyle = c; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); } ctx.fillStyle = '#c9d3de'; ctx.fillText(t, lx + 21, ly); lx += 30 + ctx.measureText(t).width; };
+  if (S.showT) leg('#4aa8ff', 'Through |t|²');
+  if (S.showR && S.rho > 0) leg('#d58cff', 'Reflection (back to input)');
+  if (sw.kind === 'lam') leg('rgba(95,211,141,0.45)', 'FWHM', true); else leg('rgba(95,211,141,0.8)', 'resonance (φ = 2πm)');
+}
+function plotClick(px) {
+  if (!pg) return; const { m, pw, sw } = pg, xv = clamp(sw.x0 + (px - m.l) / pw * (sw.x1 - sw.x0), sw.x0, sw.x1);
+  if (sw.kind === 'lam') { S.lam0 = clamp(xv, 1500, 1600); syncSlider(SLid('lam0')); document.getElementById('nLam0').value = S.lam0.toFixed(3); }
+  else { S.I = clamp(sw.toI(xv), 0, S.Imax); S.playing = false; updPlay(); syncSlider(SLid('I')); }
+  dirty = true;
+}
+let pDrag = false;
+cPlot.addEventListener('pointerdown', e => { pDrag = true; cPlot.setPointerCapture(e.pointerId); plotClick(e.offsetX); });
+cPlot.addEventListener('pointermove', e => { S.hover = { x: e.offsetX, y: e.offsetY }; if (pDrag) plotClick(e.offsetX); hoverDirty = true; });
+cPlot.addEventListener('pointerup', () => pDrag = false);
+cPlot.addEventListener('pointerleave', () => { S.hover = null; hoverDirty = true; });
+let hoverDirty = false;
+
+/* ================================================================ SECOND PLOT (intra-ring power / phase) */
+const cP2 = document.getElementById('cP2');
+function drawP2() {
+  const { ctx, w, h } = fitCanvas(cP2); ctx.clearRect(0, 0, w, h);
+  const m = { l: 58, r: 16, t: 26, b: 34 }, pw = w - m.l - m.r, ph = h - m.t - m.b; if (pw < 60 || ph < 40) return;
+  const { sw, xs, Ph, Pf, Pb } = cache, f = sw.f;
+  const X = v => m.l + (v - sw.x0) / (sw.x1 - sw.x0) * pw;
+  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  let y0, y1, yt, ylab;
+  if (S.p2 === 'pow') { let mx = 0; for (let i = 0; i < Pf.length; i++) mx = Math.max(mx, Pf[i], Pb[i]); y0 = 0; y1 = Math.max(1, mx, f.B) * 1.08; yt = niceTicks(0, y1, 4); ylab = 'P_ring / P_in'; }
+  else { y0 = -PI * 1.05; y1 = PI * 1.05; yt = [-PI, -PI / 2, 0, PI / 2, PI]; ylab = 'arg t (rad)'; }
+  const Y = v => m.t + (1 - (v - y0) / (y1 - y0)) * ph;
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
+  if (S.p2 === 'pow') {
+    if (S.rho > 0) trace(ctx, xs, Pb, X, Y, '#ff8f6b', 1.8, v => v);
+    trace(ctx, xs, Pf, X, Y, '#5fd38d', 2, v => v);
+    const bmax = f.B; ctx.strokeStyle = 'rgba(95,211,141,0.5)'; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(m.l, Y(bmax)); ctx.lineTo(m.l + pw, Y(bmax)); ctx.stroke(); ctx.setLineDash([]);
+  } else {
+    // phase with jumps broken
+    ctx.beginPath(); let col = null, prev = null;
+    for (let i = 0; i < xs.length; i++) {
+      const px = X(xs[i]), v = Ph[i];
+      if (prev !== null && Math.abs(v - prev) > PI) { ctx.moveTo(px, Y(v)); }
+      else if (prev === null) ctx.moveTo(px, Y(v)); else if (px - col >= 0.5 || Math.abs(v - prev) > 0.02) ctx.lineTo(px, Y(v)); else continue;
+      col = px; prev = v;
+    }
+    ctx.strokeStyle = '#4aa8ff'; ctx.lineWidth = 2; ctx.stroke();
+  }
+  // op line
+  const xo = sw.kind === 'lam' ? S.lam0 : (S.xI === 'I' ? S.I : Pel(S.I));
+  if (xo >= sw.x0 && xo <= sw.x1) { ctx.strokeStyle = sw.kind === 'lam' ? 'rgba(255,77,109,0.8)' : 'rgba(255,255,255,0.6)'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(X(xo), m.t); ctx.lineTo(X(xo), m.t + ph); ctx.stroke(); ctx.setLineDash([]); }
+  ctx.restore();
+  ctx.strokeStyle = '#3a4a60'; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  const pil = ['−π', '−π/2', '0', 'π/2', 'π'];
+  yt.forEach((t, i) => ctx.fillText(S.p2 === 'pow' ? tickFmt(t, yt.length > 1 ? yt[1] - yt[0] : 1) : pil[i], m.l - 6, Y(t)));
+  const xt = niceTicks(sw.x0, sw.x1, Math.max(3, Math.round(pw / 95))), xs2 = xt.length > 1 ? xt[1] - xt[0] : 1;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const t of xt) ctx.fillText(tickFmt(t, xs2), X(t), m.t + ph + 5);
+  ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.textBaseline = 'middle'; ctx.fillStyle = '#c9d3de'; ctx.fillText(ylab, 0, 0); ctx.restore();
+  let lx = m.l; const ly = 12; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const leg = (c, t, d) => { ctx.strokeStyle = c; ctx.lineWidth = 2.5; ctx.setLineDash(d ? [5, 4] : []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(t, lx + 21, ly); lx += 30 + ctx.measureText(t).width; };
+  if (S.p2 === 'pow') { leg('#5fd38d', 'forward mode'); if (S.rho > 0) leg('#ff8f6b', 'backward mode'); leg('rgba(95,211,141,0.6)', `κ²/(1−ra)² = ${f3(f.B)}`, true); }
+  else leg('#4aa8ff', `phase of t · ${f.reg}`);
+}
+
+/* ================================================================ readouts + live theory values */
+function updateReadouts() {
+  const f = figures(), q = resp(phiLam(S.lam0, S.I)), P = Pel(S.I);
+  const shift = f.FSR * P / (2 * S.Ppi);
+  const items = [
+    ['Round-trip length L', `${f3(f.L)} <small>µm</small>`],
+    ['FSR', `${fLen(f.FSR)} <small>${f3(f.FSRGHz)} GHz</small>`],
+    ['FWHM', `${fLen(f.FW)}`],
+    ['Loaded Q / intrinsic Q', `${fQ(f.QL)} <small>/</small> ${fQ(f.Qi)}`],
+    ['Finesse', `${f3(f.F)}`],
+    ['Round trip a (loss)', `${f.a.toFixed(5)} <small>${(-20 * Math.log10(f.a)).toFixed(3)} dB</small>`],
+    ['Coupling regime', `<span style="font-size:13.5px">${f.reg}</span> <small>r ${S.r > f.a ? '>' : S.r < f.a ? '<' : '='} a</small>`],
+    ['Extinction at resonance', `${isFinite(dB(f.Tmin)) && f.Tmin > 1e-9 ? (-dB(f.Tmin)).toFixed(1) : '> 90'} <small>dB</small>`],
+    ['Power build-up', `${f3(f.B)} <small>× P_in</small>`],
+    ['Splitting', S.rho > 0 ? `${fLen(f.split)} <small>${f.split > f.FW ? 'resolved' : 'hidden (< FWHM)'}</small>` : '<small>no backscatter</small>'],
+    ['Heater I / P / V', `${S.I.toFixed(2)}<small>mA</small> ${P.toFixed(2)}<small>mW</small> ${(S.I * S.Rh).toFixed(2)}<small>V</small>`],
+    ['Resonance shift', `${fLen(shift)} <small>${(P / (2 * S.Ppi)).toFixed(3)} FSR</small>`],
+    ['At λ₀: through', `${(q.T * 100).toFixed(2)}<small>%</small> <small>${dB(q.T).toFixed(2)} dB</small>`],
+    ['At λ₀: reflection', S.rho > 0 ? `${(q.Rr * 100).toFixed(2)}<small>%</small> <small>${dB(q.Rr).toFixed(1)} dB</small>` : '<small>—</small>']
+  ];
+  document.getElementById('ro').innerHTML = items.map(([k, v]) => `<div class="ro"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+  const set = (id, t) => document.getElementById(id).textContent = t;
+  set('lvL', `${f3(f.L)} µm`); set('lva', `a = ${f.a.toFixed(5)}`);
+  set('lvTmin', f.Tmin > 1e-9 ? `${dB(f.Tmin).toFixed(1)} dB` : '0 (−∞ dB)'); set('lvB', `${f3(f.B)}`);
+  set('lvFSR', `${fLen(f.FSR)} · ${f3(f.FSRGHz)} GHz`); set('lvFW', fLen(f.FW)); set('lvF', f3(f.F)); set('lvQ', fQ(f.QL)); set('lvQi', fQ(f.Qi)); set('lvTau', fTime(f.tau));
+  set('lvReg', `${f.reg} (r = ${S.r.toFixed(5)}, a = ${f.a.toFixed(5)})`);
+  set('lvSp', S.rho > 0 ? `${fLen(f.split)} vs FWHM ${fLen(f.FW)}` : 'ρ = 0 → no splitting');
+  set('lvTun', `${fLen(f.tun)}/mW`);
+  document.getElementById('p2note').textContent = S.p2 === 'pow' ? 'Power circulating in the ring, relative to the input' : 'Over-coupled: full 2π jump · under-coupled: small wobble';
+}
+
+/* ================================================================ 3D ENGINE */
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const crs = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const nrm = a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+let LAYERS, tracks, G;
+function addBox(layer, p0, p1, w, z0, z1, mat) {
+  const dx = p1[0] - p0[0], dy = p1[1] - p0[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L * w / 2, ny = dx / L * w / 2;
+  const b = [[p0[0] - nx, p0[1] - ny], [p1[0] - nx, p1[1] - ny], [p1[0] + nx, p1[1] + ny], [p0[0] + nx, p0[1] + ny]];
+  const v = [...b.map(q => [q[0], q[1], z0]), ...b.map(q => [q[0], q[1], z1])];
+  const c = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (z0 + z1) / 2];
+  for (const f of [[4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]]) {
+    const q = f.map(i => v[i]), fc = [(q[0][0] + q[2][0]) / 2, (q[0][1] + q[2][1]) / 2, (q[0][2] + q[2][2]) / 2];
+    let n = nrm(crs(sub(q[1], q[0]), sub(q[3], q[0]))); if (dot3(n, sub(fc, c)) < 0) n = [-n[0], -n[1], -n[2]];
+    LAYERS[layer].push({ q, n, c: fc, mat });
+  }
+}
+const aabb = (layer, x0, x1, y0, y1, z0, z1, mat) => addBox(layer, [x0, (y0 + y1) / 2], [x1, (y0 + y1) / 2], y1 - y0, z0, z1, mat);
+const WG_W = 0.3, WG_H = 0.24, CL_H = 0.4, GAP = 0.14;
+// ring path (scene units), starting at bottom centre and circulating counter-clockwise (same direction as the bus light at the coupler)
+function ringPath(Rs, Ls, n) {
+  const pts = [], L = 2 * PI * Rs + 4 * Ls;
+  const at = s => {
+    s = ((s % L) + L) % L; const arc = PI * Rs;
+    if (s < Ls) return [s, -Rs];
+    s -= Ls; if (s < arc) { const t = -PI / 2 + s / Rs; return [Ls + Rs * Math.cos(t), Rs * Math.sin(t)]; }
+    s -= arc; if (s < 2 * Ls) return [Ls - s, Rs];
+    s -= 2 * Ls; if (s < arc) { const t = PI / 2 + s / Rs; return [-Ls + Rs * Math.cos(t), Rs * Math.sin(t)]; }
+    s -= arc; return [-Ls + s, -Rs];
+  };
+  for (let i = 0; i <= n; i++) pts.push(at(L * i / n));
+  return { pts, L, at };
+}
+function buildScene() {
+  LAYERS = [[], [], [], []]; tracks = [];
+  const race = S.shape === 'race', Lc = race ? S.Lc : 0, Wd = 2 * S.R + Lc, Hd = 2 * S.R;
+  const sc = Math.min(11 / Wd, 6.4 / Hd), Rs = S.R * sc, Ls = Lc / 2 * sc;
+  const busY = -Rs - GAP - WG_W, CX = Math.max(Ls + Rs + 4.2, 10), yTop = Rs + 2.6, yBot = busY - 2.2;
+  G = { sc, Rs, Ls, busY, CX, yTop, yBot };
+  aabb(0, -CX, CX, yBot, yTop, -0.8, 0, { k: 'sub' });
+  // bus (split in input / output halves for lighting)
+  const segB = (x0, x1, key) => { const n = Math.ceil((x1 - x0) / 1.2); for (let i = 0; i < n; i++) addBox(1, [x0 + (x1 - x0) * i / n, busY], [x0 + (x1 - x0) * (i + 1) / n, busY], WG_W, 0, WG_H, { k: 'wg', key }); };
+  segB(-CX, 0, 'busIn'); segB(0, CX, 'busOut');
+  // ring
+  const nseg = Math.round(clamp((2 * PI * Rs + 4 * Ls) / 0.35, 60, 200));
+  const rp = ringPath(Rs, Ls, nseg); G.rp = rp;
+  for (let i = 0; i < nseg; i++) addBox(1, rp.pts[i], rp.pts[i + 1], WG_W, 0, WG_H, { k: 'wg', key: 'ring' });
+  // backscatter defect
+  G.sScat = rp.L - Ls - 0.5 * PI * Rs; const ps = rp.at(G.sScat);
+  aabb(1, ps[0] - 0.13, ps[0] + 0.13, ps[1] - 0.24, ps[1] + 0.24, 0, WG_H + 0.1, { k: 'scat' });
+  // cladding
+  aabb(2, -CX, CX, yBot, yTop, 0, CL_H, { k: 'clad' });
+  // heater over the ring, away from the coupler
+  const s1 = Ls + 0.14 * PI * Rs, s2 = 3 * Ls + 1.3 * PI * Rs, nh = Math.max(16, Math.round((s2 - s1) / 0.35));
+  const hp = []; for (let i = 0; i <= nh; i++) hp.push(rp.at(s1 + (s2 - s1) * i / nh));
+  for (let i = 0; i < nh; i++) addBox(3, hp[i], hp[i + 1], 0.5, CL_H, CL_H + 0.09, { k: 'heater' });
+  G.hp = hp;
+  // traces + pads
+  const e1 = hp[0], e2 = hp[nh], xp = Ls + Rs + 1.6;
+  aabb(3, e1[0] - 0.2, xp, e1[1] - 0.2, e1[1] + 0.2, CL_H, CL_H + 0.09, { k: 'metal' });
+  aabb(3, -xp, e2[0] + 0.2, e2[1] - 0.2, e2[1] + 0.2, CL_H, CL_H + 0.09, { k: 'metal' });
+  aabb(3, xp - 0.2, xp + 1.4, e1[1] - 0.7, e1[1] + 0.7, CL_H, CL_H + 0.13, { k: 'metal' });
+  aabb(3, -xp - 1.4, -xp + 0.2, e2[1] - 0.7, e2[1] + 0.7, CL_H, CL_H + 0.13, { k: 'metal' });
+  // laser + PD
+  aabb(3, -CX - 1.6, -CX - 0.3, busY - 0.45, busY + 0.45, -0.25, 0.55, { k: 'laser' });
+  aabb(3, CX + 0.3, CX + 1.6, busY - 0.45, busY + 0.45, -0.25, 0.55, { k: 'pd' });
+  // tracks
+  const mk = (pts, key, dir = 1) => { const L = [0]; for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); tracks.push({ pts, key, L, len: L[L.length - 1], dir }); };
+  mk([[-CX - 0.3, busY], [0, busY]], 'busIn');
+  mk([[0, busY], [-CX - 0.3, busY]], 'busRefl');
+  mk([[0, busY], [CX + 0.3, busY]], 'busOut');
+  mk(rp.pts, 'ringF'); mk([...rp.pts].reverse(), 'ringB');
+  geoDirty = false;
+}
+function pointAt(tr, s) { let i = 1; while (i < tr.L.length - 1 && tr.L[i] < s) i++; const a = tr.pts[i - 1], b = tr.pts[i], u = (s - tr.L[i - 1]) / ((tr.L[i] - tr.L[i - 1]) || 1); return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]; }
+const CAM0 = { yaw: -1.62, pitch: 0.92, dist: 27 }; const cam = { ...CAM0 };
+const c3d = document.getElementById('c3d');
+function makeCam(w, h) {
+  const cp = Math.cos(cam.pitch), ty = (G.yTop + G.yBot) / 2;
+  const pos = [cam.dist * cp * Math.cos(cam.yaw), ty + cam.dist * cp * Math.sin(cam.yaw), cam.dist * Math.sin(cam.pitch)];
+  const f = nrm(sub([0, ty, 0], pos)), r = nrm(crs(f, [0, 0, 1])), u = crs(r, f);
+  return { pos, f, r, u, F: Math.min(w * 0.95, h * 1.55), cx: w / 2, cy: h * 0.5 };
+}
+function proj(C, p) { const d = sub(p, C.pos), z = dot3(d, C.f); if (z < 0.1) return null; return [C.cx + C.F * dot3(d, C.r) / z, C.cy - C.F * dot3(d, C.u) / z, z]; }
+const LIGHT = nrm([-0.35, -0.55, 1]), GLOW = [255, 64, 104];
+const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+function heatColor(t) { const st = [[0, [150, 158, 170]], [0.3, [190, 70, 40]], [0.62, [255, 140, 40]], [1, [255, 236, 170]]]; for (let i = 1; i < st.length; i++) if (t <= st[i][0]) return mix(st[i - 1][1], st[i][1], (t - st[i - 1][0]) / (st[i][0] - st[i - 1][0])); return st[3][1]; }
+const bright = p => clamp(Math.sqrt(Math.max(p, 0)), 0, 1);
+function matColor(mat, st) {
+  switch (mat.k) {
+    case 'sub': return { c: [34, 42, 54], e: 0 };
+    case 'wg': { const p = bright(st[mat.key]); return { c: mix([70, 84, 104], GLOW, p * 0.85), e: p * 0.55 }; }
+    case 'scat': return S.rho > 0 ? { c: [200, 240, 255], e: 0.6 } : { c: [70, 84, 104], e: 0 };
+    case 'heater': return { c: heatColor(st.heat), e: st.heat * 0.7 };
+    case 'metal': return { c: [205, 168, 82], e: 0 };
+    case 'laser': return { c: [210, 48, 80], e: 0.35 };
+    case 'pd': { const p = bright(st.busOut); return { c: mix([48, 56, 70], GLOW, p * 0.75), e: p * 0.5 }; }
+  }
+  return { c: [128, 128, 128], e: 0 };
+}
+function drawLayer(ctx, C, faces, st, translucent) {
+  const vis = [];
+  for (const f of faces) { if (dot3(f.n, sub(C.pos, f.c)) <= 0) continue; const P = f.q.map(q => proj(C, q)); if (P.some(p => !p)) continue; vis.push({ f, P, z: (P[0][2] + P[1][2] + P[2][2] + P[3][2]) / 4 }); }
+  vis.sort((a, b) => b.z - a.z);
+  for (const { f, P } of vis) {
+    ctx.beginPath(); ctx.moveTo(P[0][0], P[0][1]); for (let i = 1; i < 4; i++) ctx.lineTo(P[i][0], P[i][1]); ctx.closePath();
+    if (translucent) { ctx.fillStyle = f.n[2] > 0.5 ? 'rgba(150,195,240,0.07)' : 'rgba(150,195,240,0.1)'; ctx.fill(); ctx.strokeStyle = 'rgba(170,210,250,0.15)'; ctx.lineWidth = 0.8; ctx.stroke(); continue; }
+    const { c, e } = matColor(f.mat, st), sh = 0.42 + 0.58 * Math.max(0, dot3(f.n, LIGHT)), k = sh * (1 - e) + e;
+    ctx.fillStyle = `rgb(${c[0] * k | 0},${c[1] * k | 0},${c[2] * k | 0})`; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 0.5; ctx.stroke();
+  }
+}
+function drawLight(ctx, C, st, time) {
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const sp = 0.8, speed = 2.2;
+  for (const tr of tracks) {
+    const P = Math.max(0, st[tr.key] ?? 0), p = bright(P); if (p < 0.03) continue;
+    const boost = 1 + 0.45 * Math.log10(Math.max(1, P));
+    const mid = proj(C, [...pointAt(tr, tr.len / 2), WG_H]); if (!mid) continue;
+    const lw = C.F * 0.3 / mid[2];
+    const colA = tr.key === 'ringB' || tr.key === 'busRefl' ? '255,150,90' : '255,60,100';
+    ctx.beginPath(); tr.pts.forEach((q, i) => { const s = proj(C, [q[0], q[1], WG_H]); if (s) i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); });
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = `rgba(${colA},${0.14 * p})`; ctx.lineWidth = lw * 3 * boost; ctx.stroke();
+    ctx.strokeStyle = `rgba(${colA},${0.3 * p})`; ctx.lineWidth = lw * 0.9; ctx.stroke();
+    const ph = (time * speed) % sp;
+    for (let s = ph; s < tr.len; s += sp) {
+      const q = pointAt(tr, s), Q = proj(C, [q[0], q[1], WG_H * 0.8]); if (!Q) continue;
+      const r = C.F * 0.32 * Math.min(1.6, boost) / Q[2], g = ctx.createRadialGradient(Q[0], Q[1], 0, Q[0], Q[1], r);
+      g.addColorStop(0, `rgba(255,228,236,${0.85 * p})`); g.addColorStop(0.35, `rgba(${colA},${0.5 * p})`); g.addColorStop(1, `rgba(${colA},0)`);
+      ctx.fillStyle = g; ctx.fillRect(Q[0] - r, Q[1] - r, 2 * r, 2 * r);
+    }
+  }
+  ctx.restore();
+}
+function drawHeat(ctx, C, st, time) {
+  if (st.heat < 0.01) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const fl = 0.85 + 0.15 * Math.sin(time * 9), col = heatColor(st.heat);
+  ctx.beginPath(); let zm = 0, n = 0;
+  G.hp.forEach((q, i) => { const s = proj(C, [q[0], q[1], CL_H + 0.1]); if (s) { i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); zm += s[2]; n++; } });
+  const lw = C.F * 0.8 / (zm / Math.max(1, n));
+  ctx.strokeStyle = `rgba(${col[0] | 0},${col[1] * 0.6 | 0},30,${0.2 * st.heat * fl})`; ctx.lineWidth = lw * 2; ctx.stroke();
+  ctx.strokeStyle = `rgba(255,${150 + 80 * st.heat | 0},80,${0.25 * st.heat * fl})`; ctx.lineWidth = lw * 0.6; ctx.stroke();
+  ctx.restore();
+}
+function label3D(ctx, C, p, text, color) { const P = proj(C, p); if (P) tag(ctx, P[0], P[1], text, color); }
+function draw3D(time) {
+  if (geoDirty) buildScene();
+  const { ctx, w, h } = fitCanvas(c3d); ctx.clearRect(0, 0, w, h);
+  const C = makeCam(w, h), phi = phiLam(S.lam0, S.I), q = resp(phi);
+  const st = { busIn: 1, busOut: q.T, busRefl: q.Rr, ring: Math.max(q.Pf, q.Pb), ringF: q.Pf, ringB: q.Pb, heat: clamp(Pel(S.I) / (2 * S.Ppi), 0, 1) };
+  drawLayer(ctx, C, LAYERS[0], st, false);
+  drawLayer(ctx, C, LAYERS[1], st, false);
+  drawLight(ctx, C, st, time);
+  drawLayer(ctx, C, LAYERS[2], st, true);
+  drawLayer(ctx, C, LAYERS[3], st, false);
+  drawHeat(ctx, C, st, time);
+  const { Rs, Ls, busY, CX } = G;
+  label3D(ctx, C, [-CX - 1, busY, 1.25], 'Laser λ₀', '#ff8fa8');
+  label3D(ctx, C, [CX + 1, busY, 1.25], `THROUGH ${(q.T * 100).toFixed(1)} %`, '#4aa8ff');
+  if (S.rho > 0) label3D(ctx, C, [-CX * 0.55, busY - 1.0, 0.6], `← reflected ${(q.Rr * 100).toFixed(1)} %`, '#d58cff');
+  label3D(ctx, C, [0, 0, 0.7], S.shape === 'race' ? `R = ${f3(S.R)} µm · Lc = ${f3(S.Lc)} µm` : `R = ${f3(S.R)} µm`, '#c9d3de');
+  label3D(ctx, C, [0, Rs + 1.4, 0.9], `heater · I = ${S.I.toFixed(2)} mA · P = ${f3(Pel(S.I))} mW`, '#ffcc66');
+  label3D(ctx, C, [0, busY - 0.9, 0.5], `coupler r = ${S.r.toFixed(4)}`, '#8b98a9');
+  if (S.rho > 0) { const p = G.rp.at(G.sScat); label3D(ctx, C, [p[0] - 2.2, p[1], 0.9], `backscatter ρ = ${S.rho.toFixed(3)}`, '#bfe9ff'); }
+  // phase dial: detuning from resonance
+  const cxd = 48, cyd = h - 50, R = 30, pm = ((phi % (2 * PI)) + 2 * PI) % (2 * PI);
+  ctx.fillStyle = 'rgba(10,14,20,0.75)'; ctx.beginPath(); ctx.arc(cxd, cyd, R + 10, 0, 2 * PI); ctx.fill();
+  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cxd, cyd, R, 0, 2 * PI); ctx.stroke();
+  ctx.fillStyle = '#5fd38d'; ctx.beginPath(); ctx.arc(cxd + R, cyd, 3.5, 0, 2 * PI); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cxd, cyd); ctx.lineTo(cxd + R * Math.cos(-pm), cyd + R * Math.sin(-pm)); ctx.stroke();
+  ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(`round-trip phase φ mod 2π = ${(pm / PI).toFixed(3)}π`, cxd + R + 18, cyd - 8);
+  ctx.fillStyle = '#8b98a9'; ctx.fillText('green dot = resonance (φ = 2πm)', cxd + R + 18, cyd + 10);
+  ctx.fillStyle = 'rgba(139,152,169,0.8)'; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('drag: rotate · wheel: zoom · double-click: reset', w - 10, 8);
+  ctx.textAlign = 'left'; ctx.fillText('geometry rescaled to fit the view', 10, 8);
+}
+let drag3 = null;
+c3d.addEventListener('pointerdown', e => { drag3 = { x: e.clientX, y: e.clientY }; c3d.setPointerCapture(e.pointerId); });
+c3d.addEventListener('pointermove', e => { if (!drag3) return; cam.yaw -= (e.clientX - drag3.x) * 0.008; cam.pitch = clamp(cam.pitch + (e.clientY - drag3.y) * 0.006, 0.15, 1.5); drag3 = { x: e.clientX, y: e.clientY }; });
+c3d.addEventListener('pointerup', () => drag3 = null);
+c3d.addEventListener('wheel', e => { e.preventDefault(); cam.dist = clamp(cam.dist * Math.exp(e.deltaY * 0.001), 10, 70); }, { passive: false });
+c3d.addEventListener('dblclick', () => Object.assign(cam, CAM0));
+
+/* ================================================================ UI wiring */
+function updPlay() { document.getElementById('btnPlay').textContent = S.playing ? '❚❚ Pause' : '▶ Sweep current'; }
+document.getElementById('btnPlay').onclick = () => { S.playing = !S.playing; updPlay(); };
+const segs = { segShape: v => { S.shape = v; geoDirty = true; }, segMode: v => S.mode = v, segY: v => S.ymode = v, segXI: v => S.xI = v, segP2: v => S.p2 = v };
+for (const id in segs) document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { segs[id](b.dataset.v); syncUI(); });
+document.getElementById('chkT').onchange = e => { S.showT = e.target.checked; dirty = true; };
+document.getElementById('chkR').onchange = e => { S.showR = e.target.checked; dirty = true; };
+document.getElementById('nImax').onchange = e => { const v = parseFloat(e.target.value); if (v > 0) { S.Imax = v; S.I = Math.min(S.I, v); } syncUI(); };
+document.getElementById('nLam0').onchange = e => { const v = parseFloat(e.target.value); if (v >= 1500 && v <= 1600) S.lam0 = v; syncUI(); };
+document.getElementById('nLamC').onchange = e => { const v = parseFloat(e.target.value); if (isFinite(v)) S.lamC = v; dirty = true; };
+document.getElementById('nSpan').onchange = e => { const v = parseFloat(e.target.value); if (v > 0) S.span = v; dirty = true; };
+document.getElementById('bAuto').onclick = () => { S.span = null; S.lamC = S.lam0; dirty = true; };
+document.getElementById('bZoom').onclick = () => {
+  const f = figures(), q = nearestRes(S.lam0, S.I); if (!q) return;
+  S.lamC = q.lam; S.span = Math.max(10 * f.FW, 3.5 * f.split, 1e-5); dirty = true;
+};
+document.getElementById('pCrit').onclick = () => { S.r = Math.min(aRT(), 0.99999); syncUI(); };
+document.getElementById('pRing').onclick = () => { Object.assign(S, { shape: 'ring', R: 10, neff: 2.4, ng: 4.2, loss: 3, r: 0.996, rho: 0, I: 0, span: null, lamC: S.lam0 }); geoDirty = true; syncUI(); };
+document.getElementById('pRace').onclick = () => { Object.assign(S, { shape: 'race', R: 8, Lc: 20, neff: 2.4, ng: 4.2, loss: 3, r: 0.993, rho: 0, I: 0, span: null, lamC: S.lam0 }); geoDirty = true; syncUI(); };
+document.getElementById('pView').onclick = () => Object.assign(cam, CAM0);
+window.addEventListener('resize', () => dirty = true);
+
+/* ================================================================ main loop */
+buildSliders(); S.r = 0.996; syncUI();
+let last = performance.now(), tA = 0;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; tA += dt;
+  if (S.playing) { S.I += dt * S.Imax / 10; if (S.I > S.Imax) S.I = 0; syncSlider(SLid('I')); dirty = true; }
+  draw3D(tA);
+  if (dirty) {
+    computeSweep();
+    const sw = cache.sw;
+    if (sw.kind === 'lam') { document.getElementById('nLamC').value = S.lamC.toFixed(3); document.getElementById('nSpan').value = +(sw.x1 - sw.x0).toPrecision(4); }
+    drawPlot(); drawP2(); updateReadouts(); dirty = false; hoverDirty = false;
+  } else if (hoverDirty) { drawPlot(); hoverDirty = false; }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

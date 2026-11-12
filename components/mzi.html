@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MZI Interactive Lab – Thermo-optic phase shifter</title>
+<style>
+:root{
+  --bg:#0c1016; --card:#141a22; --card2:#10151c; --line:#243041; --text:#e6edf3; --muted:#8b98a9;
+  --bar:#4aa8ff; --cross:#ff9548; --accent:#ffcc66; --ipi:#c792ea; --vpi:#ffd166; --ok:#5fd38d; --warn:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:14px 20px 6px}
+header h1{font-size:19px;margin:0;font-weight:650;letter-spacing:.2px}
+header .sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:10px 20px 20px}
+@media (max-width:1100px){main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600}
+.view{height:min(54vh,560px);min-height:360px;display:flex;flex-direction:column}
+.view canvas{flex:1;width:100%;min-height:0;display:block;border-radius:8px}
+#c3d{background:radial-gradient(ellipse at 50% 35%,#18212d 0%,#0d1218 75%);cursor:grab;touch-action:none}
+#c3d:active{cursor:grabbing}
+#cPlot{background:var(--card2);cursor:crosshair;touch-action:none}
+#cR{background:var(--card2);cursor:pointer;height:260px;width:100%;display:block;border-radius:8px;touch-action:none}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-bottom:8px;font-size:13px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;color:var(--muted);border:0;padding:4px 10px;font:inherit;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:#223046;color:var(--text)}
+.toolbar label{display:inline-flex;align-items:center;gap:5px;color:var(--muted);cursor:pointer}
+select,input[type=number]{background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit}
+input[type=number]{width:74px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.group{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.group h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin:7px 0}
+.row .lab{color:var(--muted);font-size:12.5px}
+.row .val{font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
+.row input[type=range]{grid-column:1/3;width:100%;accent-color:var(--accent);margin:2px 0 0}
+.inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0;font-size:12.5px;color:var(--muted)}
+.btn{background:#1d2735;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px 11px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn:hover{background:#26344a}
+.btn.primary{border-color:#6b5a2b;background:#2d2615;color:var(--accent)}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+.ro{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ro .k{font-size:11.5px;color:var(--muted)}
+.ro .v{font-size:16px;font-variant-numeric:tabular-nums;font-weight:600}
+.ro .v small{font-size:12px;color:var(--muted);font-weight:500}
+#warn{min-height:20px;font-size:12.5px;color:var(--warn);margin:-4px 0 8px}
+details{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:12px}
+details summary{cursor:pointer;color:var(--accent);font-weight:600}
+details p,details li{color:#c9d3de;font-size:13px}
+code,.eq{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12.5px;background:#0b0f14;border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+.eq{display:block;padding:6px 10px;margin:6px 0;white-space:pre-wrap}
+.span2{grid-column:1/-1}
+a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1c;background:#1f1a0e;border-radius:8px;padding:3px 10px;margin-right:4px}a.back:hover{background:#2d2615}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../index.html">← Component catalog</a>
+  <h1>Mach–Zehnder Interferometer · Thermo-optic phase shifter</h1>
+  <span class="sub">Theoretical model of the MZI and its thermo-optic phase shifter. Part of the Programmable Photonics interactive lab.</span>
+</header>
+
+<main>
+  <!-- 3D VIEW -->
+  <section class="card view">
+    <h2>Device (3D)</h2>
+    <canvas id="c3d"></canvas>
+  </section>
+
+  <!-- MAIN PLOT -->
+  <section class="card view">
+    <div class="toolbar">
+      <span>x-axis</span>
+      <div class="seg" id="segX">
+        <button data-v="I" class="on">Current I</button><button data-v="I2">I²</button><button data-v="V">Voltage V</button><button data-v="P">Power P</button>
+      </div>
+      <div class="seg" id="segY"><button data-v="lin" class="on">Linear</button><button data-v="db">dB</button></div>
+      <label><input type="checkbox" id="chkBar" checked> <span style="color:var(--bar)">Bar</span></label>
+      <label><input type="checkbox" id="chkCross" checked> <span style="color:var(--cross)">Cross</span></label>
+    </div>
+    <canvas id="cPlot"></canvas>
+  </section>
+
+  <!-- CONTROLS -->
+  <section class="card">
+    <h2>Controls</h2>
+    <div class="inline" style="margin-bottom:10px">
+      <span>Presets:</span>
+      <button class="btn" id="pIdeal">Ideal MZI</button>
+      <button class="btn primary" id="pFab">Non-ideal MZI (example)</button>
+      <button class="btn" id="pView">Reset 3D view</button>
+    </div>
+    <div class="groups">
+      <div class="group" data-group="drive"><h3>Drive</h3>
+        <div class="inline"><button class="btn" id="btnPlay">▶ Sweep current</button><span>Tip: click or drag on the plot to set the operating point.</span></div>
+      </div>
+      <div class="group" data-group="heater"><h3>Heater (phase shifter)</h3></div>
+      <div class="group" data-group="device"><h3>Interferometer imperfections</h3></div>
+      <div class="group"><h3>Current source limits &amp; axes</h3>
+        <div class="inline">Imax <input type="number" id="nImax" min="0.1" max="100" step="0.1" value="2"> mA</div>
+        <div class="inline">Vmax <input type="number" id="nVmax" min="0.1" max="100" step="0.1" value="5"> V</div>
+        <div class="inline">Power axis max <input type="number" id="nPax" min="0.1" max="1000" step="0.1" value="5"> mW <button class="btn" id="btnPauto">Auto</button></div>
+        <div class="inline" style="font-size:12px">Hatched area on the plot = out of reach for this source (current above Imax or voltage above Vmax).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- READOUTS + R PLOT -->
+  <section class="card">
+    <h2>Operating point</h2>
+    <div class="readouts" id="ro"></div>
+    <div id="warn"></div>
+    <h2>How Iπ and Vπ depend on R (for a fixed Pπ)</h2>
+    <canvas id="cR"></canvas>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ state */
+const S = {
+  I: 0.6, Rk: 1.5, Ppi: 1.35, gamma: 0, theta0: 0, a1: 0, a2: 0,
+  Imax: 2, Vmax: 5, Paxis: 5,
+  xmode: 'I', ymode: 'lin', showBar: true, showCross: true,   playing: false, hover: null
+};
+let dirty = true;
+const PI = Math.PI;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+/* ------------------------------------------------------------------ physics (I in mA, R in kΩ, P in mW, V in V) */
+const Phys = {
+  PfromI(I) { const k = S.gamma * I * I * S.Rk; if (k >= 0.95) return NaN; return I * I * S.Rk / (1 - k); },
+  PfromV(V) { if (S.gamma < 1e-9) return V * V / S.Rk; const a = S.gamma * S.Rk, b = S.Rk; return (-b + Math.sqrt(b * b + 4 * a * V * V)) / (2 * a); },
+  IfromP(P) { return Math.sqrt(Math.max(P, 0) / (S.Rk * (1 + S.gamma * P))); },
+  VfromP(P) { return Math.sqrt(Math.max(P, 0) * S.Rk * (1 + S.gamma * P)); },
+  R(P) { return S.Rk * (1 + S.gamma * P); }
+};
+function mmi(a) { return [Math.sin(PI / 4 + a), Math.cos(PI / 4 + a)]; }
+function trans(P) {
+  const ph = S.theta0 + PI * P / S.Ppi;
+  const [s1, c1] = mmi(S.a1), [s2, c2] = mmi(S.a2), cp = Math.cos(ph);
+  const B = 2 * s1 * s2 * c1 * c2;
+  return {
+    ph,
+    bar: s1 * s1 * s2 * s2 + c1 * c1 * c2 * c2 - B * cp,
+    cross: c2 * c2 * s1 * s1 + s2 * s2 * c1 * c1 + B * cp,
+    top: s1 * s1, bot: c1 * c1
+  };
+}
+function extinction() {
+  const [s1, c1] = mmi(S.a1), [s2, c2] = mmi(S.a2);
+  const B = 2 * s1 * s2 * c1 * c2, Ab = s1 * s1 * s2 * s2 + c1 * c1 * c2 * c2, Ac = c2 * c2 * s1 * s1 + s2 * s2 * c1 * c1;
+  const er = (A) => (A - B) < 1e-7 ? Infinity : 10 * Math.log10((A + B) / (A - B));
+  return { bar: er(Ab), cross: er(Ac) };
+}
+function reachable(P) {
+  if (!isFinite(P)) return false;
+  return Phys.IfromP(P) <= S.Imax * 1.0001 && Phys.VfromP(P) <= S.Vmax * 1.0001;
+}
+function Preach() {
+  const pI = Phys.PfromI(S.Imax), pV = Phys.PfromV(S.Vmax);
+  return Math.min(isFinite(pI) ? pI : Infinity, pV);
+}
+function opPoint() {
+  let I = clamp(S.I, 0, S.Imax), limited = null;
+  const Icomp = Phys.IfromP(Phys.PfromV(S.Vmax));
+  if (I > Icomp) { I = Icomp; limited = 'V'; }
+  let P = Phys.PfromI(I);
+  if (!isFinite(P)) { I = Math.sqrt(0.94 / (S.gamma * S.Rk)); P = Phys.PfromI(I); limited = 'runaway'; }
+  return { I, P, V: Phys.VfromP(P), R: Phys.R(P), limited };
+}
+const XM = {
+  I:  { label: 'Heater current I (mA)', range: () => [0, S.Imax], P: x => Phys.PfromI(x), x: P => Phys.IfromP(P), d: (i, v, p) => i, unit: 'mA', pi: 'Iπ' },
+  I2: { label: 'Squared current I² (mA²)', range: () => [0, S.Imax * S.Imax], P: x => Phys.PfromI(Math.sqrt(Math.max(x, 0))), x: P => Phys.IfromP(P) ** 2, d: (i, v, p) => i * i, unit: 'mA²', pi: 'Iπ²' },
+  V:  { label: 'Heater voltage V (V)', range: () => [0, S.Vmax], P: x => Phys.PfromV(x), x: P => Phys.VfromP(P), d: (i, v, p) => v, unit: 'V', pi: 'Vπ' },
+  P:  { label: 'Electrical power P = I·V (mW)', range: () => [0, S.Paxis], P: x => x, x: P => P, d: (i, v, p) => p, unit: 'mW', pi: 'Pπ' }
+};
+
+/* ------------------------------------------------------------------ formatting */
+function fmtR(kOhm) { const o = kOhm * 1000; return o >= 1000 ? (o / 1000).toFixed(o >= 10000 ? 2 : 3) + ' kΩ' : o.toFixed(0) + ' Ω'; }
+function f3(v) { return Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : Math.abs(v) >= 1 ? v.toFixed(2) : v.toFixed(3); }
+function dB(p) { return 10 * Math.log10(Math.max(p, 1e-6)); }
+
+/* ------------------------------------------------------------------ sliders */
+const SL = [
+  { id: 'I', g: 'drive', lab: 'Current I', min: 0, max: () => S.Imax, step: 0.0005, get: () => S.I, set: v => S.I = v, fmt: v => v.toFixed(3) + ' mA' },
+  { id: 'R', g: 'heater', lab: 'Heater resistance R', log: true, min: 20, max: 50000, get: () => S.Rk * 1000, set: v => S.Rk = v / 1000, fmt: v => fmtR(v / 1000) },
+  { id: 'Ppi', g: 'heater', lab: 'Pπ – power for a π shift (thermal efficiency)', log: true, min: 0.2, max: 60, get: () => S.Ppi, set: v => S.Ppi = v, fmt: v => f3(v) + ' mW' },
+  { id: 'gamma', g: 'heater', lab: 'R temperature coefficient γ', min: 0, max: 5, step: 0.01, get: () => S.gamma * 100, set: v => S.gamma = v / 100, fmt: v => v.toFixed(2) + ' %/mW' },
+  { id: 'theta0', g: 'device', lab: 'Phase offset θ₀ (fabrication)', min: -PI, max: PI, step: 0.001, get: () => S.theta0, set: v => S.theta0 = v, fmt: v => v.toFixed(3) + ' rad (' + (v / PI).toFixed(2) + 'π)' },
+  { id: 'a1', g: 'device', lab: 'MMI 1 imbalance α₁', min: -0.3, max: 0.3, step: 0.001, get: () => S.a1, set: v => S.a1 = v, fmt: v => split(v) },
+  { id: 'a2', g: 'device', lab: 'MMI 2 imbalance α₂', min: -0.3, max: 0.3, step: 0.001, get: () => S.a2, set: v => S.a2 = v, fmt: v => split(v) }
+];
+function split(a) { const s = Math.sin(PI / 4 + a) ** 2 * 100; return a.toFixed(3) + ' rad · ' + s.toFixed(1) + ':' + (100 - s).toFixed(1); }
+const LOGN = 1000;
+function buildSliders() {
+  for (const c of SL) {
+    const host = document.querySelector(`[data-group="${c.g}"]`);
+    const row = document.createElement('div'); row.className = 'row';
+    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val" id="o_${c.id}"></span><input type="range" id="s_${c.id}">`;
+    host.appendChild(row);
+    const s = row.querySelector('input');
+    if (c.log) { s.min = 0; s.max = LOGN; s.step = 1; }
+    else { s.min = c.min; s.max = typeof c.max === 'function' ? c.max() : c.max; s.step = c.step; }
+    s.addEventListener('input', () => {
+      const u = +s.value;
+      c.set(c.log ? c.min * Math.pow(c.max / c.min, u / LOGN) : u);
+      if (c.id === 'I') S.playing = false, updPlayBtn();
+      syncOut(c); dirty = true;
+    });
+  }
+  syncUI();
+}
+function syncOut(c) { document.getElementById('o_' + c.id).textContent = c.fmt(c.get()); }
+function syncSlider(c) {
+  const s = document.getElementById('s_' + c.id);
+  if (c.log) s.value = Math.round(LOGN * Math.log(c.get() / c.min) / Math.log(c.max / c.min));
+  else { if (typeof c.max === 'function') s.max = c.max(); s.value = c.get(); }
+  syncOut(c);
+}
+function syncUI() {
+  SL.forEach(syncSlider);
+  document.getElementById('nImax').value = S.Imax;
+  document.getElementById('nVmax').value = S.Vmax;
+  document.getElementById('nPax').value = +S.Paxis.toFixed(2);
+  setSeg('segX', S.xmode); setSeg('segY', S.ymode);
+  dirty = true;
+}
+function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+
+/* ------------------------------------------------------------------ canvas helper */
+function fitCanvas(c) {
+  const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  const W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0);
+  return { ctx, w: r.width, h: r.height };
+}
+function niceTicks(a, b, n) {
+  const span = b - a; if (span <= 0) return [a];
+  const s0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(s0))), r = s0 / mag;
+  const st = (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * mag, t = [];
+  for (let v = Math.ceil(a / st - 1e-9) * st; v <= b + 1e-9; v += st) t.push(+v.toFixed(10));
+  return t;
+}
+function tickFmt(v) { const a = Math.abs(v); return a === 0 ? '0' : a >= 100 ? v.toFixed(0) : a >= 10 ? v.toFixed(0) : a >= 1 ? (+v.toFixed(2)).toString() : (+v.toFixed(3)).toString(); }
+const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
+  ctx.font = FONT; const w = ctx.measureText(text).width + 10;
+  let x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
+  ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
+  ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + 0.5);
+}
+function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+let hatchCache = null;
+function hatchPattern(ctx) {
+  if (!hatchCache) {
+    const p = document.createElement('canvas'); p.width = p.height = 8; const g = p.getContext('2d');
+    g.fillStyle = 'rgba(10,13,18,0.55)'; g.fillRect(0, 0, 8, 8);
+    g.strokeStyle = 'rgba(255,255,255,0.22)'; g.lineWidth = 1; g.beginPath(); g.moveTo(-1, 9); g.lineTo(9, -1); g.stroke();
+    hatchCache = p;
+  }
+  return ctx.createPattern(hatchCache, 'repeat');
+}
+
+/* ------------------------------------------------------------------ MAIN PLOT */
+const cPlot = document.getElementById('cPlot');
+let plotGeom = null;
+function drawPlot() {
+  const { ctx, w, h } = fitCanvas(cPlot); ctx.clearRect(0, 0, w, h);
+  const m = { l: 56, r: 16, t: 58, b: 44 }, pw = w - m.l - m.r, ph = h - m.t - m.b;
+  if (pw < 60 || ph < 60) return;
+  const mode = XM[S.xmode], [x0, x1] = mode.range(), lin = S.ymode === 'lin';
+  const y0 = lin ? 0 : -40, y1 = lin ? 1.08 : 3;
+  const X = v => m.l + (v - x0) / (x1 - x0) * pw, Y = v => m.t + (1 - (v - y0) / (y1 - y0)) * ph;
+  const yv = p => lin ? p : Math.max(-40, dB(p));
+  plotGeom = { m, pw, ph, x0, x1, X };
+  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
+  // ---- Pπ bands (heater-induced Δφ = kπ)
+  let band1 = null;
+  for (let k = 1; k <= 120; k++) {
+    const xa = mode.x((k - 1) * S.Ppi), xbRaw = mode.x(k * S.Ppi);
+    if (!(xa < x1)) break;
+    const xb = Math.min(xbRaw, x1), A = X(xa), B = X(xb);
+    ctx.fillStyle = k === 1 ? 'rgba(255,204,102,0.17)' : (k % 2 ? 'rgba(255,204,102,0.065)' : 'rgba(255,255,255,0.012)');
+    ctx.fillRect(A, m.t, B - A, ph);
+    if (k === 1) band1 = { A, B, full: xbRaw <= x1, xb: xbRaw };
+    if (xbRaw <= x1) {
+      ctx.strokeStyle = 'rgba(255,204,102,0.5)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(B, m.t); ctx.lineTo(B, m.t + ph); ctx.stroke(); ctx.setLineDash([]);
+      if (B - A > 14 || k <= 2) { ctx.fillStyle = 'rgba(255,204,102,0.95)'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText((k === 1 ? '' : k) + 'π', B, m.t + 4); }
+    }
+    if (B - A < 1.2) break;
+  }
+  // ---- grid
+  const xt = niceTicks(x0, x1, Math.max(3, Math.round(pw / 90)));
+  const yt = lin ? [0, 0.2, 0.4, 0.6, 0.8, 1.0] : [-40, -30, -20, -10, 0];
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
+  for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
+
+  // ---- curves
+  const N = 700;
+  const curve = (key, color) => {
+    ctx.beginPath(); let pen = false;
+    for (let i = 0; i <= N; i++) {
+      const xv = x0 + (x1 - x0) * i / N, P = mode.P(xv);
+      if (!isFinite(P)) { pen = false; continue; }
+      const px = X(xv), py = Y(yv(trans(P)[key]));
+      if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = color; ctx.lineWidth = 2.2; ctx.lineJoin = 'round'; ctx.stroke();
+  };
+  if (S.showCross) curve('cross', '#ff9548');
+  if (S.showBar) curve('bar', '#4aa8ff');
+
+  // ---- unreachable (source limits) hatch
+  let sStart = null;
+  const NS = 400;
+  for (let i = 0; i <= NS; i++) {
+    const xv = x0 + (x1 - x0) * i / NS, ok = reachable(mode.P(xv));
+    if (!ok && sStart === null) sStart = xv;
+    if ((ok || i === NS) && sStart !== null) {
+      const A = X(sStart), B = X(ok ? xv : x1);
+      ctx.fillStyle = hatchPattern(ctx); ctx.fillRect(A, m.t, B - A, ph);
+      if (B - A > 110) tag(ctx, (A + B) / 2, m.t + ph - 14, 'beyond source limits', '#c9d3de');
+      sStart = null;
+    }
+  }
+  // ---- Pπ label
+  // ---- operating point
+  const op = opPoint(), xo = mode.x(op.P), t = trans(op.P);
+  if (xo >= x0 && xo <= x1) {
+    const px = X(xo);
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(px, m.t); ctx.lineTo(px, m.t + ph); ctx.stroke(); ctx.setLineDash([]);
+    const dot = (val, col) => { ctx.beginPath(); ctx.arc(px, Y(yv(val)), 5, 0, 2 * PI); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); };
+    if (S.showCross) dot(t.cross, '#ff9548');
+    if (S.showBar) dot(t.bar, '#4aa8ff');
+  }
+  // ---- hover
+  if (S.hover && S.hover.x >= m.l && S.hover.x <= m.l + pw && S.hover.y >= m.t && S.hover.y <= m.t + ph) {
+    const xv = x0 + (S.hover.x - m.l) / pw * (x1 - x0), P = mode.P(xv);
+    if (isFinite(P)) {
+      const th = trans(P);
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(S.hover.x, m.t); ctx.lineTo(S.hover.x, m.t + ph); ctx.stroke();
+      const lines = [
+        `I = ${f3(Phys.IfromP(P))} mA   V = ${f3(Phys.VfromP(P))} V   P = ${f3(P)} mW`,
+        `Δφ heater = ${(P / S.Ppi).toFixed(2)}π   φ = ${(th.ph / PI).toFixed(2)}π`,
+        `Bar ${(th.bar * 100).toFixed(1)} % (${dB(th.bar).toFixed(1)} dB)   Cross ${(th.cross * 100).toFixed(1)} % (${dB(th.cross).toFixed(1)} dB)`
+      ];
+      ctx.font = FONT; const bw = Math.max(...lines.map(l => ctx.measureText(l).width)) + 14, bh = 16 * lines.length + 8;
+      let bx = S.hover.x + 12, by = S.hover.y + 12;
+      if (bx + bw > m.l + pw) bx = S.hover.x - bw - 12; if (by + bh > m.t + ph) by = S.hover.y - bh - 12;
+      ctx.fillStyle = 'rgba(8,11,16,0.92)'; roundRect(ctx, bx, by, bw, bh, 6); ctx.fill();
+      ctx.strokeStyle = '#2c3a4f'; ctx.stroke();
+      ctx.fillStyle = '#dfe7ef'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      lines.forEach((l, i) => ctx.fillText(l, bx + 7, by + 5 + 16 * i));
+    }
+  }
+  ctx.restore();
+
+  // ---- Pπ bracket above the plot
+  if (band1) {
+    const yb = m.t - 9, A = band1.A, B = band1.B;
+    ctx.strokeStyle = '#ffcc66'; ctx.lineWidth = 1.3; ctx.beginPath();
+    ctx.moveTo(A + 1, yb - 5); ctx.lineTo(A + 1, yb); ctx.lineTo(B, yb); if (band1.full) ctx.lineTo(B, yb - 5); ctx.stroke();
+    const txt = band1.full ? `${mode.pi} = ${f3(band1.xb)} ${mode.unit}` : `${mode.pi} = ${f3(band1.xb)} ${mode.unit} (beyond axis)`;
+    const extra = S.xmode === 'P' ? `  ·  Iπ = ${f3(Phys.IfromP(S.Ppi))} mA, Vπ = ${f3(Phys.VfromP(S.Ppi))} V` : `  ·  Pπ = ${f3(S.Ppi)} mW`;
+    ctx.font = FONT; const wTxt = ctx.measureText(txt + extra).width + 12;
+    const cx = clamp((A + B) / 2, m.l + wTxt / 2, m.l + pw - wTxt / 2);
+    tag(ctx, cx, yb - 2, txt + extra, '#ffcc66', 'rgba(30,24,10,0.95)');
+  }
+
+  // ---- axes
+  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of xt) ctx.fillText(tickFmt(t), X(t), m.t + ph + 6);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const t of yt) ctx.fillText(lin ? t.toFixed(1) : t, m.l - 6, Y(t));
+  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(mode.label, m.l + pw / 2, h - 8);
+  ctx.save(); ctx.translate(15, m.t + ph / 2); ctx.rotate(-PI / 2);
+  ctx.fillText(lin ? 'Normalized optical transmission' : 'Optical transmission (dB)', 0, 0); ctx.restore();
+  // ---- legend
+  let lx = m.l; const ly = 16; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  const leg = (draw, text) => { draw(lx, ly); ctx.fillStyle = '#c9d3de'; ctx.fillText(text, lx + 22, ly); lx += 30 + ctx.measureText(text).width; };
+  const lineSw = c => (x, y) => { ctx.strokeStyle = c; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 16, y); ctx.stroke(); };
+  if (S.showBar) leg(lineSw('#4aa8ff'), 'Bar |M₀₀|²');
+  if (S.showCross) leg(lineSw('#ff9548'), 'Cross |M₁₀|²');
+  leg((x, y) => { ctx.fillStyle = 'rgba(255,204,102,0.35)'; ctx.fillRect(x, y - 7, 16, 14); }, 'Pπ bands (Δφ = π)');
+}
+function plotSetI(px) {
+  if (!plotGeom) return;
+  const { m, pw, x0, x1 } = plotGeom, mode = XM[S.xmode];
+  const xv = clamp(x0 + (px - m.l) / pw * (x1 - x0), x0, x1), P = mode.P(xv);
+  if (!isFinite(P)) return;
+  S.I = clamp(Phys.IfromP(P), 0, S.Imax); S.playing = false; updPlayBtn();
+  syncSlider(SL[0]); dirty = true;
+}
+let plotDrag = false;
+cPlot.addEventListener('pointerdown', e => { plotDrag = true; cPlot.setPointerCapture(e.pointerId); plotSetI(e.offsetX); });
+cPlot.addEventListener('pointermove', e => { S.hover = { x: e.offsetX, y: e.offsetY }; if (plotDrag) plotSetI(e.offsetX); dirty = true; });
+cPlot.addEventListener('pointerup', () => plotDrag = false);
+cPlot.addEventListener('pointerleave', () => { S.hover = null; dirty = true; });
+
+/* ------------------------------------------------------------------ R PLOT (Iπ, Vπ vs R) */
+const cR = document.getElementById('cR');
+let rGeom = null;
+function drawRPlot() {
+  const { ctx, w, h } = fitCanvas(cR); ctx.clearRect(0, 0, w, h);
+  const m = { l: 52, r: 16, t: 30, b: 38 }, pw = w - m.l - m.r, ph = h - m.t - m.b;
+  if (pw < 60 || ph < 40) return;
+  const lx0 = 1, lx1 = 5, ly0 = -2, ly1 = 2.3;
+  const X = lr => m.l + (lr - lx0) / (lx1 - lx0) * pw, Y = ly => m.t + (1 - (ly - ly0) / (ly1 - ly0)) * ph;
+  rGeom = { m, pw, lx0, lx1 };
+  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
+  const req = (Rk, Pt) => { const f = 1 + S.gamma * Pt, I = Math.sqrt(Pt / (Rk * f)); return [I, I * Rk * f]; };
+  // feasibility shading
+  const NS = 300;
+  for (let i = 0; i < NS; i++) {
+    const lr = lx0 + (lx1 - lx0) * (i + 0.5) / NS, Rk = Math.pow(10, lr) / 1000;
+    const [I1, V1] = req(Rk, S.Ppi), [I2, V2] = req(Rk, 2 * S.Ppi);
+    const ok1 = I1 <= S.Imax && V1 <= S.Vmax, ok2 = I2 <= S.Imax && V2 <= S.Vmax;
+    if (ok1) { ctx.fillStyle = ok2 ? 'rgba(95,211,141,0.20)' : 'rgba(95,211,141,0.09)'; ctx.fillRect(X(lx0 + (lx1 - lx0) * i / NS), m.t, pw / NS + 0.6, ph); }
+  }
+  // grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1;
+  for (let d = lx0; d <= lx1; d++) for (let k = 1; k < 10; k++) { const lr = d + Math.log10(k); if (lr > lx1) break; ctx.globalAlpha = k === 1 ? 1 : 0.35; ctx.beginPath(); ctx.moveTo(X(lr), m.t); ctx.lineTo(X(lr), m.t + ph); ctx.stroke(); }
+  for (let d = -2; d <= 2; d++) for (let k = 1; k < 10; k++) { const ly = d + Math.log10(k); if (ly > ly1) break; ctx.globalAlpha = k === 1 ? 1 : 0.35; ctx.beginPath(); ctx.moveTo(m.l, Y(ly)); ctx.lineTo(m.l + pw, Y(ly)); ctx.stroke(); }
+  ctx.globalAlpha = 1;
+  // limits
+  const hline = (v, col) => { if (v <= 0) return; const y = Y(Math.log10(v)); ctx.strokeStyle = col; ctx.setLineDash([6, 4]); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(m.l, y); ctx.lineTo(m.l + pw, y); ctx.stroke(); ctx.setLineDash([]); };
+  hline(S.Imax, 'rgba(199,146,234,0.8)'); hline(S.Vmax, 'rgba(255,209,102,0.8)');
+  // curves
+  const curve = (which, mult, col, dash) => {
+    ctx.beginPath();
+    for (let i = 0; i <= 200; i++) { const lr = lx0 + (lx1 - lx0) * i / 200, Rk = Math.pow(10, lr) / 1000, r = req(Rk, mult * S.Ppi)[which]; const y = Y(Math.log10(r)); i ? ctx.lineTo(X(lr), y) : ctx.moveTo(X(lr), y); }
+    ctx.strokeStyle = col; ctx.lineWidth = dash ? 1.4 : 2.2; ctx.setLineDash(dash ? [5, 4] : []); ctx.stroke(); ctx.setLineDash([]);
+  };
+  curve(0, 2, '#c792ea', true); curve(1, 2, '#ffd166', true);
+  curve(0, 1, '#c792ea', false); curve(1, 1, '#ffd166', false);
+  // current R
+  const lrNow = Math.log10(S.Rk * 1000), [In, Vn] = req(S.Rk, S.Ppi);
+  if (lrNow >= lx0 && lrNow <= lx1) {
+    const px = X(lrNow);
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(px, m.t); ctx.lineTo(px, m.t + ph); ctx.stroke();
+    const dot = (v, col) => { ctx.beginPath(); ctx.arc(px, Y(Math.log10(v)), 4.5, 0, 2 * PI); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.stroke(); };
+    dot(In, '#c792ea'); dot(Vn, '#ffd166');
+    const right = px < m.l + pw - 120;
+    let yI = Y(Math.log10(In)), yV = Y(Math.log10(Vn));
+    if (Math.abs(yI - yV) < 22) { const mid = (yI + yV) / 2, up = Vn >= In; yV = mid + (up ? -12 : 12); yI = mid + (up ? 12 : -12); }
+    tag(ctx, px + (right ? 8 : -8), yI, `Iπ = ${f3(In)} mA`, '#c792ea', 'rgba(12,16,22,0.85)', right ? 'left' : 'right');
+    tag(ctx, px + (right ? 8 : -8), yV, `Vπ = ${f3(Vn)} V`, '#ffd166', 'rgba(12,16,22,0.85)', right ? 'left' : 'right');
+  }
+  ctx.restore();
+  // axes
+  ctx.strokeStyle = '#3a4a60'; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const rl = ['10 Ω', '100 Ω', '1 kΩ', '10 kΩ', '100 kΩ'];
+  for (let d = lx0; d <= lx1; d++) ctx.fillText(rl[d - 1], X(d), m.t + ph + 5);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let d = -2; d <= 2; d++) ctx.fillText(['0.01', '0.1', '1', '10', '100'][d + 2], m.l - 6, Y(d));
+  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('Heater resistance R (click to set)', m.l + pw / 2, h - 6);
+  ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText('mA  /  V', 0, 0); ctx.restore();
+  // legend
+  let lx = m.l; const ly = 13; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const leg = (col, dash, text) => { ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.setLineDash(dash ? [4, 3] : []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(text, lx + 20, ly); lx += 28 + ctx.measureText(text).width; };
+  leg('#c792ea', false, 'Iπ'); leg('#ffd166', false, 'Vπ'); leg('#c792ea', true, 'I₂π'); leg('#ffd166', true, 'V₂π');
+  ctx.fillStyle = 'rgba(95,211,141,0.5)'; ctx.fillRect(lx, ly - 6, 14, 12); ctx.fillStyle = '#c9d3de'; ctx.fillText('reachable with this source', lx + 19, ly);
+}
+let rDrag = false;
+function rSet(px) {
+  if (!rGeom) return; const { m, pw, lx0, lx1 } = rGeom;
+  const lr = clamp(lx0 + (px - m.l) / pw * (lx1 - lx0), Math.log10(20), Math.log10(50000));
+  S.Rk = Math.pow(10, lr) / 1000; syncSlider(SL[1]); dirty = true;
+}
+cR.addEventListener('pointerdown', e => { rDrag = true; cR.setPointerCapture(e.pointerId); rSet(e.offsetX); });
+cR.addEventListener('pointermove', e => { if (rDrag) rSet(e.offsetX); });
+cR.addEventListener('pointerup', () => rDrag = false);
+
+/* ------------------------------------------------------------------ READOUTS */
+function updateReadouts() {
+  const op = opPoint(), t = trans(op.P), er = extinction();
+  const IpiNow = Phys.IfromP(S.Ppi), VpiNow = Phys.VfromP(S.Ppi);
+  const alphaNb = PI * S.Rk / S.Ppi;
+  const erTxt = v => isFinite(v) ? v.toFixed(1) + ' dB' : '∞';
+  const items = [
+    ['Current I', `${op.I.toFixed(3)} <small>mA</small>`],
+    ['Voltage V', `${f3(op.V)} <small>V</small>`],
+    ['Electrical power P', `${f3(op.P)} <small>mW</small>`],
+    ['Resistance R(P)', `${fmtR(op.R)}`],
+    ['Heater phase Δφ = πP/Pπ', `${(op.P / S.Ppi).toFixed(3)}<small>π</small>`],
+    ['Total phase φ', `${(t.ph / PI).toFixed(3)}<small>π</small>`],
+    ['<span style="color:var(--bar)">Bar</span> output', `${(t.bar * 100).toFixed(1)}<small>%</small> <small>${dB(t.bar).toFixed(1)} dB</small>`],
+    ['<span style="color:var(--cross)">Cross</span> output', `${(t.cross * 100).toFixed(1)}<small>%</small> <small>${dB(t.cross).toFixed(1)} dB</small>`],
+    ['Pπ / Iπ / Vπ', `${f3(S.Ppi)}<small>mW</small> ${f3(IpiNow)}<small>mA</small> ${f3(VpiNow)}<small>V</small>`],
+    ['Quadratic coeff. α = πR/Pπ', `${f3(alphaNb)} <small>rad/mA²</small>`],
+    ['Extinction ratio bar / cross', `${erTxt(er.bar)} <small>/</small> ${erTxt(er.cross)}`],
+    ['Max. reachable power', `${f3(Preach())} <small>mW = ${(Preach() / S.Ppi).toFixed(2)} Pπ</small>`]
+  ];
+  document.getElementById('ro').innerHTML = items.map(([k, v]) => `<div class="ro"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+  const w = [];
+  if (op.limited === 'V') w.push(`Voltage compliance: the source cannot exceed ${S.Vmax} V, so the current is limited to ${op.I.toFixed(3)} mA.`);
+  if (op.limited === 'runaway') w.push('Thermal runaway: with this temperature coefficient, R grows faster than the current can be held. Reduce I or γ.');
+  if (Preach() < S.Ppi) w.push(`With this source and R = ${fmtR(S.Rk)}, you can't reach a π shift (max ${(Preach() / S.Ppi).toFixed(2)} Pπ).`);
+  else if (Preach() < 2 * S.Ppi) w.push('This source reaches π but not a full 2π range.');
+  document.getElementById('warn').textContent = w.join('  ');
+}
+
+/* ------------------------------------------------------------------ 3D ENGINE (tiny painter's-algorithm renderer) */
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const crs = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const nrm = a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+const LAYERS = [[], [], [], []]; // 0 substrate, 1 optical layer, 2 cladding (translucent), 3 metal + off-chip
+function addBox(layer, p0, p1, w, z0, z1, mat) {
+  const dx = p1[0] - p0[0], dy = p1[1] - p0[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L * w / 2, ny = dx / L * w / 2;
+  const b = [[p0[0] - nx, p0[1] - ny], [p1[0] - nx, p1[1] - ny], [p1[0] + nx, p1[1] + ny], [p0[0] + nx, p0[1] + ny]];
+  const v = [...b.map(q => [q[0], q[1], z0]), ...b.map(q => [q[0], q[1], z1])];
+  const c = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (z0 + z1) / 2];
+  for (const f of [[4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]]) {
+    const q = f.map(i => v[i]);
+    const fc = [(q[0][0] + q[2][0]) / 2, (q[0][1] + q[2][1]) / 2, (q[0][2] + q[2][2]) / 2];
+    let n = nrm(crs(sub(q[1], q[0]), sub(q[3], q[0])));
+    if (dot3(n, sub(fc, c)) < 0) n = [-n[0], -n[1], -n[2]];
+    LAYERS[layer].push({ q, n, c: fc, mat });
+  }
+}
+const aabb = (layer, x0, x1, y0, y1, z0, z1, mat) => addBox(layer, [x0, (y0 + y1) / 2], [x1, (y0 + y1) / 2], y1 - y0, z0, z1, mat);
+function sbend(xa, ya, xb, yb, n) { const p = []; for (let i = 0; i <= n; i++) { const u = i / n; p.push([xa + (xb - xa) * u, ya + (yb - ya) * (1 - Math.cos(PI * u)) / 2]); } return p; }
+function polyBoxes(pts, mat) { for (let i = 0; i < pts.length - 1; i++) addBox(1, pts[i], pts[i + 1], WG_W, 0, WG_H, mat); }
+
+const Y0 = 0.6, YA = 2.0, WG_W = 0.32, WG_H = 0.26, CL_H = 0.42, CHIP_X = 11.5, CHIP_Y = 4.4;
+const HX = 2.3; // heater half-length
+const tracks = [];
+function buildScene() {
+  aabb(0, -CHIP_X, CHIP_X, -CHIP_Y, CHIP_Y, -0.9, 0, { k: 'sub' });
+  // input waveguides
+  polyBoxes([[-CHIP_X, Y0], [-7.5, Y0]], { k: 'wg', key: 'in0' });
+  polyBoxes([[-CHIP_X, -Y0], [-7.5, -Y0]], { k: 'wg', key: 'in1' });
+  // MMIs
+  aabb(1, -7.5, -5.5, -1.0, 1.0, 0, WG_H, { k: 'wg', key: 'mmi1' });
+  aabb(1, 5.5, 7.5, -1.0, 1.0, 0, WG_H, { k: 'wg', key: 'mmi2' });
+  // arms
+  const top = [...sbend(-5.5, Y0, -2.6, YA, 12), [2.6, YA], ...sbend(2.6, YA, 5.5, Y0, 12).slice(1)];
+  const bot = top.map(p => [p[0], -p[1]]);
+  polyBoxes(top, { k: 'wg', key: 'top' }); polyBoxes(bot, { k: 'wg', key: 'bot' });
+  // outputs
+  polyBoxes([[7.5, Y0], [CHIP_X, Y0]], { k: 'wg', key: 'bar' });
+  polyBoxes([[7.5, -Y0], [CHIP_X, -Y0]], { k: 'wg', key: 'cross' });
+  // cladding (translucent)
+  aabb(2, -CHIP_X, CHIP_X, -CHIP_Y, CHIP_Y, 0, CL_H, { k: 'clad' });
+  // heater + traces + pads
+  aabb(3, -HX, HX, YA - 0.32, YA + 0.32, CL_H, CL_H + 0.1, { k: 'heater' });
+  aabb(3, -HX - 0.45, -HX + 0.05, YA - 0.32, 3.2, CL_H, CL_H + 0.1, { k: 'metal' });
+  aabb(3, HX - 0.05, HX + 0.45, YA - 0.32, 3.2, CL_H, CL_H + 0.1, { k: 'metal' });
+  aabb(3, -HX - 1.2, -HX + 0.6, 3.2, 4.2, CL_H, CL_H + 0.14, { k: 'metal' });
+  aabb(3, HX - 0.6, HX + 1.2, 3.2, 4.2, CL_H, CL_H + 0.14, { k: 'metal' });
+  // laser + photodetectors (off-chip)
+  aabb(3, -13.4, -11.9, Y0 - 0.45, Y0 + 0.45, -0.25, 0.55, { k: 'laser' });
+  aabb(3, 11.9, 13.4, Y0 - 0.45, Y0 + 0.45, -0.25, 0.55, { k: 'pd', key: 'bar' });
+  aabb(3, 11.9, 13.4, -Y0 - 0.45, -Y0 + 0.45, -0.25, 0.55, { k: 'pd', key: 'cross' });
+  // light tracks
+  const mk = (pts, key) => { const L = [0]; for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); tracks.push({ pts, key, L, len: L[L.length - 1] }); };
+  mk([[-11.9, Y0], [-7.5, Y0]], 'in0');
+  mk([[-7.5, Y0], [-5.5, Y0]], 'mmiTop'); mk([[-7.5, Y0], [-5.5, -Y0]], 'mmiBot');
+  mk(top, 'top'); mk(bot, 'bot');
+  mk([[5.5, Y0], [7.5, Y0]], 'mmi2a'); mk([[5.5, -Y0], [7.5, -Y0]], 'mmi2b');
+  mk([[5.5, Y0], [7.5, -Y0]], 'mmi2c'); mk([[5.5, -Y0], [7.5, Y0]], 'mmi2d');
+  mk([[7.5, Y0], [11.9, Y0]], 'bar'); mk([[7.5, -Y0], [11.9, -Y0]], 'cross');
+}
+function pointAt(tr, s) {
+  let i = 1; while (i < tr.L.length - 1 && tr.L[i] < s) i++;
+  const a = tr.pts[i - 1], b = tr.pts[i], u = (s - tr.L[i - 1]) / ((tr.L[i] - tr.L[i - 1]) || 1);
+  return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
+}
+const CAM0 = { yaw: -1.74, pitch: 0.8, dist: 29 };
+const cam = { ...CAM0 };
+const c3d = document.getElementById('c3d');
+function makeCam(w, h) {
+  const cp = Math.cos(cam.pitch);
+  const pos = [cam.dist * cp * Math.cos(cam.yaw), cam.dist * cp * Math.sin(cam.yaw), cam.dist * Math.sin(cam.pitch)];
+  const f = nrm(sub([0, 0, 0], pos)), r = nrm(crs(f, [0, 0, 1])), u = crs(r, f);
+  return { pos, f, r, u, F: Math.min(w * 0.9, h * 1.7), cx: w / 2, cy: h * 0.5 };
+}
+function proj(C, p) { const d = sub(p, C.pos), z = dot3(d, C.f); if (z < 0.1) return null; return [C.cx + C.F * dot3(d, C.r) / z, C.cy - C.F * dot3(d, C.u) / z, z]; }
+const LIGHT = nrm([-0.35, -0.55, 1]);
+const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+const GLOW = [255, 64, 104];
+function heatColor(t) {
+  const st = [[0, [150, 158, 170]], [0.3, [190, 70, 40]], [0.62, [255, 140, 40]], [1, [255, 236, 170]]];
+  for (let i = 1; i < st.length; i++) if (t <= st[i][0]) return mix(st[i - 1][1], st[i][1], (t - st[i - 1][0]) / (st[i][0] - st[i - 1][0]));
+  return st[st.length - 1][1];
+}
+function matColor(mat, st) {
+  switch (mat.k) {
+    case 'sub': return { c: [34, 42, 54], e: 0 };
+    case 'wg': { const p = Math.sqrt(clamp(st[mat.key], 0, 1)); return { c: mix([70, 84, 104], GLOW, p * 0.85), e: p * 0.55 }; }
+    case 'heater': return { c: heatColor(st.heat), e: st.heat * 0.7 };
+    case 'metal': return { c: [205, 168, 82], e: 0 };
+    case 'laser': return { c: [210, 48, 80], e: 0.35 };
+    case 'pd': { const p = Math.sqrt(clamp(st[mat.key], 0, 1)); return { c: mix([48, 56, 70], GLOW, p * 0.75), e: p * 0.5 }; }
+  }
+  return { c: [128, 128, 128], e: 0 };
+}
+function drawLayer(ctx, C, faces, st, translucent) {
+  const vis = [];
+  for (const f of faces) {
+    if (dot3(f.n, sub(C.pos, f.c)) <= 0) continue;
+    const P = f.q.map(q => proj(C, q)); if (P.some(p => !p)) continue;
+    vis.push({ f, P, z: (P[0][2] + P[1][2] + P[2][2] + P[3][2]) / 4 });
+  }
+  vis.sort((a, b) => b.z - a.z);
+  for (const { f, P } of vis) {
+    ctx.beginPath(); ctx.moveTo(P[0][0], P[0][1]); for (let i = 1; i < 4; i++) ctx.lineTo(P[i][0], P[i][1]); ctx.closePath();
+    if (translucent) {
+      ctx.fillStyle = f.n[2] > 0.5 ? 'rgba(150,195,240,0.07)' : 'rgba(150,195,240,0.10)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(170,210,250,0.16)'; ctx.lineWidth = 0.8; ctx.stroke(); continue;
+    }
+    const { c, e } = matColor(f.mat, st);
+    const sh = 0.42 + 0.58 * Math.max(0, dot3(f.n, LIGHT)), k = sh * (1 - e) + e;
+    ctx.fillStyle = `rgb(${c[0] * k | 0},${c[1] * k | 0},${c[2] * k | 0})`; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.28)'; ctx.lineWidth = 0.6; ctx.stroke();
+  }
+}
+function drawLight(ctx, C, st, time) {
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const sp = 0.85, speed = 2.4;
+  for (const tr of tracks) {
+    const p = clamp(st[tr.key] ?? 0, 0, 1); if (p < 0.004) continue;
+    const mid = proj(C, [...pointAt(tr, tr.len / 2), WG_H]); if (!mid) continue;
+    const lw = C.F * 0.32 / mid[2];
+    ctx.beginPath();
+    tr.pts.forEach((q, i) => { const s = proj(C, [q[0], q[1], WG_H]); if (s) i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); });
+    ctx.lineCap = 'round'; ctx.strokeStyle = `rgba(255,60,100,${0.16 * p})`; ctx.lineWidth = lw * 3.2; ctx.stroke();
+    ctx.strokeStyle = `rgba(255,120,150,${0.35 * p})`; ctx.lineWidth = lw * 0.9; ctx.stroke();
+    for (let s = (time * speed) % sp; s < tr.len; s += sp) {
+      const q = pointAt(tr, s), P = proj(C, [q[0], q[1], WG_H * 0.8]); if (!P) continue;
+      const r = C.F * 0.34 / P[2], g = ctx.createRadialGradient(P[0], P[1], 0, P[0], P[1], r);
+      g.addColorStop(0, `rgba(255,225,235,${0.85 * p})`); g.addColorStop(0.35, `rgba(255,70,110,${0.5 * p})`); g.addColorStop(1, 'rgba(255,40,90,0)');
+      ctx.fillStyle = g; ctx.fillRect(P[0] - r, P[1] - r, 2 * r, 2 * r);
+    }
+  }
+  ctx.restore();
+}
+function drawHeat(ctx, C, st, time) {
+  if (st.heat < 0.01) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const a = proj(C, [-HX, YA, CL_H + 0.12]), b = proj(C, [HX, YA, CL_H + 0.12]); if (!a || !b) { ctx.restore(); return; }
+  const lw = C.F * 0.9 / ((a[2] + b[2]) / 2), fl = 0.85 + 0.15 * Math.sin(time * 9);
+  const col = heatColor(st.heat);
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = `rgba(${col[0] | 0},${col[1] * 0.6 | 0},30,${0.22 * st.heat * fl})`; ctx.lineWidth = lw * 2.2;
+  ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+  ctx.strokeStyle = `rgba(255,${150 + 80 * st.heat | 0},80,${0.28 * st.heat * fl})`; ctx.lineWidth = lw * 0.7; ctx.stroke();
+  ctx.restore();
+}
+function label3D(ctx, C, p, text, color, bg) { const P = proj(C, p); if (P) tag(ctx, P[0], P[1], text, color, bg); }
+function draw3D(time) {
+  const { ctx, w, h } = fitCanvas(c3d); ctx.clearRect(0, 0, w, h);
+  const C = makeCam(w, h), op = opPoint(), t = trans(op.P);
+  const st = {
+    in0: 1, in1: 0, mmi1: 0.6, mmi2: 0.6, top: t.top, bot: t.bot, bar: t.bar, cross: t.cross,
+    mmiTop: t.top, mmiBot: t.bot, mmi2a: t.top * 0.5, mmi2b: t.bot * 0.5, mmi2c: t.top * 0.5, mmi2d: t.bot * 0.5,
+    heat: clamp(op.P / (3 * S.Ppi), 0, 1)
+  };
+  drawLayer(ctx, C, LAYERS[0], st, false);
+  drawLayer(ctx, C, LAYERS[1], st, false);
+  drawLight(ctx, C, st, time);
+  drawLayer(ctx, C, LAYERS[2], st, true);
+  drawLayer(ctx, C, LAYERS[3], st, false);
+  drawHeat(ctx, C, st, time);
+  // labels
+  label3D(ctx, C, [-12.6, Y0, 1.25], 'Laser in', '#ff8fa8');
+  label3D(ctx, C, [-6.5, 0, 0.95], 'MMI 1', '#c9d3de');
+  label3D(ctx, C, [6.5, 0, 0.95], 'MMI 2', '#c9d3de');
+  label3D(ctx, C, [0, -YA, 0.95], 'reference arm', '#8b98a9');
+  label3D(ctx, C, [0, 3.7, 1.15], `Heater R = ${fmtR(op.R)} · I = ${op.I.toFixed(3)} mA · P = ${f3(op.P)} mW`, '#ffcc66');
+  label3D(ctx, C, [12.65, Y0, 1.25], `BAR ${(t.bar * 100).toFixed(1)} %`, '#4aa8ff');
+  label3D(ctx, C, [12.65, -Y0, 1.25], `CROSS ${(t.cross * 100).toFixed(1)} %`, '#ff9548');
+  // phase dial
+  const cx = 48, cy = h - 50, R = 30;
+  ctx.fillStyle = 'rgba(10,14,20,0.75)'; ctx.beginPath(); ctx.arc(cx, cy, R + 10, 0, 2 * PI); ctx.fill();
+  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * PI); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,204,102,0.9)'; ctx.lineWidth = 4; ctx.beginPath();
+  const a0 = -S.theta0, a1 = -t.ph;
+  ctx.arc(cx, cy, R, a0, a1, a1 > a0 ? false : true); ctx.stroke();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(a1), cy + R * Math.sin(a1)); ctx.stroke();
+  ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(`φ = θ₀ + πP/Pπ = ${(t.ph / PI).toFixed(2)}π`, cx + R + 18, cy - 8);
+  ctx.fillStyle = '#8b98a9'; ctx.fillText(`heater adds ${(op.P / S.Ppi).toFixed(2)}π`, cx + R + 18, cy + 10);
+  ctx.fillStyle = 'rgba(139,152,169,0.8)'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillText('drag: rotate · wheel: zoom · double-click: reset', w - 10, 8);
+}
+// camera interaction
+let drag3 = null;
+c3d.addEventListener('pointerdown', e => { drag3 = { x: e.clientX, y: e.clientY }; c3d.setPointerCapture(e.pointerId); });
+c3d.addEventListener('pointermove', e => {
+  if (!drag3) return;
+  cam.yaw -= (e.clientX - drag3.x) * 0.008; cam.pitch = clamp(cam.pitch + (e.clientY - drag3.y) * 0.006, 0.12, 1.45);
+  drag3 = { x: e.clientX, y: e.clientY };
+});
+c3d.addEventListener('pointerup', () => drag3 = null);
+c3d.addEventListener('wheel', e => { e.preventDefault(); cam.dist = clamp(cam.dist * Math.exp(e.deltaY * 0.001), 12, 70); }, { passive: false });
+c3d.addEventListener('dblclick', () => Object.assign(cam, CAM0));
+
+/* ------------------------------------------------------------------ UI wiring */
+function updPlayBtn() { document.getElementById('btnPlay').textContent = S.playing ? '❚❚ Pause sweep' : '▶ Sweep current'; }
+document.getElementById('btnPlay').onclick = () => { S.playing = !S.playing; updPlayBtn(); };
+document.querySelectorAll('#segX button').forEach(b => b.onclick = () => { S.xmode = b.dataset.v; setSeg('segX', S.xmode); dirty = true; });
+document.querySelectorAll('#segY button').forEach(b => b.onclick = () => { S.ymode = b.dataset.v; setSeg('segY', S.ymode); dirty = true; });
+document.getElementById('chkBar').onchange = e => { S.showBar = e.target.checked; dirty = true; };
+document.getElementById('chkCross').onchange = e => { S.showCross = e.target.checked; dirty = true; };
+const num = (id, key, min) => document.getElementById(id).addEventListener('change', e => {
+  const v = parseFloat(e.target.value); if (isFinite(v) && v >= min) S[key] = v; else e.target.value = S[key];
+  if (key === 'Imax') S.I = Math.min(S.I, S.Imax);
+  syncUI();
+});
+num('nImax', 'Imax', 0.05); num('nVmax', 'Vmax', 0.05); num('nPax', 'Paxis', 0.05);
+document.getElementById('btnPauto').onclick = () => { const p = Math.max(Math.min(Preach(), 40 * S.Ppi), 2 * S.Ppi) * 1.08; S.Paxis = +p.toPrecision(2); syncUI(); };
+function preset(name) {
+  if (name === 'ideal') Object.assign(S, { Rk: 1.5, Ppi: 1.35, gamma: 0, theta0: 0, a1: 0, a2: 0 });
+  else Object.assign(S, { Rk: 1.5, Ppi: 1.35, gamma: 0.25 / 100, theta0: 0.6, a1: 0.08, a2: -0.05 });
+  syncUI();
+}
+document.getElementById('pIdeal').onclick = () => preset('ideal');
+document.getElementById('pFab').onclick = () => preset('fab');
+document.getElementById('pView').onclick = () => Object.assign(cam, CAM0);
+window.addEventListener('resize', () => dirty = true);
+
+/* ------------------------------------------------------------------ main loop */
+buildScene(); buildSliders();
+let last = performance.now(), tAnim = 0;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; tAnim += dt;
+  if (S.playing) { S.I += dt * S.Imax / 8; if (S.I > S.Imax) S.I = 0; syncSlider(SL[0]); dirty = true; }
+  draw3D(tAnim);
+  if (dirty) { drawPlot(); drawRPlot(); updateReadouts(); dirty = false; }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
