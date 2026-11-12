@@ -627,7 +627,7 @@ function buildScene() {
   LAYERS = [[], [], [], []]; tracks = [];
   const race = S.shape === 'race', Lc = race ? S.Lc : 0, Wd = 2 * S.R + Lc, Hd = 2 * S.R;
   const sc = Math.min(11 / Wd, 6.4 / Hd), Rs = S.R * sc, Ls = Lc / 2 * sc;
-  const busY = -Rs - GAP - WG_W, CX = Math.max(Ls + Rs + 4.2, 10), yTop = Rs + 2.6, yBot = busY - 2.2;
+  const busY = -Rs - GAP - WG_W, CX = Math.max(Ls + Rs + 4.2, 10), yTop = Rs + 3.2, yBot = busY - 2.2;
   G = { sc, Rs, Ls, busY, CX, yTop, yBot };
   aabb(0, -CX, CX, yBot, yTop, -0.8, 0, { k: 'sub' });
   // bus (split in input / output halves for lighting)
@@ -643,16 +643,18 @@ function buildScene() {
   // cladding
   aabb(2, -CX, CX, yBot, yTop, 0, CL_H, { k: 'clad' });
   // heater over the ring, away from the coupler
-  const s1 = Ls + 0.14 * PI * Rs, s2 = 3 * Ls + 1.3 * PI * Rs, nh = Math.max(16, Math.round((s2 - s1) / 0.35));
+  const s1 = Ls + (2 * PI / 3) * Rs, s2 = 3 * Ls + (4 * PI / 3) * Rs,   // symmetric arc on top: 30° → 150°
+        nh = Math.max(16, Math.round((s2 - s1) / 0.35));
   const hp = []; for (let i = 0; i <= nh; i++) hp.push(rp.at(s1 + (s2 - s1) * i / nh));
   for (let i = 0; i < nh; i++) addBox(3, hp[i], hp[i + 1], 0.5, CL_H, CL_H + 0.09, { k: 'heater' });
   G.hp = hp;
   // traces + pads
-  const e1 = hp[0], e2 = hp[nh], xp = Ls + Rs + 1.6;
-  aabb(3, e1[0] - 0.2, xp, e1[1] - 0.2, e1[1] + 0.2, CL_H, CL_H + 0.09, { k: 'metal' });
-  aabb(3, -xp, e2[0] + 0.2, e2[1] - 0.2, e2[1] + 0.2, CL_H, CL_H + 0.09, { k: 'metal' });
-  aabb(3, xp - 0.2, xp + 1.4, e1[1] - 0.7, e1[1] + 0.7, CL_H, CL_H + 0.13, { k: 'metal' });
-  aabb(3, -xp - 1.4, -xp + 0.2, e2[1] - 0.7, e2[1] + 0.7, CL_H, CL_H + 0.13, { k: 'metal' });
+  // traces go straight up from both heater ends to two pads placed symmetrically
+  const yp = Rs + 1.9;
+  for (const e of [hp[0], hp[nh]]) {
+    aabb(3, e[0] - 0.2, e[0] + 0.2, e[1] - 0.2, yp - 0.5, CL_H, CL_H + 0.09, { k: 'metal' });
+    aabb(3, e[0] - 0.7, e[0] + 0.7, yp - 0.5, yp + 0.5, CL_H, CL_H + 0.13, { k: 'metal' });
+  }
   // laser + PD
   aabb(3, -CX - 1.6, -CX - 0.3, busY - 0.45, busY + 0.45, -0.25, 0.55, { k: 'laser' });
   aabb(3, CX + 0.3, CX + 1.6, busY - 0.45, busY + 0.45, -0.25, 0.55, { k: 'pd' });
@@ -753,7 +755,7 @@ function draw3D(time) {
   label3D(ctx, C, [CX + 1, busY, 1.25], `THROUGH ${(q.T * 100).toFixed(1)} %`, '#4aa8ff');
   if (S.rho > 0) label3D(ctx, C, [-CX * 0.55, busY - 1.0, 0.6], `← reflected ${(q.Rr * 100).toFixed(1)} %`, '#d58cff');
   label3D(ctx, C, [0, 0, 0.7], S.shape === 'race' ? `R = ${f3(S.R)} µm · Lc = ${f3(S.Lc)} µm` : `R = ${f3(S.R)} µm`, '#c9d3de');
-  label3D(ctx, C, [0, Rs + 1.4, 0.9], `heater · I = ${S.I.toFixed(2)} mA · P = ${f3(Pel(S.I))} mW`, '#ffcc66');
+  label3D(ctx, C, [0, Rs + 1.9, 0.9], `heater · I = ${S.I.toFixed(2)} mA · P = ${f3(Pel(S.I))} mW`, '#ffcc66');
   label3D(ctx, C, [0, busY - 0.9, 0.5], `coupler r = ${S.r.toFixed(4)}`, '#8b98a9');
   if (S.rho > 0) { const p = G.rp.at(G.sScat); label3D(ctx, C, [p[0] - 2.2, p[1], 0.9], `backscatter ρ = ${S.rho.toFixed(3)}`, '#bfe9ff'); }
   // phase dial: detuning from resonance
