@@ -23,7 +23,32 @@ main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;pad
 #c3d{background:radial-gradient(ellipse at 50% 35%,#18212d 0%,#0d1218 75%);cursor:grab;touch-action:none}
 #c3d:active{cursor:grabbing}
 #cPlot{background:var(--card2);cursor:crosshair;touch-action:none}
-#cR{background:var(--card2);cursor:pointer;height:260px;width:100%;display:block;border-radius:8px;touch-action:none}
+#cPh{background:var(--card2);height:250px;width:100%;display:block;border-radius:8px}
+.cfgbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:4px 20px 2px;font-size:13px;color:var(--muted)}
+.tabs{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.tabs button{background:transparent;color:var(--muted);border:0;padding:8px 16px;font:inherit;font-size:13.5px;cursor:pointer}
+.tabs button+button{border-left:1px solid var(--line)}
+.tabs button.on{background:#2d2615;color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
+.hide{display:none!important}
+.theory{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
+.th{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
+.th.wide{grid-column:1/-1}
+.th h3{margin:0 0 8px;font-size:14px;color:var(--accent)}
+.th p{margin:6px 0;color:#c9d3de;font-size:13px}
+.eq{display:block;text-align:center;line-height:2.3;margin:8px 0;font:15px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 3px;line-height:1.25}
+.frac>span:first-child{border-bottom:1px solid #cfd8e3;padding:0 4px 2px}
+.frac>span:last-child{padding:2px 4px 0}
+i.v{font-family:"Cambria Math","Times New Roman",serif;font-style:italic}
+.live{font:600 12.5px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);background:#1f1a0e;border:1px solid #4a3d1c;border-radius:5px;padding:1px 6px;white-space:nowrap}
+.smat{display:inline-grid;grid-template-columns:auto auto;gap:2px 14px;padding:2px 9px;vertical-align:middle;border-left:1.5px solid #cfd8e3;border-right:1.5px solid #cfd8e3;border-radius:7px;line-height:1.7;text-align:center}
+.mrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;margin:10px 0 4px}
+.mblk{display:inline-flex;flex-direction:column;align-items:center;gap:5px}
+.mat{display:inline-grid;grid-template-columns:auto auto;gap:4px 14px;padding:6px 10px;border-left:2px solid #cfd8e3;border-right:2px solid #cfd8e3;border-radius:7px;font:12.5px ui-monospace,SFMono-Regular,Consolas,monospace;color:#eef3f8;text-align:right}
+.mat.vec{grid-template-columns:auto}
+.mat .ang{color:var(--muted)}
+.mname{font-size:12px;color:var(--accent)}
+.mop{color:var(--muted);font-size:18px}
 .toolbar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-bottom:8px;font-size:13px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{background:transparent;color:var(--muted);border:0;padding:4px 10px;font:inherit;cursor:pointer}
@@ -52,8 +77,8 @@ input[type=number]{width:74px}
 details{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:12px}
 details summary{cursor:pointer;color:var(--accent);font-weight:600}
 details p,details li{color:#c9d3de;font-size:13px}
-code,.eq{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12.5px;background:#0b0f14;border:1px solid var(--line);border-radius:5px;padding:1px 5px}
-.eq{display:block;padding:6px 10px;margin:6px 0;white-space:pre-wrap}
+
+
 .span2{grid-column:1/-1}
 a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1c;background:#1f1a0e;border-radius:8px;padding:3px 10px;margin-right:4px}a.back:hover{background:#2d2615}
 </style>
@@ -61,9 +86,14 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
 <body>
 <header>
   <a class="back" href="../index.html">← Component catalog</a>
-  <h1>Mach–Zehnder Interferometer · Thermo-optic phase shifter</h1>
-  <span class="sub">Theoretical model of the MZI and its thermo-optic phase shifter. Part of the Programmable Photonics interactive lab.</span>
+  <h1>Mach–Zehnder interferometer · tunable basic unit</h1>
+  <span class="sub">Theoretical transfer-matrix model of the MZI with thermo-optic phase shifters. Part of the Programmable Photonics interactive lab.</span>
 </header>
+<nav class="cfgbar">
+  <span>Configuration</span>
+  <div class="tabs" id="segCfg"><button data-v="single" class="on">1 internal phase shifter</button><button data-v="dual">2 internal phase shifters</button><button data-v="intext">Internal + external phase shifter</button></div>
+  <span id="cfgNote"></span>
+</nav>
 
 <main>
   <!-- 3D VIEW -->
@@ -80,8 +110,8 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
         <button data-v="I" class="on">Current I</button><button data-v="I2">I²</button><button data-v="V">Voltage V</button><button data-v="P">Power P</button>
       </div>
       <div class="seg" id="segY"><button data-v="lin" class="on">Linear</button><button data-v="db">dB</button></div>
-      <label><input type="checkbox" id="chkBar" checked> <span style="color:var(--bar)">Bar</span></label>
-      <label><input type="checkbox" id="chkCross" checked> <span style="color:var(--cross)">Cross</span></label>
+      <label><input type="checkbox" id="chkBar" checked> <span style="color:var(--bar)">Out 1 (bar)</span></label>
+      <label><input type="checkbox" id="chkCross" checked> <span style="color:var(--cross)">Out 2 (cross)</span></label>
     </div>
     <canvas id="cPlot"></canvas>
   </section>
@@ -98,8 +128,13 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
     <div class="groups">
       <div class="group" data-group="drive"><h3>Drive</h3>
         <div class="inline"><button class="btn" id="btnPlay">▶ Sweep current</button><span>Tip: click or drag on the plot to set the operating point.</span></div>
+        <div class="inline" id="sweepWrap">Plotted / swept heater <span class="seg" id="segSw"><button data-v="1" class="on">Heater 1</button><button data-v="2">Heater 2</button></span></div>
       </div>
-      <div class="group" data-group="heater"><h3>Heater (phase shifter)</h3></div>
+      <div class="group" data-group="heater"><h3>Heaters (identical phase shifters)</h3></div>
+      <div class="group" data-group="input"><h3>Optical input &amp; external phase shifter</h3>
+        <div class="inline">Input <span class="seg" id="segIn"><button data-v="one" class="on">Upper port only</button><button data-v="both">Both ports (50/50)</button></span></div>
+        <div class="inline" id="extWrap">External phase shifter at <span class="seg" id="segExt"><button data-v="in">Input</button><button data-v="out" class="on">Output</button></span></div>
+      </div>
       <div class="group" data-group="device"><h3>Interferometer imperfections</h3></div>
       <div class="group"><h3>Current source limits &amp; axes</h3>
         <div class="inline">Imax <input type="number" id="nImax" min="0.1" max="100" step="0.1" value="2"> mA</div>
@@ -115,8 +150,55 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
     <h2>Operating point</h2>
     <div class="readouts" id="ro"></div>
     <div id="warn"></div>
-    <h2>How Iπ and Vπ depend on R (for a fixed Pπ)</h2>
-    <canvas id="cR"></canvas>
+    <h2>Output phases</h2>
+    <canvas id="cPh"></canvas>
+  </section>
+
+  <!-- THEORY -->
+  <section class="card span2">
+    <h2>Theory</h2>
+    <div class="theory">
+      <div class="th wide">
+        <h3>1 · Transfer matrix as a product of blocks</h3>
+        <p>Each element of the circuit is a 2×2 matrix acting on the field amplitudes of the two waveguides, <i class="v">E</i> = (<i class="v">E</i><sub>upper</sub>, <i class="v">E</i><sub>lower</sub>)<sup>T</sup>. The MZI matrix is the product of its blocks, written right to left in the order the light meets them:</p>
+        <div class="eq" id="thEq"></div>
+        <p>Current numerical values, as magnitude∠phase:</p>
+        <div class="mrow" id="thNum"></div>
+        <div class="mrow" id="thVec"></div>
+      </div>
+      <div class="th">
+        <h3>2 · MMI coupler with imbalance</h3>
+        <p>An ideal 2×2 MMI splits the power 50:50 and adds a 90° phase to the crossed path. Fabrication errors in its width or length shift the self-imaging point and unbalance the split. This is modelled with an angle error α:</p>
+        <div class="eq"><i class="v">M</i><sub>MMI</sub>(α) = <span class="smat"><span>sin(π/4 + α)</span><span>j cos(π/4 + α)</span><span>j cos(π/4 + α)</span><span>sin(π/4 + α)</span></span></div>
+        <div class="eq">α = 0 &nbsp;→&nbsp; <i class="v">M</i><sub>MMI</sub> = <span class="frac"><span>1</span><span>√2</span></span><span class="smat"><span>1</span><span>j</span><span>j</span><span>1</span></span></div>
+        <p>The matrix stays unitary for any α (the coupler remains lossless), and only the power ratio changes: sin²(π/4 + α) : cos²(π/4 + α). Current values: <span class="live" id="thSplit"></span></p>
+        <p>With identical couplers (α₁ = α₂), the cross port still reaches a perfect zero, but the bar port has a finite extinction ratio. With different errors, both ports lose extinction.</p>
+      </div>
+      <div class="th">
+        <h3>3 · Phase shifters</h3>
+        <p>A phase shifter is a diagonal matrix. Depending on the configuration:</p>
+        <div class="eq">1 internal: &nbsp;<i class="v">P</i>(φ₁) = <span class="smat"><span>e<sup>jφ₁</sup></span><span>0</span><span>0</span><span>1</span></span></div>
+        <div class="eq">2 internal: &nbsp;<i class="v">P</i>(φ₁, φ₂) = <span class="smat"><span>e<sup>jφ₁</sup></span><span>0</span><span>0</span><span>e<sup>jφ₂</sup></span></span> = e<sup>j(φ₁+φ₂)/2</sup><span class="smat"><span>e<sup>jΔφ/2</sup></span><span>0</span><span>0</span><span>e<sup>−jΔφ/2</sup></span></span></div>
+        <div class="eq">external: &nbsp;<i class="v">P</i><sub>ext</sub>(φ<sub>ext</sub>) = <span class="smat"><span>e<sup>jφ<sub>ext</sub></sup></span><span>0</span><span>0</span><span>1</span></span></div>
+        <p>Thermo-optic phase (all heaters identical; θ₀ is the fabrication offset of the internal upper arm):</p>
+        <div class="eq">φ<sub>1</sub> = θ₀ + π<span class="frac"><span><i class="v">P</i><sub>1</sub></span><span><i class="v">P</i><sub>π</sub></span></span>, &nbsp; φ<sub>2</sub> = π<span class="frac"><span><i class="v">P</i><sub>2</sub></span><span><i class="v">P</i><sub>π</sub></span></span>, &nbsp; <i class="v">P</i> = <i class="v">I</i>²<i class="v">R</i></div>
+      </div>
+      <div class="th">
+        <h3>4 · Ideal closed forms (α₁ = α₂ = 0)</h3>
+        <p>1 internal phase shifter:</p>
+        <div class="eq"><i class="v">T</i> = j e<sup>jφ/2</sup><span class="smat"><span>sin(φ/2)</span><span>cos(φ/2)</span><span>cos(φ/2)</span><span>−sin(φ/2)</span></span></div>
+        <p>2 internal phase shifters. Only the difference Δφ = φ₁ − φ₂ sets the split; the common part is a global phase:</p>
+        <div class="eq"><i class="v">T</i> = j e<sup>j(φ₁+φ₂)/2</sup><span class="smat"><span>sin(Δφ/2)</span><span>cos(Δφ/2)</span><span>cos(Δφ/2)</span><span>−sin(Δφ/2)</span></span></div>
+        <p>Internal θ plus external φ at the input: this is the tunable basic unit used in meshes.</p>
+        <div class="eq"><i class="v">T</i>(θ, φ) = j e<sup>jθ/2</sup><span class="smat"><span>e<sup>jφ</sup> sin(θ/2)</span><span>cos(θ/2)</span><span>e<sup>jφ</sup> cos(θ/2)</span><span>−sin(θ/2)</span></span></div>
+      </div>
+      <div class="th">
+        <h3>5 · Why use two phase shifters?</h3>
+        <p><b>Two internal phase shifters (dual drive).</b> Any Δφ in [−π, π] is reached by heating only one arm. Each heater then needs at most Pπ instead of 2Pπ. Driving both arms also allows push–pull operation and compensating θ₀ in either direction.</p>
+        <p><b>Internal + external.</b> θ sets the splitting ratio and φ sets the relative phase between the ports. Together they give full control of the 2×2 element, which is what programmable meshes (Reck, Clements, recirculating meshes) need to interfere light coherently with other units.</p>
+        <p>With light in the upper port only, an external phase shifter at the input just adds a global phase, so the powers don't change. Select “Both ports” to see its effect. An external phase shifter at the output never changes the powers; it shifts the relative output phase (lower plot on the right).</p>
+      </div>
+    </div>
   </section>
 </main>
 
@@ -125,7 +207,7 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
 
 /* ------------------------------------------------------------------ state */
 const S = {
-  I: 0.6, Rk: 1.5, Ppi: 1.35, gamma: 0, theta0: 0, a1: 0, a2: 0,
+  I: 0.6, I2: 0, cfg: 'single', sweep: 1, inp: 'one', psi: 0, extPos: 'out', Rk: 1.5, Ppi: 1.35, gamma: 0, theta0: 0, a1: 0, a2: 0,
   Imax: 2, Vmax: 5, Paxis: 5,
   xmode: 'I', ymode: 'lin', showBar: true, showCross: true,   playing: false, hover: null
 };
@@ -142,22 +224,40 @@ const Phys = {
   R(P) { return S.Rk * (1 + S.gamma * P); }
 };
 function mmi(a) { return [Math.sin(PI / 4 + a), Math.cos(PI / 4 + a)]; }
-function trans(P) {
-  const ph = S.theta0 + PI * P / S.Ppi;
-  const [s1, c1] = mmi(S.a1), [s2, c2] = mmi(S.a2), cp = Math.cos(ph);
-  const B = 2 * s1 * s2 * c1 * c2;
-  return {
-    ph,
-    bar: s1 * s1 * s2 * s2 + c1 * c1 * c2 * c2 - B * cp,
-    cross: c2 * c2 * s1 * s1 + s2 * s2 * c1 * c1 + B * cp,
-    top: s1 * s1, bot: c1 * c1
-  };
+/* complex numbers as [re, im]; 2×2 matrices as [[c, c], [c, c]] */
+const cmul = (a, b) => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]], cadd = (a, b) => [a[0] + b[0], a[1] + b[1]];
+const cexp = p => [Math.cos(p), Math.sin(p)], abs2 = c => c[0] * c[0] + c[1] * c[1], carg = c => Math.atan2(c[1], c[0]);
+const mm = (A, B) => [0, 1].map(i => [0, 1].map(j => cadd(cmul(A[i][0], B[0][j]), cmul(A[i][1], B[1][j]))));
+const mv = (A, v) => [cadd(cmul(A[0][0], v[0]), cmul(A[0][1], v[1])), cadd(cmul(A[1][0], v[0]), cmul(A[1][1], v[1]))];
+const diag = (p, q) => [[cexp(p), [0, 0]], [[0, 0], cexp(q)]], EYE = diag(0, 0);
+const wrapPi = x => ((x + PI) % (2 * PI) + 2 * PI) % (2 * PI) - PI;
+function mmiM(a) { const [s, c] = mmi(a); return [[[s, 0], [0, c]], [[0, c], [s, 0]]]; }
+function blocks(P1, P2) {
+  const p1 = S.theta0 + PI * P1 / S.Ppi, p2 = PI * P2 / S.Ppi;
+  const M1 = mmiM(S.a1), M2 = mmiM(S.a2);
+  const Pint = S.cfg === 'dual' ? diag(p1, p2) : diag(p1, 0), Pext = S.cfg === 'intext' ? diag(p2, 0) : EYE;
+  let T;
+  if (S.cfg === 'intext' && S.extPos === 'in') T = mm(M2, mm(Pint, mm(M1, Pext)));
+  else if (S.cfg === 'intext') T = mm(Pext, mm(M2, mm(Pint, M1)));
+  else T = mm(M2, mm(Pint, M1));
+  return { M1, M2, Pint, Pext, T, p1, p2 };
 }
-function extinction() {
-  const [s1, c1] = mmi(S.a1), [s2, c2] = mmi(S.a2);
-  const B = 2 * s1 * s2 * c1 * c2, Ab = s1 * s1 * s2 * s2 + c1 * c1 * c2 * c2, Ac = c2 * c2 * s1 * s1 + s2 * s2 * c1 * c1;
-  const er = (A) => (A - B) < 1e-7 ? Infinity : 10 * Math.log10((A + B) / (A - B));
-  return { bar: er(Ab), cross: er(Ac) };
+function Ein() { return S.inp === 'one' ? [[1, 0], [0, 0]] : [[Math.SQRT1_2, 0], cmul([Math.SQRT1_2, 0], cexp(S.psi))]; }
+function fields(P1, P2) {
+  const B = blocks(P1, P2), e = Ein(), E = mv(B.T, e);
+  const a = mv(B.M1, S.cfg === 'intext' && S.extPos === 'in' ? mv(B.Pext, e) : e);
+  return Object.assign(B, { e, E, bar: abs2(E[0]), cross: abs2(E[1]), top: abs2(a[0]), bot: abs2(a[1]), in0: abs2(e[0]), in1: abs2(e[1]), o1: carg(E[0]), o2: carg(E[1]) });
+}
+// P = electrical power of the plotted/swept heater; the other heater stays at its slider value
+function trans(P) {
+  const P1 = S.sweep === 2 ? opH(1).P : P, P2 = S.cfg === 'single' ? 0 : (S.sweep === 2 ? P : opH(2).P);
+  const f = fields(P1, P2); f.ph = S.cfg === 'dual' ? f.p1 - f.p2 : f.p1; return f;
+}
+function extinction() {   // scan the internal phase over 2π with everything else fixed
+  const P2 = S.cfg === 'single' ? 0 : opH(2).P; let b0 = 1e9, b1 = 0, c0 = 1e9, c1 = 0;
+  for (let k = 0; k < 720; k++) { const f = fields(2 * S.Ppi * k / 720, P2); b0 = Math.min(b0, f.bar); b1 = Math.max(b1, f.bar); c0 = Math.min(c0, f.cross); c1 = Math.max(c1, f.cross); }
+  const er = (lo, hi) => lo < 1e-9 * hi ? Infinity : 10 * Math.log10(hi / lo);
+  return { bar: er(b0, b1), cross: er(c0, c1) };
 }
 function reachable(P) {
   if (!isFinite(P)) return false;
@@ -167,14 +267,15 @@ function Preach() {
   const pI = Phys.PfromI(S.Imax), pV = Phys.PfromV(S.Vmax);
   return Math.min(isFinite(pI) ? pI : Infinity, pV);
 }
-function opPoint() {
-  let I = clamp(S.I, 0, S.Imax), limited = null;
+function opPoint(Iin = S.I) {
+  let I = clamp(Iin, 0, S.Imax), limited = null;
   const Icomp = Phys.IfromP(Phys.PfromV(S.Vmax));
   if (I > Icomp) { I = Icomp; limited = 'V'; }
   let P = Phys.PfromI(I);
   if (!isFinite(P)) { I = Math.sqrt(0.94 / (S.gamma * S.Rk)); P = Phys.PfromI(I); limited = 'runaway'; }
   return { I, P, V: Phys.VfromP(P), R: Phys.R(P), limited };
 }
+const opH = n => opPoint(n === 2 ? S.I2 : S.I), opSw = () => opH(S.sweep);
 const XM = {
   I:  { label: 'Heater current I (mA)', range: () => [0, S.Imax], P: x => Phys.PfromI(x), x: P => Phys.IfromP(P), d: (i, v, p) => i, unit: 'mA', pi: 'Iπ' },
   I2: { label: 'Squared current I² (mA²)', range: () => [0, S.Imax * S.Imax], P: x => Phys.PfromI(Math.sqrt(Math.max(x, 0))), x: P => Phys.IfromP(P) ** 2, d: (i, v, p) => i * i, unit: 'mA²', pi: 'Iπ²' },
@@ -189,20 +290,24 @@ function dB(p) { return 10 * Math.log10(Math.max(p, 1e-6)); }
 
 /* ------------------------------------------------------------------ sliders */
 const SL = [
-  { id: 'I', g: 'drive', lab: 'Current I', min: 0, max: () => S.Imax, step: 0.0005, get: () => S.I, set: v => S.I = v, fmt: v => v.toFixed(3) + ' mA' },
+  { id: 'I', g: 'drive', lab: 'Heater 1 current I₁ (internal, upper arm)', min: 0, max: () => S.Imax, step: 0.0005, get: () => S.I, set: v => S.I = v, fmt: v => v.toFixed(3) + ' mA' },
   { id: 'R', g: 'heater', lab: 'Heater resistance R', log: true, min: 20, max: 50000, get: () => S.Rk * 1000, set: v => S.Rk = v / 1000, fmt: v => fmtR(v / 1000) },
   { id: 'Ppi', g: 'heater', lab: 'Pπ – power for a π shift (thermal efficiency)', log: true, min: 0.2, max: 60, get: () => S.Ppi, set: v => S.Ppi = v, fmt: v => f3(v) + ' mW' },
   { id: 'gamma', g: 'heater', lab: 'R temperature coefficient γ', min: 0, max: 5, step: 0.01, get: () => S.gamma * 100, set: v => S.gamma = v / 100, fmt: v => v.toFixed(2) + ' %/mW' },
   { id: 'theta0', g: 'device', lab: 'Phase offset θ₀ (fabrication)', min: -PI, max: PI, step: 0.001, get: () => S.theta0, set: v => S.theta0 = v, fmt: v => v.toFixed(3) + ' rad (' + (v / PI).toFixed(2) + 'π)' },
   { id: 'a1', g: 'device', lab: 'MMI 1 imbalance α₁', min: -0.3, max: 0.3, step: 0.001, get: () => S.a1, set: v => S.a1 = v, fmt: v => split(v) },
-  { id: 'a2', g: 'device', lab: 'MMI 2 imbalance α₂', min: -0.3, max: 0.3, step: 0.001, get: () => S.a2, set: v => S.a2 = v, fmt: v => split(v) }
+  { id: 'a2', g: 'device', lab: 'MMI 2 imbalance α₂', min: -0.3, max: 0.3, step: 0.001, get: () => S.a2, set: v => S.a2 = v, fmt: v => split(v) },
+  { id: 'I2', g: 'drive', lab: 'Heater 2 current I₂', min: 0, max: () => S.Imax, step: 0.0005, get: () => S.I2, set: v => S.I2 = v, fmt: v => v.toFixed(3) + ' mA' },
+  { id: 'psi', g: 'input', lab: 'Relative phase of the lower input ψ', min: -PI, max: PI, step: 0.001, get: () => S.psi, set: v => S.psi = v, fmt: v => (v / PI).toFixed(3) + 'π' }
 ];
+const SLid = id => SL.find(c => c.id === id);
+function setSw(v) { if (S.sweep === 2) { S.I2 = v; syncSlider(SLid('I2')); } else { S.I = v; syncSlider(SL[0]); } }
 function split(a) { const s = Math.sin(PI / 4 + a) ** 2 * 100; return a.toFixed(3) + ' rad · ' + s.toFixed(1) + ':' + (100 - s).toFixed(1); }
 const LOGN = 1000;
 function buildSliders() {
   for (const c of SL) {
     const host = document.querySelector(`[data-group="${c.g}"]`);
-    const row = document.createElement('div'); row.className = 'row';
+    const row = document.createElement('div'); row.className = 'row'; row.id = 'row_' + c.id;
     row.innerHTML = `<span class="lab">${c.lab}</span><span class="val" id="o_${c.id}"></span><input type="range" id="s_${c.id}">`;
     host.appendChild(row);
     const s = row.querySelector('input');
@@ -211,7 +316,7 @@ function buildSliders() {
     s.addEventListener('input', () => {
       const u = +s.value;
       c.set(c.log ? c.min * Math.pow(c.max / c.min, u / LOGN) : u);
-      if (c.id === 'I') S.playing = false, updPlayBtn();
+      if (c.id === 'I' || c.id === 'I2') S.playing = false, updPlayBtn();
       syncOut(c); dirty = true;
     });
   }
@@ -230,6 +335,11 @@ function syncUI() {
   document.getElementById('nVmax').value = S.Vmax;
   document.getElementById('nPax').value = +S.Paxis.toFixed(2);
   setSeg('segX', S.xmode); setSeg('segY', S.ymode);
+  setSeg('segCfg', S.cfg); setSeg('segSw', String(S.sweep)); setSeg('segIn', S.inp); setSeg('segExt', S.extPos);
+  const vis = (id, on) => document.getElementById(id).classList.toggle('hide', !on);
+  vis('row_I2', S.cfg !== 'single'); vis('sweepWrap', S.cfg !== 'single'); vis('extWrap', S.cfg === 'intext'); vis('row_psi', S.inp === 'both');
+  document.querySelector('#row_I2 .lab').textContent = S.cfg === 'dual' ? 'Heater 2 current I₂ (internal, lower arm)' : 'Heater 2 current I₂ (external, upper ' + (S.extPos === 'in' ? 'input)' : 'output)');
+  document.getElementById('cfgNote').textContent = S.cfg === 'single' ? 'Classic MZI: one heater on the upper arm.' : S.cfg === 'dual' ? 'Dual drive: one heater per arm, only Δφ = φ₁ − φ₂ matters for the powers.' : 'Tunable basic unit: θ (internal) sets the split, φ (external) sets the relative phase.';
   dirty = true;
 }
 function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
@@ -337,7 +447,7 @@ function drawPlot() {
   }
   // ---- Pπ label
   // ---- operating point
-  const op = opPoint(), xo = mode.x(op.P), t = trans(op.P);
+  const op = opSw(), xo = mode.x(op.P), t = trans(op.P);
   if (xo >= x0 && xo <= x1) {
     const px = X(xo);
     ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.2;
@@ -354,8 +464,8 @@ function drawPlot() {
       ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(S.hover.x, m.t); ctx.lineTo(S.hover.x, m.t + ph); ctx.stroke();
       const lines = [
         `I = ${f3(Phys.IfromP(P))} mA   V = ${f3(Phys.VfromP(P))} V   P = ${f3(P)} mW`,
-        `Δφ heater = ${(P / S.Ppi).toFixed(2)}π   φ = ${(th.ph / PI).toFixed(2)}π`,
-        `Bar ${(th.bar * 100).toFixed(1)} % (${dB(th.bar).toFixed(1)} dB)   Cross ${(th.cross * 100).toFixed(1)} % (${dB(th.cross).toFixed(1)} dB)`
+        `heater adds ${(P / S.Ppi).toFixed(2)}π   ${S.cfg === 'dual' ? 'Δφ' : 'φ₁'} = ${(th.ph / PI).toFixed(2)}π`,
+        `Out 1 ${(th.bar * 100).toFixed(1)} % (${dB(th.bar).toFixed(1)} dB)   Out 2 ${(th.cross * 100).toFixed(1)} % (${dB(th.cross).toFixed(1)} dB)`
       ];
       ctx.font = FONT; const bw = Math.max(...lines.map(l => ctx.measureText(l).width)) + 14, bh = 16 * lines.length + 8;
       let bx = S.hover.x + 12, by = S.hover.y + 12;
@@ -387,15 +497,15 @@ function drawPlot() {
   ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
   for (const t of yt) ctx.fillText(lin ? t.toFixed(1) : t, m.l - 6, Y(t));
   ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-  ctx.fillText(mode.label, m.l + pw / 2, h - 8);
+  ctx.fillText(S.cfg === 'single' ? mode.label : `Heater ${S.sweep} · ` + mode.label.replace(/^Heater /, ''), m.l + pw / 2, h - 8);
   ctx.save(); ctx.translate(15, m.t + ph / 2); ctx.rotate(-PI / 2);
   ctx.fillText(lin ? 'Normalized optical transmission' : 'Optical transmission (dB)', 0, 0); ctx.restore();
   // ---- legend
   let lx = m.l; const ly = 16; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
   const leg = (draw, text) => { draw(lx, ly); ctx.fillStyle = '#c9d3de'; ctx.fillText(text, lx + 22, ly); lx += 30 + ctx.measureText(text).width; };
   const lineSw = c => (x, y) => { ctx.strokeStyle = c; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 16, y); ctx.stroke(); };
-  if (S.showBar) leg(lineSw('#4aa8ff'), 'Bar |M₀₀|²');
-  if (S.showCross) leg(lineSw('#ff9548'), 'Cross |M₁₀|²');
+  if (S.showBar) leg(lineSw('#4aa8ff'), 'Out 1 (bar) |E₁|²');
+  if (S.showCross) leg(lineSw('#ff9548'), 'Out 2 (cross) |E₂|²');
   leg((x, y) => { ctx.fillStyle = 'rgba(255,204,102,0.35)'; ctx.fillRect(x, y - 7, 16, 14); }, 'Pπ bands (Δφ = π)');
 }
 function plotSetI(px) {
@@ -403,8 +513,7 @@ function plotSetI(px) {
   const { m, pw, x0, x1 } = plotGeom, mode = XM[S.xmode];
   const xv = clamp(x0 + (px - m.l) / pw * (x1 - x0), x0, x1), P = mode.P(xv);
   if (!isFinite(P)) return;
-  S.I = clamp(Phys.IfromP(P), 0, S.Imax); S.playing = false; updPlayBtn();
-  syncSlider(SL[0]); dirty = true;
+  setSw(clamp(Phys.IfromP(P), 0, S.Imax)); S.playing = false; updPlayBtn(); dirty = true;
 }
 let plotDrag = false;
 cPlot.addEventListener('pointerdown', e => { plotDrag = true; cPlot.setPointerCapture(e.pointerId); plotSetI(e.offsetX); });
@@ -412,103 +521,77 @@ cPlot.addEventListener('pointermove', e => { S.hover = { x: e.offsetX, y: e.offs
 cPlot.addEventListener('pointerup', () => plotDrag = false);
 cPlot.addEventListener('pointerleave', () => { S.hover = null; dirty = true; });
 
-/* ------------------------------------------------------------------ R PLOT (Iπ, Vπ vs R) */
-const cR = document.getElementById('cR');
-let rGeom = null;
-function drawRPlot() {
-  const { ctx, w, h } = fitCanvas(cR); ctx.clearRect(0, 0, w, h);
-  const m = { l: 52, r: 16, t: 30, b: 38 }, pw = w - m.l - m.r, ph = h - m.t - m.b;
-  if (pw < 60 || ph < 40) return;
-  const lx0 = 1, lx1 = 5, ly0 = -2, ly1 = 2.3;
-  const X = lr => m.l + (lr - lx0) / (lx1 - lx0) * pw, Y = ly => m.t + (1 - (ly - ly0) / (ly1 - ly0)) * ph;
-  rGeom = { m, pw, lx0, lx1 };
+/* ------------------------------------------------------------------ OUTPUT PHASE PLOT */
+const cPh = document.getElementById('cPh');
+function drawPh() {
+  const { ctx, w, h } = fitCanvas(cPh); ctx.clearRect(0, 0, w, h);
+  const m = { l: 56, r: 16, t: 28, b: 38 }, pw = w - m.l - m.r, ph = h - m.t - m.b; if (pw < 60 || ph < 40) return;
+  const mode = XM[S.xmode], [x0, x1] = mode.range(), y0 = -PI * 1.08, y1 = PI * 1.08;
+  const X = v => m.l + (v - x0) / (x1 - x0) * pw, Y = v => m.t + (1 - (v - y0) / (y1 - y0)) * ph;
   ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
   ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
-  const req = (Rk, Pt) => { const f = 1 + S.gamma * Pt, I = Math.sqrt(Pt / (Rk * f)); return [I, I * Rk * f]; };
-  // feasibility shading
-  const NS = 300;
-  for (let i = 0; i < NS; i++) {
-    const lr = lx0 + (lx1 - lx0) * (i + 0.5) / NS, Rk = Math.pow(10, lr) / 1000;
-    const [I1, V1] = req(Rk, S.Ppi), [I2, V2] = req(Rk, 2 * S.Ppi);
-    const ok1 = I1 <= S.Imax && V1 <= S.Vmax, ok2 = I2 <= S.Imax && V2 <= S.Vmax;
-    if (ok1) { ctx.fillStyle = ok2 ? 'rgba(95,211,141,0.20)' : 'rgba(95,211,141,0.09)'; ctx.fillRect(X(lx0 + (lx1 - lx0) * i / NS), m.t, pw / NS + 0.6, ph); }
-  }
-  // grid
-  ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1;
-  for (let d = lx0; d <= lx1; d++) for (let k = 1; k < 10; k++) { const lr = d + Math.log10(k); if (lr > lx1) break; ctx.globalAlpha = k === 1 ? 1 : 0.35; ctx.beginPath(); ctx.moveTo(X(lr), m.t); ctx.lineTo(X(lr), m.t + ph); ctx.stroke(); }
-  for (let d = -2; d <= 2; d++) for (let k = 1; k < 10; k++) { const ly = d + Math.log10(k); if (ly > ly1) break; ctx.globalAlpha = k === 1 ? 1 : 0.35; ctx.beginPath(); ctx.moveTo(m.l, Y(ly)); ctx.lineTo(m.l + pw, Y(ly)); ctx.stroke(); }
-  ctx.globalAlpha = 1;
-  // limits
-  const hline = (v, col) => { if (v <= 0) return; const y = Y(Math.log10(v)); ctx.strokeStyle = col; ctx.setLineDash([6, 4]); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(m.l, y); ctx.lineTo(m.l + pw, y); ctx.stroke(); ctx.setLineDash([]); };
-  hline(S.Imax, 'rgba(199,146,234,0.8)'); hline(S.Vmax, 'rgba(255,209,102,0.8)');
-  // curves
-  const curve = (which, mult, col, dash) => {
-    ctx.beginPath();
-    for (let i = 0; i <= 200; i++) { const lr = lx0 + (lx1 - lx0) * i / 200, Rk = Math.pow(10, lr) / 1000, r = req(Rk, mult * S.Ppi)[which]; const y = Y(Math.log10(r)); i ? ctx.lineTo(X(lr), y) : ctx.moveTo(X(lr), y); }
-    ctx.strokeStyle = col; ctx.lineWidth = dash ? 1.4 : 2.2; ctx.setLineDash(dash ? [5, 4] : []); ctx.stroke(); ctx.setLineDash([]);
-  };
-  curve(0, 2, '#c792ea', true); curve(1, 2, '#ffd166', true);
-  curve(0, 1, '#c792ea', false); curve(1, 1, '#ffd166', false);
-  // current R
-  const lrNow = Math.log10(S.Rk * 1000), [In, Vn] = req(S.Rk, S.Ppi);
-  if (lrNow >= lx0 && lrNow <= lx1) {
-    const px = X(lrNow);
-    ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(px, m.t); ctx.lineTo(px, m.t + ph); ctx.stroke();
-    const dot = (v, col) => { ctx.beginPath(); ctx.arc(px, Y(Math.log10(v)), 4.5, 0, 2 * PI); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.stroke(); };
-    dot(In, '#c792ea'); dot(Vn, '#ffd166');
-    const right = px < m.l + pw - 120;
-    let yI = Y(Math.log10(In)), yV = Y(Math.log10(Vn));
-    if (Math.abs(yI - yV) < 22) { const mid = (yI + yV) / 2, up = Vn >= In; yV = mid + (up ? -12 : 12); yI = mid + (up ? 12 : -12); }
-    tag(ctx, px + (right ? 8 : -8), yI, `Iπ = ${f3(In)} mA`, '#c792ea', 'rgba(12,16,22,0.85)', right ? 'left' : 'right');
-    tag(ctx, px + (right ? 8 : -8), yV, `Vπ = ${f3(Vn)} V`, '#ffd166', 'rgba(12,16,22,0.85)', right ? 'left' : 'right');
-  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  for (const t of [-PI, -PI / 2, 0, PI / 2, PI]) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
+  const N = 600, xs = [], d = { o1: [], o2: [], rel: [] };
+  for (let i = 0; i <= N; i++) { const xv = x0 + (x1 - x0) * i / N, P = mode.P(xv); xs.push(xv); if (!isFinite(P)) { d.o1.push(NaN); d.o2.push(NaN); d.rel.push(NaN); continue; } const f = trans(P); d.o1.push(f.bar > 1e-8 ? f.o1 : NaN); d.o2.push(f.cross > 1e-8 ? f.o2 : NaN); d.rel.push(f.bar > 1e-8 && f.cross > 1e-8 ? wrapPi(f.o1 - f.o2) : NaN); }
+  const line = (arr, col, lw, dash) => { ctx.beginPath(); let prev = NaN; arr.forEach((v, i) => { if (!isFinite(v)) { prev = NaN; return; } const px = X(xs[i]), py = Y(v); if (!isFinite(prev) || Math.abs(v - prev) > PI) ctx.moveTo(px, py); else ctx.lineTo(px, py); prev = v; }); ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []); ctx.stroke(); ctx.setLineDash([]); };
+  if (S.showCross) line(d.o2, '#ff9548', 1.8); if (S.showBar) line(d.o1, '#4aa8ff', 1.8); line(d.rel, '#e6edf3', 2, [6, 4]);
+  const op = opSw(), xo = mode.x(op.P);
+  if (xo >= x0 && xo <= x1) { ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(X(xo), m.t); ctx.lineTo(X(xo), m.t + ph); ctx.stroke(); ctx.setLineDash([]); }
   ctx.restore();
-  // axes
   ctx.strokeStyle = '#3a4a60'; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
-  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-  const rl = ['10 Ω', '100 Ω', '1 kΩ', '10 kΩ', '100 kΩ'];
-  for (let d = lx0; d <= lx1; d++) ctx.fillText(rl[d - 1], X(d), m.t + ph + 5);
-  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-  for (let d = -2; d <= 2; d++) ctx.fillText(['0.01', '0.1', '1', '10', '100'][d + 2], m.l - 6, Y(d));
-  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-  ctx.fillText('Heater resistance R (click to set)', m.l + pw / 2, h - 6);
-  ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText('mA  /  V', 0, 0); ctx.restore();
-  // legend
-  let lx = m.l; const ly = 13; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  const leg = (col, dash, text) => { ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.setLineDash(dash ? [4, 3] : []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(text, lx + 20, ly); lx += 28 + ctx.measureText(text).width; };
-  leg('#c792ea', false, 'Iπ'); leg('#ffd166', false, 'Vπ'); leg('#c792ea', true, 'I₂π'); leg('#ffd166', true, 'V₂π');
-  ctx.fillStyle = 'rgba(95,211,141,0.5)'; ctx.fillRect(lx, ly - 6, 14, 12); ctx.fillStyle = '#c9d3de'; ctx.fillText('reachable with this source', lx + 19, ly);
+  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ['−π', '−π/2', '0', 'π/2', 'π'].forEach((t, i) => ctx.fillText(t, m.l - 6, Y(-PI + i * PI / 2)));
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; for (const t of niceTicks(x0, x1, Math.max(3, Math.round(pw / 90)))) ctx.fillText(tickFmt(t), X(t), m.t + ph + 5);
+  ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.textBaseline = 'middle'; ctx.fillStyle = '#c9d3de'; ctx.fillText('phase (rad)', 0, 0); ctx.restore();
+  let lx = m.l; const ly = 12; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const leg = (c, t, dash) => { ctx.strokeStyle = c; ctx.lineWidth = 2.2; ctx.setLineDash(dash ? [6, 4] : []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(t, lx + 21, ly); lx += 30 + ctx.measureText(t).width; };
+  if (S.showBar) leg('#4aa8ff', 'arg E₁'); if (S.showCross) leg('#ff9548', 'arg E₂'); leg('#e6edf3', 'relative phase arg(E₁/E₂)', true);
 }
-let rDrag = false;
-function rSet(px) {
-  if (!rGeom) return; const { m, pw, lx0, lx1 } = rGeom;
-  const lr = clamp(lx0 + (px - m.l) / pw * (lx1 - lx0), Math.log10(20), Math.log10(50000));
-  S.Rk = Math.pow(10, lr) / 1000; syncSlider(SL[1]); dirty = true;
+
+/* ------------------------------------------------------------------ THEORY (live matrices) */
+function cfmt(c) { const r = Math.hypot(c[0], c[1]); if (r < 5e-4) return '0'; return `${r.toFixed(3)}<span class="ang">∠${(Math.atan2(c[1], c[0]) * 180 / PI).toFixed(0)}°</span>`; }
+const matHTML = (M, name) => `<div class="mblk"><div class="mat">${[M[0][0], M[0][1], M[1][0], M[1][1]].map(c => `<span>${cfmt(c)}</span>`).join('')}</div><div class="mname">${name}</div></div>`;
+const vecHTML = (v, name) => `<div class="mblk"><div class="mat vec">${v.map(c => `<span>${cfmt(c)}</span>`).join('')}</div><div class="mname">${name}</div></div>`;
+const OP = t => `<span class="mop">${t}</span>`;
+function updateTheory() {
+  const P2 = S.cfg === 'single' ? 0 : opH(2).P, f = fields(opH(1).P, P2);
+  const M = n => `<i class="v">M</i><sub>MMI</sub>(α<sub>${n}</sub>)`;
+  let eq, blocksL;
+  if (S.cfg === 'single') { eq = `<i class="v">T</i> = ${M(2)} · <i class="v">P</i>(φ₁) · ${M(1)}`; blocksL = [[f.M2, 'M_MMI(α₂)'], [f.Pint, 'P(φ₁)'], [f.M1, 'M_MMI(α₁)']]; }
+  else if (S.cfg === 'dual') { eq = `<i class="v">T</i> = ${M(2)} · <i class="v">P</i>(φ₁, φ₂) · ${M(1)}`; blocksL = [[f.M2, 'M_MMI(α₂)'], [f.Pint, 'P(φ₁, φ₂)'], [f.M1, 'M_MMI(α₁)']]; }
+  else if (S.extPos === 'in') { eq = `<i class="v">T</i> = ${M(2)} · <i class="v">P</i>(φ₁) · ${M(1)} · <i class="v">P</i><sub>ext</sub>(φ<sub>ext</sub>)`; blocksL = [[f.M2, 'M_MMI(α₂)'], [f.Pint, 'P(φ₁)'], [f.M1, 'M_MMI(α₁)'], [f.Pext, 'P_ext(φ_ext)']]; }
+  else { eq = `<i class="v">T</i> = <i class="v">P</i><sub>ext</sub>(φ<sub>ext</sub>) · ${M(2)} · <i class="v">P</i>(φ₁) · ${M(1)}`; blocksL = [[f.Pext, 'P_ext(φ_ext)'], [f.M2, 'M_MMI(α₂)'], [f.Pint, 'P(φ₁)'], [f.M1, 'M_MMI(α₁)']]; }
+  document.getElementById('thEq').innerHTML = eq + ` &nbsp;&nbsp;<span class="live">φ₁ = ${(f.p1 / PI).toFixed(3)}π${S.cfg === 'single' ? '' : (S.cfg === 'dual' ? ' · φ₂ = ' : ' · φ_ext = ') + (f.p2 / PI).toFixed(3) + 'π'}</span>`;
+  document.getElementById('thNum').innerHTML = matHTML(f.T, 'T') + OP('=') + blocksL.map(([B, n]) => matHTML(B, n)).join(OP('·'));
+  document.getElementById('thVec').innerHTML = vecHTML(f.E, 'E_out') + OP('=') + matHTML(f.T, 'T') + OP('·') + vecHTML(f.e, 'E_in') +
+    `<span class="live">|E₁|² = ${(f.bar * 100).toFixed(1)} % · |E₂|² = ${(f.cross * 100).toFixed(1)} %</span>`;
+  const sp = a => { const s = Math.sin(PI / 4 + a) ** 2 * 100; return s.toFixed(1) + ':' + (100 - s).toFixed(1); };
+  document.getElementById('thSplit').textContent = `MMI 1 ${sp(S.a1)} · MMI 2 ${sp(S.a2)}`;
 }
-cR.addEventListener('pointerdown', e => { rDrag = true; cR.setPointerCapture(e.pointerId); rSet(e.offsetX); });
-cR.addEventListener('pointermove', e => { if (rDrag) rSet(e.offsetX); });
-cR.addEventListener('pointerup', () => rDrag = false);
 
 /* ------------------------------------------------------------------ READOUTS */
 function updateReadouts() {
-  const op = opPoint(), t = trans(op.P), er = extinction();
+  const op = opSw(), o1 = opH(1), o2 = opH(2), P2 = S.cfg === 'single' ? 0 : o2.P, t = fields(o1.P, P2), er = extinction();
   const IpiNow = Phys.IfromP(S.Ppi), VpiNow = Phys.VfromP(S.Ppi);
   const alphaNb = PI * S.Rk / S.Ppi;
   const erTxt = v => isFinite(v) ? v.toFixed(1) + ' dB' : '∞';
-  const items = [
-    ['Current I', `${op.I.toFixed(3)} <small>mA</small>`],
-    ['Voltage V', `${f3(op.V)} <small>V</small>`],
-    ['Electrical power P', `${f3(op.P)} <small>mW</small>`],
-    ['Resistance R(P)', `${fmtR(op.R)}`],
-    ['Heater phase Δφ = πP/Pπ', `${(op.P / S.Ppi).toFixed(3)}<small>π</small>`],
-    ['Total phase φ', `${(t.ph / PI).toFixed(3)}<small>π</small>`],
-    ['<span style="color:var(--bar)">Bar</span> output', `${(t.bar * 100).toFixed(1)}<small>%</small> <small>${dB(t.bar).toFixed(1)} dB</small>`],
-    ['<span style="color:var(--cross)">Cross</span> output', `${(t.cross * 100).toFixed(1)}<small>%</small> <small>${dB(t.cross).toFixed(1)} dB</small>`],
-    ['Pπ / Iπ / Vπ', `${f3(S.Ppi)}<small>mW</small> ${f3(IpiNow)}<small>mA</small> ${f3(VpiNow)}<small>V</small>`],
+  const hv = o => `${o.I.toFixed(3)}<small>mA</small> ${f3(o.V)}<small>V</small> ${f3(o.P)}<small>mW</small>`;
+  const items = [['Heater 1: I₁ · V₁ · P₁', hv(o1)]];
+  if (S.cfg !== 'single') items.push(['Heater 2: I₂ · V₂ · P₂', hv(o2)]);
+  items.push(['Internal phase φ₁ = θ₀ + πP₁/Pπ', `${(t.p1 / PI).toFixed(3)}<small>π</small>`]);
+  if (S.cfg === 'dual') items.push(['Lower-arm phase φ₂', `${(t.p2 / PI).toFixed(3)}<small>π</small>`], ['Difference Δφ = φ₁ − φ₂', `${(wrapPi(t.p1 - t.p2) / PI).toFixed(3)}<small>π</small>`]);
+  if (S.cfg === 'intext') items.push(['External phase φ_ext = πP₂/Pπ', `${(t.p2 / PI).toFixed(3)}<small>π</small>`]);
+  items.push(
+    ['<span style="color:var(--bar)">Out 1</span> (bar)', `${(t.bar * 100).toFixed(1)}<small>%</small> <small>${dB(t.bar).toFixed(1)} dB</small>`],
+    ['<span style="color:var(--cross)">Out 2</span> (cross)', `${(t.cross * 100).toFixed(1)}<small>%</small> <small>${dB(t.cross).toFixed(1)} dB</small>`],
+    ['Relative output phase arg(E₁/E₂)', t.bar > 1e-8 && t.cross > 1e-8 ? `${(wrapPi(t.o1 - t.o2) / PI).toFixed(3)}<small>π</small>` : '<small>undefined (one port dark)</small>'],
+    ['Pπ / Iπ / Vπ (each heater)', `${f3(S.Ppi)}<small>mW</small> ${f3(IpiNow)}<small>mA</small> ${f3(VpiNow)}<small>V</small>`],
     ['Quadratic coeff. α = πR/Pπ', `${f3(alphaNb)} <small>rad/mA²</small>`],
-    ['Extinction ratio bar / cross', `${erTxt(er.bar)} <small>/</small> ${erTxt(er.cross)}`],
-    ['Max. reachable power', `${f3(Preach())} <small>mW = ${(Preach() / S.Ppi).toFixed(2)} Pπ</small>`]
-  ];
+    ['Extinction ratio out 1 / out 2', `${erTxt(er.bar)} <small>/</small> ${erTxt(er.cross)}`],
+    ['Total electrical power', `${f3(o1.P + P2)} <small>mW</small>`],
+    ['Max. reachable power per heater', `${f3(Preach())} <small>mW = ${(Preach() / S.Ppi).toFixed(2)} Pπ</small>`]
+  );
   document.getElementById('ro').innerHTML = items.map(([k, v]) => `<div class="ro"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
   const w = [];
   if (op.limited === 'V') w.push(`Voltage compliance: the source cannot exceed ${S.Vmax} V, so the current is limited to ${op.I.toFixed(3)} mA.`);
@@ -543,7 +626,10 @@ function polyBoxes(pts, mat) { for (let i = 0; i < pts.length - 1; i++) addBox(1
 const Y0 = 0.6, YA = 2.0, WG_W = 0.32, WG_H = 0.26, CL_H = 0.42, CHIP_X = 11.5, CHIP_Y = 4.4;
 const HX = 2.3; // heater half-length
 const tracks = [];
+let HEATERS = [], builtKey = '';
+const sceneKey = () => S.cfg + S.extPos + S.inp;
 function buildScene() {
+  LAYERS.forEach(l => l.length = 0); tracks.length = 0; HEATERS = []; builtKey = sceneKey();
   aabb(0, -CHIP_X, CHIP_X, -CHIP_Y, CHIP_Y, -0.9, 0, { k: 'sub' });
   // input waveguides
   polyBoxes([[-CHIP_X, Y0], [-7.5, Y0]], { k: 'wg', key: 'in0' });
@@ -561,19 +647,32 @@ function buildScene() {
   // cladding (translucent)
   aabb(2, -CHIP_X, CHIP_X, -CHIP_Y, CHIP_Y, 0, CL_H, { k: 'clad' });
   // heater + traces + pads
-  aabb(3, -HX, HX, YA - 0.32, YA + 0.32, CL_H, CL_H + 0.1, { k: 'heater' });
+  aabb(3, -HX, HX, YA - 0.32, YA + 0.32, CL_H, CL_H + 0.1, { k: 'heater', h: 1 }); HEATERS.push({ x0: -HX, x1: HX, y: YA, h: 1 });
+  if (S.cfg === 'dual') {
+    aabb(3, -HX, HX, -YA - 0.32, -YA + 0.32, CL_H, CL_H + 0.1, { k: 'heater', h: 2 }); HEATERS.push({ x0: -HX, x1: HX, y: -YA, h: 2 });
+    aabb(3, -HX - 0.45, -HX + 0.05, -3.2, -YA + 0.32, CL_H, CL_H + 0.1, { k: 'metal' });
+    aabb(3, HX - 0.05, HX + 0.45, -3.2, -YA + 0.32, CL_H, CL_H + 0.1, { k: 'metal' });
+    aabb(3, -HX - 1.2, -HX + 0.6, -4.2, -3.2, CL_H, CL_H + 0.14, { k: 'metal' });
+    aabb(3, HX - 0.6, HX + 1.2, -4.2, -3.2, CL_H, CL_H + 0.14, { k: 'metal' });
+  } else if (S.cfg === 'intext') {
+    const sg = S.extPos === 'in' ? -1 : 1, xa = sg * 8.0, xb = sg * 10.6, lo = Math.min(xa, xb), hi = Math.max(xa, xb);
+    aabb(3, lo, hi, Y0 - 0.3, Y0 + 0.3, CL_H, CL_H + 0.1, { k: 'heater', h: 2 }); HEATERS.push({ x0: lo, x1: hi, y: Y0, h: 2 });
+    for (const xe of [lo, hi]) { aabb(3, xe - 0.2, xe + 0.2, Y0 + 0.3, 1.9, CL_H, CL_H + 0.1, { k: 'metal' }); aabb(3, xe - 0.7, xe + 0.7, 1.9, 2.9, CL_H, CL_H + 0.14, { k: 'metal' }); }
+  }
   aabb(3, -HX - 0.45, -HX + 0.05, YA - 0.32, 3.2, CL_H, CL_H + 0.1, { k: 'metal' });
   aabb(3, HX - 0.05, HX + 0.45, YA - 0.32, 3.2, CL_H, CL_H + 0.1, { k: 'metal' });
   aabb(3, -HX - 1.2, -HX + 0.6, 3.2, 4.2, CL_H, CL_H + 0.14, { k: 'metal' });
   aabb(3, HX - 0.6, HX + 1.2, 3.2, 4.2, CL_H, CL_H + 0.14, { k: 'metal' });
   // laser + photodetectors (off-chip)
   aabb(3, -13.4, -11.9, Y0 - 0.45, Y0 + 0.45, -0.25, 0.55, { k: 'laser' });
+  if (S.inp === 'both') aabb(3, -13.4, -11.9, -Y0 - 0.45, -Y0 + 0.45, -0.25, 0.55, { k: 'laser' });
   aabb(3, 11.9, 13.4, Y0 - 0.45, Y0 + 0.45, -0.25, 0.55, { k: 'pd', key: 'bar' });
   aabb(3, 11.9, 13.4, -Y0 - 0.45, -Y0 + 0.45, -0.25, 0.55, { k: 'pd', key: 'cross' });
   // light tracks
   const mk = (pts, key) => { const L = [0]; for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); tracks.push({ pts, key, L, len: L[L.length - 1] }); };
   mk([[-11.9, Y0], [-7.5, Y0]], 'in0');
   mk([[-7.5, Y0], [-5.5, Y0]], 'mmiTop'); mk([[-7.5, Y0], [-5.5, -Y0]], 'mmiBot');
+  mk([[-11.9, -Y0], [-7.5, -Y0]], 'in1'); mk([[-7.5, -Y0], [-5.5, -Y0]], 'mmiX1'); mk([[-7.5, -Y0], [-5.5, Y0]], 'mmiX2');
   mk(top, 'top'); mk(bot, 'bot');
   mk([[5.5, Y0], [7.5, Y0]], 'mmi2a'); mk([[5.5, -Y0], [7.5, -Y0]], 'mmi2b');
   mk([[5.5, Y0], [7.5, -Y0]], 'mmi2c'); mk([[5.5, -Y0], [7.5, Y0]], 'mmi2d');
@@ -606,7 +705,7 @@ function matColor(mat, st) {
   switch (mat.k) {
     case 'sub': return { c: [34, 42, 54], e: 0 };
     case 'wg': { const p = Math.sqrt(clamp(st[mat.key], 0, 1)); return { c: mix([70, 84, 104], GLOW, p * 0.85), e: p * 0.55 }; }
-    case 'heater': return { c: heatColor(st.heat), e: st.heat * 0.7 };
+    case 'heater': { const hh = mat.h === 2 ? st.heat2 : st.heat; return { c: heatColor(hh), e: hh * 0.7 }; }
     case 'metal': return { c: [205, 168, 82], e: 0 };
     case 'laser': return { c: [210, 48, 80], e: 0.35 };
     case 'pd': { const p = Math.sqrt(clamp(st[mat.key], 0, 1)); return { c: mix([48, 56, 70], GLOW, p * 0.75), e: p * 0.5 }; }
@@ -654,25 +753,28 @@ function drawLight(ctx, C, st, time) {
   ctx.restore();
 }
 function drawHeat(ctx, C, st, time) {
-  if (st.heat < 0.01) return;
-  ctx.save(); ctx.globalCompositeOperation = 'lighter';
-  const a = proj(C, [-HX, YA, CL_H + 0.12]), b = proj(C, [HX, YA, CL_H + 0.12]); if (!a || !b) { ctx.restore(); return; }
-  const lw = C.F * 0.9 / ((a[2] + b[2]) / 2), fl = 0.85 + 0.15 * Math.sin(time * 9);
-  const col = heatColor(st.heat);
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = `rgba(${col[0] | 0},${col[1] * 0.6 | 0},30,${0.22 * st.heat * fl})`; ctx.lineWidth = lw * 2.2;
-  ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
-  ctx.strokeStyle = `rgba(255,${150 + 80 * st.heat | 0},80,${0.28 * st.heat * fl})`; ctx.lineWidth = lw * 0.7; ctx.stroke();
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  for (const H of HEATERS) {
+    const heat = H.h === 2 ? st.heat2 : st.heat; if (heat < 0.01) continue;
+    const a = proj(C, [H.x0, H.y, CL_H + 0.12]), b = proj(C, [H.x1, H.y, CL_H + 0.12]); if (!a || !b) continue;
+    const lw = C.F * 0.9 / ((a[2] + b[2]) / 2), fl = 0.85 + 0.15 * Math.sin(time * 9 + H.h), col = heatColor(heat);
+    ctx.strokeStyle = `rgba(${col[0] | 0},${col[1] * 0.6 | 0},30,${0.22 * heat * fl})`; ctx.lineWidth = lw * 2.2;
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+    ctx.strokeStyle = `rgba(255,${150 + 80 * heat | 0},80,${0.28 * heat * fl})`; ctx.lineWidth = lw * 0.7; ctx.stroke();
+  }
   ctx.restore();
 }
 function label3D(ctx, C, p, text, color, bg) { const P = proj(C, p); if (P) tag(ctx, P[0], P[1], text, color, bg); }
 function draw3D(time) {
+  if (builtKey !== sceneKey()) buildScene();
   const { ctx, w, h } = fitCanvas(c3d); ctx.clearRect(0, 0, w, h);
-  const C = makeCam(w, h), op = opPoint(), t = trans(op.P);
+  const C = makeCam(w, h), o1 = opH(1), o2 = opH(2), P2 = S.cfg === 'single' ? 0 : o2.P, t = fields(o1.P, P2);
+  const tph = S.cfg === 'dual' ? t.p1 - t.p2 : t.p1;
   const st = {
-    in0: 1, in1: 0, mmi1: 0.6, mmi2: 0.6, top: t.top, bot: t.bot, bar: t.bar, cross: t.cross,
-    mmiTop: t.top, mmiBot: t.bot, mmi2a: t.top * 0.5, mmi2b: t.bot * 0.5, mmi2c: t.top * 0.5, mmi2d: t.bot * 0.5,
-    heat: clamp(op.P / (3 * S.Ppi), 0, 1)
+    in0: t.in0, in1: t.in1, mmi1: 0.6, mmi2: 0.6, top: t.top, bot: t.bot, bar: t.bar, cross: t.cross,
+    mmiTop: t.top * t.in0, mmiBot: t.bot * t.in0, mmiX1: t.bot * t.in1, mmiX2: t.top * t.in1,
+    mmi2a: t.top * 0.5, mmi2b: t.bot * 0.5, mmi2c: t.top * 0.5, mmi2d: t.bot * 0.5,
+    heat: clamp(o1.P / (3 * S.Ppi), 0, 1), heat2: clamp(P2 / (3 * S.Ppi), 0, 1)
   };
   drawLayer(ctx, C, LAYERS[0], st, false);
   drawLayer(ctx, C, LAYERS[1], st, false);
@@ -681,24 +783,28 @@ function draw3D(time) {
   drawLayer(ctx, C, LAYERS[3], st, false);
   drawHeat(ctx, C, st, time);
   // labels
-  label3D(ctx, C, [-12.6, Y0, 1.25], 'Laser in', '#ff8fa8');
+  label3D(ctx, C, [-12.6, Y0, 1.25], S.inp === 'both' ? 'Laser 1' : 'Laser in', '#ff8fa8');
+  if (S.inp === 'both') label3D(ctx, C, [-12.2, -Y0 - 1.1, 0.9], `Laser 2 (ψ = ${(S.psi / PI).toFixed(2)}π)`, '#ff8fa8');
   label3D(ctx, C, [-6.5, 0, 0.95], 'MMI 1', '#c9d3de');
   label3D(ctx, C, [6.5, 0, 0.95], 'MMI 2', '#c9d3de');
-  label3D(ctx, C, [0, -YA, 0.95], 'reference arm', '#8b98a9');
-  label3D(ctx, C, [0, 3.7, 1.15], `Heater R = ${fmtR(op.R)} · I = ${op.I.toFixed(3)} mA · P = ${f3(op.P)} mW`, '#ffcc66');
-  label3D(ctx, C, [12.65, Y0, 1.25], `BAR ${(t.bar * 100).toFixed(1)} %`, '#4aa8ff');
-  label3D(ctx, C, [12.65, -Y0, 1.25], `CROSS ${(t.cross * 100).toFixed(1)} %`, '#ff9548');
+  if (S.cfg !== 'dual') label3D(ctx, C, [0, -YA, 0.95], 'reference arm', '#8b98a9');
+  label3D(ctx, C, [0, 3.7, 1.15], `Heater 1 · I₁ = ${o1.I.toFixed(3)} mA · P₁ = ${f3(o1.P)} mW`, '#ffcc66');
+  if (S.cfg === 'dual') label3D(ctx, C, [0, -3.7, 1.15], `Heater 2 · I₂ = ${o2.I.toFixed(3)} mA · P₂ = ${f3(o2.P)} mW`, '#ffcc66');
+  if (S.cfg === 'intext') label3D(ctx, C, [(S.extPos === 'in' ? -1 : 1) * 9.3, 3.4, 1.15], `External · I₂ = ${o2.I.toFixed(3)} mA`, '#ffcc66');
+  label3D(ctx, C, [12.65, Y0, 1.25], `OUT 1 ${(t.bar * 100).toFixed(1)} %`, '#4aa8ff');
+  label3D(ctx, C, [12.65, -Y0, 1.25], `OUT 2 ${(t.cross * 100).toFixed(1)} %`, '#ff9548');
   // phase dial
   const cx = 48, cy = h - 50, R = 30;
   ctx.fillStyle = 'rgba(10,14,20,0.75)'; ctx.beginPath(); ctx.arc(cx, cy, R + 10, 0, 2 * PI); ctx.fill();
   ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * PI); ctx.stroke();
   ctx.strokeStyle = 'rgba(255,204,102,0.9)'; ctx.lineWidth = 4; ctx.beginPath();
-  const a0 = -S.theta0, a1 = -t.ph;
+  const a0 = -S.theta0, a1 = -tph;
   ctx.arc(cx, cy, R, a0, a1, a1 > a0 ? false : true); ctx.stroke();
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(a1), cy + R * Math.sin(a1)); ctx.stroke();
   ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.fillText(`φ = θ₀ + πP/Pπ = ${(t.ph / PI).toFixed(2)}π`, cx + R + 18, cy - 8);
-  ctx.fillStyle = '#8b98a9'; ctx.fillText(`heater adds ${(op.P / S.Ppi).toFixed(2)}π`, cx + R + 18, cy + 10);
+  ctx.fillText(S.cfg === 'dual' ? `Δφ = φ₁ − φ₂ = ${(tph / PI).toFixed(2)}π` : `φ₁ = θ₀ + πP₁/Pπ = ${(tph / PI).toFixed(2)}π`, cx + R + 18, cy - 8);
+  ctx.fillStyle = '#8b98a9';
+  ctx.fillText(S.cfg === 'intext' ? `external φ_ext = ${(t.p2 / PI).toFixed(2)}π` : S.cfg === 'dual' ? `φ₁ = ${(t.p1 / PI).toFixed(2)}π · φ₂ = ${(t.p2 / PI).toFixed(2)}π` : `heater adds ${(o1.P / S.Ppi).toFixed(2)}π`, cx + R + 18, cy + 10);
   ctx.fillStyle = 'rgba(139,152,169,0.8)'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
   ctx.fillText('drag: rotate · wheel: zoom · double-click: reset', w - 10, 8);
 }
@@ -721,9 +827,11 @@ document.querySelectorAll('#segX button').forEach(b => b.onclick = () => { S.xmo
 document.querySelectorAll('#segY button').forEach(b => b.onclick = () => { S.ymode = b.dataset.v; setSeg('segY', S.ymode); dirty = true; });
 document.getElementById('chkBar').onchange = e => { S.showBar = e.target.checked; dirty = true; };
 document.getElementById('chkCross').onchange = e => { S.showCross = e.target.checked; dirty = true; };
+const segs2 = { segCfg: v => { S.cfg = v; if (v === 'single') S.sweep = 1; }, segSw: v => S.sweep = +v, segIn: v => S.inp = v, segExt: v => S.extPos = v };
+for (const id in segs2) document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { segs2[id](b.dataset.v); syncUI(); });
 const num = (id, key, min) => document.getElementById(id).addEventListener('change', e => {
   const v = parseFloat(e.target.value); if (isFinite(v) && v >= min) S[key] = v; else e.target.value = S[key];
-  if (key === 'Imax') S.I = Math.min(S.I, S.Imax);
+  if (key === 'Imax') { S.I = Math.min(S.I, S.Imax); S.I2 = Math.min(S.I2, S.Imax); }
   syncUI();
 });
 num('nImax', 'Imax', 0.05); num('nVmax', 'Vmax', 0.05); num('nPax', 'Paxis', 0.05);
@@ -739,13 +847,13 @@ document.getElementById('pView').onclick = () => Object.assign(cam, CAM0);
 window.addEventListener('resize', () => dirty = true);
 
 /* ------------------------------------------------------------------ main loop */
-buildScene(); buildSliders();
+buildSliders(); buildScene();
 let last = performance.now(), tAnim = 0;
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now; tAnim += dt;
-  if (S.playing) { S.I += dt * S.Imax / 8; if (S.I > S.Imax) S.I = 0; syncSlider(SL[0]); dirty = true; }
+  if (S.playing) { const k = S.sweep === 2 ? 'I2' : 'I'; S[k] += dt * S.Imax / 8; if (S[k] > S.Imax) S[k] = 0; syncSlider(SLid(k)); dirty = true; }
   draw3D(tAnim);
-  if (dirty) { drawPlot(); drawRPlot(); updateReadouts(); dirty = false; }
+  if (dirty) { drawPlot(); drawPh(); updateReadouts(); updateTheory(); dirty = false; }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
