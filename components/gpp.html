@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>General-purpose programmable processor</title>
+<style>
+
+:root{
+  --bg:#0c1016; --card:#141a22; --card2:#10151c; --line:#243041; --text:#e6edf3; --muted:#8b98a9;
+  --thr:#4aa8ff; --refl:#d58cff; --fw:#5fd38d; --bw:#ff8f6b; --accent:#ffcc66; --laser:#ff4d6d; --warn:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:14px 20px 6px}
+header h1{font-size:19px;margin:0;font-weight:650}
+header .sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:10px 20px 20px}
+@media (max-width:1100px){main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600}
+.view{height:min(54vh,560px);min-height:380px;display:flex;flex-direction:column}
+.view canvas{flex:1;width:100%;min-height:0;display:block;border-radius:8px}
+#c3d{background:radial-gradient(ellipse at 50% 35%,#18212d 0%,#0d1218 75%);cursor:grab;touch-action:none}
+#c3d:active{cursor:grabbing}
+#cPlot{background:var(--card2);cursor:crosshair;touch-action:none}
+#cP2{background:var(--card2);height:240px;width:100%;display:block;border-radius:8px;cursor:crosshair;touch-action:none}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;color:var(--muted);border:0;padding:4px 10px;font:inherit;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:#223046;color:var(--text)}
+.toolbar label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+input[type=number]{background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;width:86px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.group{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.group h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin:7px 0}
+.row.off{opacity:.35;pointer-events:none}
+.row .lab{color:var(--muted);font-size:12.5px}
+.row .val{font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
+.row input[type=range]{grid-column:1/3;width:100%;accent-color:var(--accent);margin:2px 0 0}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0;font-size:12.5px;color:var(--muted)}
+.btn{background:#1d2735;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn:hover{background:#26344a}
+.btn.primary{border-color:#6b5a2b;background:#2d2615;color:var(--accent)}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
+.ro{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ro .k{font-size:11.5px;color:var(--muted)}
+.ro .v{font-size:15.5px;font-variant-numeric:tabular-nums;font-weight:600}
+.ro .v small{font-size:12px;color:var(--muted);font-weight:500}
+.span2{grid-column:1/-1}
+/* theory */
+.theory{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
+.th{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.th h3{margin:0 0 8px;font-size:14px;color:var(--accent)}
+.th p{margin:6px 0;color:#c9d3de;font-size:13px}
+.eq{display:block;text-align:center;line-height:2.4;margin:8px 0;font:15px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 3px}
+.frac>span:first-child{border-bottom:1px solid #cfd8e3;padding:0 4px 2px}
+.frac>span:last-child{padding:2px 4px 0}
+.live{font:600 12.5px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);background:#1f1a0e;border:1px solid #4a3d1c;border-radius:5px;padding:1px 6px;white-space:nowrap}
+table.fm{width:100%;border-collapse:collapse;font-size:13px}
+table.fm td{padding:5px 6px;border-bottom:1px solid #1f2836;color:#c9d3de;vertical-align:middle}
+table.fm td.f{font:14px "Cambria Math","STIX Two Math","Times New Roman",serif;color:#eef3f8}
+table.fm td.f small{display:block;font:11.5px system-ui,sans-serif;color:var(--muted)}
+table.fm td:last-child{text-align:right}
+i.v{font-family:"Cambria Math","Times New Roman",serif;font-style:italic}
+a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1c;background:#1f1a0e;border-radius:8px;padding:3px 10px;margin-right:4px}a.back:hover{background:#2d2615}
+
+.row .val{display:flex;align-items:center;justify-content:flex-end;gap:4px;text-align:right}
+.numin{width:78px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font:inherit;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.numin:focus{outline:none;border-color:var(--accent)}
+.row .unit{color:var(--muted);font-size:12px;min-width:18px;text-align:left}
+.row .extra{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.cfgsel{background:#1f1a0e;color:var(--accent);border:1px solid #6b5a2b;border-radius:9px;padding:6px 10px;font:inherit;font-size:13.5px;cursor:pointer}
+
+.smat{display:inline-grid;grid-template-columns:auto auto;gap:2px 14px;padding:2px 9px;vertical-align:middle;border-left:1.5px solid #cfd8e3;border-right:1.5px solid #cfd8e3;border-radius:7px;line-height:1.7;text-align:center}
+
+.cfgbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:4px 20px 2px;font-size:13px;color:var(--muted)}
+.cfgbar .seg button{padding:5px 14px;font-size:13.5px}
+#cMesh{width:100%;height:540px;display:block;border-radius:8px;background:#0b0f15;cursor:pointer}
+#cPlot{width:100%;height:330px;display:block;border-radius:8px;background:var(--card2)}
+select.sm{background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;font-size:12.5px}
+.hide{display:none!important}
+.smat4{display:inline-grid;grid-template-columns:repeat(4,auto);gap:1px 12px;padding:2px 9px;vertical-align:middle;border-left:1.5px solid #cfd8e3;border-right:1.5px solid #cfd8e3;border-radius:7px;line-height:1.6;text-align:center;font-size:14px}
+.theory p, .theory li{color:#c9d3de;font-size:13px}
+.selbox{border:1px solid #6b5426;background:#1d1910;border-radius:8px;padding:8px 10px;margin-top:8px}
+.selbox h3{margin:0 0 6px;color:var(--accent)}
+.legend-st{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend-st i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../index.html">← Component catalog</a>
+  <h1>General-purpose programmable processor</h1>
+  <span class="sub">Recirculating waveguide meshes (square, triangular, hexagonal) simulated with scattering parameters: light can travel in both directions and around closed cells. Part of the Programmable Photonics interactive lab.</span>
+</header>
+<nav class="cfgbar">
+  <span>Topology</span>
+  <select id="selTopo" class="cfgsel">
+    <option value="square">Square mesh</option>
+    <option value="tri">Triangular mesh</option>
+    <option value="hex" selected>Hexagonal mesh</option>
+  </select>
+  <span>Size</span>
+  <span class="seg" id="segSize"><button data-v="0">S</button><button data-v="1" class="on">M</button><button data-v="2">L</button></span>
+  <span id="topoNote"></span>
+</nav>
+<main>
+  <section class="card span2">
+    <div class="toolbar">
+      <span id="meshTitle" style="color:var(--text);font-weight:600"></span>
+      <span>Click a PUC to cycle bar → cross → tunable (50 %) and select it · click a port to use it as input · shift+click (or right-click) for the output</span>
+      <span style="margin-left:auto">Glow</span><span class="seg" id="segGlow"><button data-v="lin" class="on">linear</button><button data-v="log">log</button></span>
+    </div>
+    <canvas id="cMesh"></canvas>
+    <div class="legend-st" style="margin-top:6px"><span><i style="background:#4aa8ff"></i>bar (θ = 0)</span><span><i style="background:#ff9548"></i>cross (θ = π/2)</span><span><i style="background:#c08cff"></i>tunable coupler</span><span><i style="background:#ff4d6d"></i>input port</span><span><i style="background:#5fd38d"></i>monitored output</span><span id="lamNote"></span></div>
+  </section>
+
+  <section class="card">
+    <h2>Controls</h2>
+    <div class="inline" style="margin-bottom:8px">
+      Input <select id="selIn" class="sm"></select>
+      Output <select id="selOut" class="sm"></select>
+    </div>
+    <div class="inline" style="margin-bottom:10px">
+      <button class="btn primary" id="bRoute">Route input → output</button>
+      <button class="btn" id="bRing">Ring filter</button>
+      <button class="btn" id="bBar">All bar</button>
+      <button class="btn" id="bCross">All cross</button>
+      <button class="btn" id="bRand">Random</button>
+    </div>
+    <div class="groups">
+      <div class="group" data-group="phys"><h3>PUC and wavelength</h3></div>
+    </div>
+    <div class="selbox" id="selBox">
+      <h3 id="selTitle">No PUC selected</h3>
+      <div class="inline"><span class="seg" id="segState"><button data-v="bar">bar</button><button data-v="cross">cross</button><button data-v="tc">tunable</button></span><button class="btn" id="bDesel">Deselect</button></div>
+      <div class="group" data-group="sel"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Figures of merit</h2>
+    <div class="readouts" id="ro"></div>
+  </section>
+
+  <section class="card span2">
+    <div class="toolbar">
+      <div class="seg" id="segPlot"><button data-v="ports" class="on">Power at every port</button><button data-v="spec">Spectrum of the output</button><button data-v="all">Spectra of all ports</button><button data-v="gd">Group delay</button></div>
+      <span id="plotNote"></span>
+    </div>
+    <canvas id="cPlot"></canvas>
+  </section>
+
+  <section class="card span2">
+    <h2>Theory: the scattering matrix of a recirculating mesh</h2>
+    <div class="theory">
+      <div class="th">
+        <h3>1 · Why a transfer matrix is not enough</h3>
+        <p>In a feed-forward mesh light always moves forward, so the circuit is a product of transfer matrices. In a recirculating (2D) mesh every waveguide can be used in <b>both directions</b> and light can go <b>around closed cells</b>: rings, cavities and feedback paths. An output can feed back into an earlier element, so there is no "first" and "last" block to multiply.</p>
+        <p>Instead every element is described by its <b>scattering matrix</b> <i class="v">S</i>, which relates the waves leaving each port, <i class="v">b</i>, to the waves entering, <i class="v">a</i>: <i class="v">b</i> = <i class="v">S a</i>. The circuit is then a set of linear equations that includes every reflection and every round trip.</p>
+      </div>
+      <div class="th">
+        <h3>2 · The programmable unit cell (PUC)</h3>
+        <p>Each PUC is an MZI with two phase shifters (φ₁, φ₂) and four ports: 0 and 1 on one side, 2 and 3 on the other. Neglecting back-reflections, light only crosses from one side to the other (Sánchez et al., JLT 2022):</p>
+        <div class="eq"><i class="v">S</i><sub>PUC</sub> = −j e<sup>−jΔ</sup> α e<sup>−jωτ</sup> <span class="smat4"><span>0</span><span>0</span><span>cos θ</span><span>−sin θ</span><span>0</span><span>0</span><span>sin θ</span><span>cos θ</span><span>cos θ</span><span>sin θ</span><span>0</span><span>0</span><span>−sin θ</span><span>cos θ</span><span>0</span><span>0</span></span></div>
+        <p>θ = (φ₁ − φ₂)/2 sets the splitting and Δ = (φ₁ + φ₂)/2 the common phase. α is the PUC loss and τ its delay, the <b>basic unit length</b> (BUL) divided by the group velocity. Three useful states: <b>bar</b> (θ = 0: 0→2, 1→3), <b>cross</b> (θ = π/2: 0→3, 1→2) and <b>tunable coupler</b> (anything in between). <span class="live" id="lvP"></span></p>
+      </div>
+      <div class="th">
+        <h3>3 · Connecting the cells</h3>
+        <p>Stack the S matrices of all PUCs in one block-diagonal matrix and split the ports into <b>external</b> (E, the mesh I/O) and <b>internal</b> (I, joined at the vertices). The connections impose <i class="v">a</i><sub>I</sub> = Γ <i class="v">b</i><sub>I</sub>, where the permutation Γ pairs every internal port with its neighbour. Eliminating the internal waves:</p>
+        <div class="eq"><i class="v">S</i><sub>mesh</sub> = <i class="v">S</i><sub>EE</sub> + <i class="v">S</i><sub>EI</sub> Γ (<i class="v">I</i> − <i class="v">S</i><sub>II</sub> Γ)<sup>−1</sup> <i class="v">S</i><sub>IE</sub></div>
+        <p>The inverse sums every possible round trip: (<i class="v">I</i> − <i class="v">X</i>)<sup>−1</sup> = <i class="v">I</i> + <i class="v">X</i> + <i class="v">X</i>² + … This is where resonances come from. This page solves the sparse linear system (<i class="v">I</i> − <i class="v">S</i><sub>II</sub>Γ) <i class="v">a</i><sub>I</sub> = <i class="v">S</i><sub>IE</sub> <i class="v">a</i><sub>E</sub> exactly at every wavelength, with the unknowns ordered by position so that the matrix is banded. <span class="live" id="lvS"></span></p>
+      </div>
+      <div class="th">
+        <h3>4 · Inductive and graph-based methods</h3>
+        <p>The same <i class="v">S</i><sub>mesh</sub> can be built <b>inductively</b>: start from one PUC and add one PUC at a time, updating the scattering matrix of the growing mesh. The update depends on how the new PUC is attached:</p>
+        <ul style="margin:4px 0 6px 18px;padding:0">
+          <li>S0: through one port (two new external ports);</li>
+          <li>S1: two ports on the same side;</li>
+          <li>S2: one port on each side (closes a cell, adds a feedback loop);</li>
+          <li>S3: three ports.</li>
+        </ul>
+        <p>The <b>graph-based</b> alternative treats ports as vertices and PUC paths as weighted edges. It enumerates the optical paths between an input and an output, multiplying their responses and dropping paths below a power threshold (e.g. −40 dB). It is faster for large meshes and many wavelengths, but approximate for high-Q resonators, which contain infinitely many round trips.</p>
+      </div>
+      <div class="th">
+        <h3>5 · Choosing a topology</h3>
+        <p>Every vertex joins 3 (hexagonal), 4 (square) or 6 (triangular) PUCs. The smallest closed cavity uses 6, 4 or 3 PUCs, which sets the shortest ring delay and hence the largest free spectral range:</p>
+        <div class="eq">FSR<sub>cell</sub> = <span class="frac"><span>λ²</span><span><i class="v">n</i><sub>g</sub> · <i class="v">N</i><sub>cell</sub> · BUL</span></span> <span class="live" id="lvF"></span></div>
+        <p>Hexagonal meshes need fewer PUCs per vertex and give more reconfiguration options per PUC. Triangular meshes give the shortest cavities, square meshes the simplest routing. In square and triangular meshes (even number of PUCs per vertex) the ports split into two classes: light entering one port can only reach half of the ports (marked “not reachable” in the output list), whereas in a hexagonal mesh every port can reach every other one. All three are simulated here with the same PUC model and the same solver.</p>
+      </div>
+      <div class="th">
+        <h3>6 · Reading the simulation</h3>
+        <p><b>Power at every port</b> shows where the light leaves the mesh at the chosen wavelength, including the light returning to the input side. <b>Spectrum</b> sweeps the wavelength for the monitored output: a straight route is flat, a closed cell coupled to the route gives periodic notches spaced by FSR<sub>cell</sub>, and their depth depends on the coupling (κ = sin²θ) and the loss. <b>Group delay</b> −dφ/dω shows the slow light near a resonance.</p>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+"use strict";
+const PI = Math.PI;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+let dirty = true;
+function f3(v) { const a = Math.abs(v); return !isFinite(v) ? '∞' : a >= 1000 ? v.toFixed(0) : a >= 100 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : a >= 1 ? v.toFixed(3) : v.toFixed(4); }
+const dB = p => 10 * Math.log10(Math.max(p, 1e-12));
+const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+function fitCanvas(c) {
+  const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  const W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); return { ctx, w: r.width, h: r.height };
+}
+function niceTicks(a, b, n) {
+  const span = b - a; if (!(span > 0)) return [a];
+  const s0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(s0))), q = s0 / mag;
+  const st = (q < 1.5 ? 1 : q < 3 ? 2 : q < 7 ? 5 : 10) * mag, t = [];
+  for (let v = Math.ceil(a / st - 1e-9) * st; v <= b + 1e-9; v += st) t.push(+v.toFixed(12));
+  return t;
+}
+function tickFmt(v, step) { const d = Math.max(0, Math.min(6, -Math.floor(Math.log10(step || 1) + 1e-9))); return v.toFixed(d); }
+function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
+  ctx.font = FONT; const w = ctx.measureText(text).width + 10, x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
+  ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
+  ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + 0.5);
+}
+/* colour maps: 'light' (dark → red → white, for optical intensity) and 'heat' (dark blue → red → yellow) */
+const CMAPS = {
+  light: [[0, [8, 10, 16]], [0.25, [90, 10, 40]], [0.5, [210, 40, 80]], [0.75, [255, 120, 120]], [1, [255, 235, 230]]],
+  heat: [[0, [14, 22, 48]], [0.25, [60, 30, 110]], [0.5, [180, 40, 90]], [0.75, [245, 120, 40]], [1, [255, 240, 150]]]
+};
+function cmap(name, t) {
+  const st = CMAPS[name]; t = clamp(t, 0, 1);
+  for (let i = 1; i < st.length; i++) if (t <= st[i][0]) { const u = (t - st[i - 1][0]) / (st[i][0] - st[i - 1][0]), a = st[i - 1][1], b = st[i][1]; return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u]; }
+  return st[st.length - 1][1];
+}
+/* ------------------------------------------------ sliders with editable numeric boxes */
+const LOGN = 2000;
+const toSlider = (c, v) => Math.round(LOGN * Math.log(v / c.min) / Math.log(c.max / c.min));
+const fromSlider = (c, u) => c.min * Math.pow(c.max / c.min, u / LOGN);
+const SLid = id => SL.find(c => c.id === id);
+const maxOf = c => typeof c.max === 'function' ? c.max() : c.max;
+function buildSliders() {
+  for (const c of SL) {
+    const host = document.querySelector(`[data-group="${c.g}"]`);
+    const row = document.createElement('div'); row.className = 'row'; row.id = 'row_' + c.id;
+    row.innerHTML = `<span class="lab">${c.lab}</span><span class="val"><input type="text" inputmode="decimal" class="numin" id="n_${c.id}"><span class="unit">${c.unit ?? ''}</span><span class="extra" id="x_${c.id}"></span></span><input type="range" id="s_${c.id}">`;
+    const inl = host.querySelector('.inline.after'); if (inl) host.insertBefore(row, inl); else host.appendChild(row);
+    const s = row.querySelector('input[type=range]');
+    if (c.log) { s.min = 0; s.max = LOGN; s.step = 1; } else { s.min = c.min; s.max = maxOf(c); s.step = c.step; }
+    s.addEventListener('input', () => { c.set(c.log ? fromSlider(c, +s.value) : +s.value); if (c.after) c.after(); syncOut(c); dirty = true; });
+    const n = row.querySelector('.numin');
+    n.addEventListener('change', () => { let v = parseFloat(String(n.value).replace(',', '.')); if (isFinite(v)) { c.set(clamp(v, c.min, maxOf(c))); if (c.after) c.after(); syncSlider(c); dirty = true; } else syncOut(c); });
+    n.addEventListener('keydown', e => { if (e.key === 'Enter') n.blur(); });
+  }
+  SL.forEach(syncSlider);
+}
+function syncOut(c) {
+  const n = document.getElementById('n_' + c.id);
+  if (document.activeElement !== n) n.value = +c.get().toFixed(c.dec ?? 3);
+  document.getElementById('x_' + c.id).textContent = c.extra ? c.extra(c.get()) : '';
+}
+function syncSlider(c) {
+  const s = document.getElementById('s_' + c.id);
+  if (c.log) s.value = toSlider(c, c.get()); else { s.max = maxOf(c); s.value = c.get(); }
+  syncOut(c);
+}
+function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+function wireSeg(id, fn) { document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { fn(b.dataset.v); setSeg(id, b.dataset.v); dirty = true; }); }
+function readouts(id, items) { document.getElementById(id).innerHTML = items.map(([k, v]) => `<div class="ro"><div class="k">${k}</div><div class="v">${v}</div></div>`).join(''); }
+const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
+/* ------------------------------------------------ generic line plot
+   o = { x0, x1, y0, y1, xlabel, ylabel, series:[{x:[], y:[], color, width, dash}], vlines:[{x, color, label, dash}],
+         legend:[{color, label, dash}], yfmt, ylog } */
+function linePlot(canvas, o) {
+  const { ctx, w, h } = fitCanvas(canvas); ctx.clearRect(0, 0, w, h);
+  const m = { l: 60, r: 16, t: 30, b: 42 }, pw = w - m.l - m.r, ph = h - m.t - m.b; if (pw < 60 || ph < 40) return;
+  const ty = v => o.ylog ? Math.log10(Math.max(v, 1e-30)) : v;
+  const Y0 = ty(o.y0), Y1 = ty(o.y1);
+  const X = v => m.l + (v - o.x0) / (o.x1 - o.x0) * pw, Y = v => m.t + (1 - (ty(v) - Y0) / (Y1 - Y0)) * ph;
+  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  const xt = niceTicks(o.x0, o.x1, Math.max(3, Math.round(pw / 90))), xst = xt.length > 1 ? xt[1] - xt[0] : 1;
+  let yt; if (o.ylog) { yt = []; for (let d = Math.ceil(Y0); d <= Math.floor(Y1); d++) yt.push(Math.pow(10, d)); } else yt = niceTicks(o.y0, o.y1, Math.max(3, Math.round(ph / 55)));
+  const yst = !o.ylog && yt.length > 1 ? yt[1] - yt[0] : 1;
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
+  for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
+  for (const b of (o.bands || [])) { ctx.fillStyle = b.color; ctx.fillRect(X(b.x0), m.t, X(b.x1) - X(b.x0), ph); }
+  for (const v of (o.vlines || [])) {
+    if (v.x < o.x0 || v.x > o.x1) continue;
+    ctx.strokeStyle = v.color; ctx.lineWidth = 1.2; ctx.setLineDash(v.dash || [4, 4]);
+    ctx.beginPath(); ctx.moveTo(X(v.x), m.t); ctx.lineTo(X(v.x), m.t + ph); ctx.stroke(); ctx.setLineDash([]);
+    if (v.label) { ctx.font = FONT; ctx.fillStyle = v.color; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(v.label, X(v.x), m.t + 4 + (v.row || 0) * 14); }
+  }
+  for (const s of o.series) {
+    ctx.beginPath(); let pen = false;
+    for (let i = 0; i < s.x.length; i++) { const y = s.y[i]; if (!isFinite(y)) { pen = false; continue; } const px = X(s.x[i]), py = Y(y); if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py); }
+    ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 2; ctx.setLineDash(s.dash || []); ctx.lineJoin = 'round'; ctx.stroke(); ctx.setLineDash([]);
+  }
+  for (const p of (o.points || [])) { if (p.x < o.x0 || p.x > o.x1) continue; ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 5, 0, 2 * PI); ctx.fillStyle = p.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); }
+  ctx.restore();
+  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of xt) ctx.fillText(o.xfmt ? o.xfmt(t) : tickFmt(t, xst), X(t), m.t + ph + 6);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const t of yt) ctx.fillText(o.yfmt ? o.yfmt(t) : (o.ylog ? (t >= 1 ? String(t) : t.toExponential(0)) : tickFmt(t, yst)), m.l - 6, Y(t));
+  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
+  ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText(o.ylabel, 0, 0); ctx.restore();
+  let lx = m.l; const ly = 14; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
+  return { X, Y, m, pw, ph };
+}
+
+/* ======================================================================
+   General-purpose waveguide-mesh core: lattice generation (square,
+   triangular, hexagonal), PUC scattering matrices and a global scattering
+   solve of the whole mesh (bidirectional, with recirculation).
+   ====================================================================== */
+/* ---------------------------------------------------------------- lattices */
+function makeLattice(topo, size) {
+  const V = [], E = [], C = [], key = (x, y) => `${Math.round(x * 1000)},${Math.round(y * 1000)}`, vmap = new Map(), emap = new Map();
+  const vid = (x, y) => { const k = key(x, y); if (!vmap.has(k)) { vmap.set(k, V.length); V.push({ x, y }); } return vmap.get(k); };
+  const eid = (a, b) => { const k = a < b ? a + '-' + b : b + '-' + a; if (!emap.has(k)) { emap.set(k, E.length); E.push({ u: Math.min(a, b), v: Math.max(a, b) }); } return emap.get(k); };
+  const cell = pts => { const ids = pts.map(p => vid(p[0], p[1])), es = ids.map((a, i) => eid(a, ids[(i + 1) % ids.length])); C.push({ v: ids, e: es, cx: pts.reduce((s, p) => s + p[0], 0) / pts.length, cy: pts.reduce((s, p) => s + p[1], 0) / pts.length }); };
+  if (topo === 'square') {
+    const [nx, ny] = [[2, 2], [3, 2], [4, 3]][size];
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) cell([[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]]);
+  } else if (topo === 'tri') {
+    const [nx, ny] = [[2, 2], [3, 2], [4, 3]][size], h = Math.sqrt(3) / 2, P = (i, j) => [i + (j % 2) * 0.5, j * h];
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      if (j % 2 === 0) { cell([P(i, j), P(i + 1, j), P(i, j + 1)]); cell([P(i + 1, j), P(i + 1, j + 1), P(i, j + 1)]); }
+      else { cell([P(i, j), P(i + 1, j), P(i + 1, j + 1)]); cell([P(i, j), P(i + 1, j + 1), P(i, j + 1)]); }
+    }
+  } else {
+    const [nc, nr] = [[2, 1], [3, 2], [4, 3]][size], s3 = Math.sqrt(3);
+    for (let r = 0; r < nr; r++) for (let c = 0; c < nc; c++) {
+      const cx = c * s3 + (r % 2) * s3 / 2, cy = r * 1.5, pts = [];
+      for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; pts.push([cx + Math.cos(a), cy + Math.sin(a)]); }
+      cell(pts);
+    }
+  }
+  return { V, E, C, deg0: topo === 'square' ? 4 : topo === 'tri' ? 6 : 3 };
+}
+/* ---------------------------------------------------------------- ports & connectivity
+   PUC e goes from vertex u to vertex v. Ports: 0 (left, at u), 1 (right, at u), 2 (left, at v), 3 (right, at v).
+   bar (θ = 0): 0→2, 1→3 · cross (θ = π/2): 0→3, 1→2.  At every vertex consecutive PUC ends are joined
+   (CCW port of one to CW port of the next); ports facing an empty angular gap are external I/O. */
+function buildMesh(L) {
+  const { V, E, deg0 } = L, gap0 = 2 * Math.PI / deg0 + 0.02, nP = 4 * E.length, link = new Int32Array(nP).fill(-1), ext = [];
+  const ends = V.map(() => []);
+  E.forEach((e, i) => {
+    const a = Math.atan2(V[e.v].y - V[e.u].y, V[e.v].x - V[e.u].x);
+    ends[e.u].push({ e: i, ang: a, ccw: 4 * i + 0, cw: 4 * i + 1 });            // looking outwards from u: port 0 on the left (CCW)
+    ends[e.v].push({ e: i, ang: a + Math.PI, ccw: 4 * i + 3, cw: 4 * i + 2 });  // looking outwards from v: port 3 is on the CCW side
+  });
+  ends.forEach((list, vi) => {
+    list.forEach(x => x.ang = ((x.ang % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI));
+    list.sort((p, q) => p.ang - q.ang);
+    for (let k = 0; k < list.length; k++) {
+      const A = list[k], B = list[(k + 1) % list.length]; let g = B.ang - A.ang; if (g <= 0) g += 2 * Math.PI; if (list.length === 1) g = 2 * Math.PI;
+      if (g < gap0) { link[A.ccw] = B.cw; link[B.cw] = A.ccw; }
+      else { ext.push({ p: A.ccw, v: vi, ang: A.ang + 0.6 }); ext.push({ p: B.cw, v: vi, ang: B.ang - 0.6 }); }
+    }
+  });
+  // number external ports clockwise around the centroid, starting at the left
+  const cx = V.reduce((s, v) => s + v.x, 0) / V.length, cy = V.reduce((s, v) => s + v.y, 0) / V.length;
+  ext.forEach(o => { o.x = V[o.v].x + 0.32 * Math.cos(o.ang); o.y = V[o.v].y + 0.32 * Math.sin(o.ang); o.th = Math.atan2(o.y - cy, o.x - cx); });
+  ext.sort((p, q) => ((Math.PI - p.th) % (2 * Math.PI)) - ((Math.PI - q.th) % (2 * Math.PI)));
+  const extIdx = new Int32Array(nP).fill(-1); ext.forEach((o, i) => extIdx[o.p] = i);
+  // internal ports ordered by position (small bandwidth for the banded solver)
+  const pos = p => { const e = E[p >> 2], end = (p & 3) < 2 ? e.u : e.v, o = (p & 3) < 2 ? e.v : e.u; return [V[end].x * 0.8 + V[o].x * 0.2, V[end].y * 0.8 + V[o].y * 0.2]; };
+  const internal = []; for (let p = 0; p < nP; p++) if (link[p] >= 0) internal.push(p);
+  internal.sort((a, b) => { const A = pos(a), B = pos(b); return (A[0] - B[0]) || (A[1] - B[1]) || (a - b); });
+  const uIdx = new Int32Array(nP).fill(-1); internal.forEach((p, i) => uIdx[p] = i);
+  return { L, link, ext, extIdx, internal, uIdx, nP };
+}
+/* ---------------------------------------------------------------- PUC scattering matrix (Sánchez et al., JLT 2022, eq. 1)
+   S = −j e^{−jΔ} · α e^{−jωτ} · [[0,0,c,−s],[0,0,s,c],[c,s,0,0],[−s,c,0,0]],  θ: 0 bar … π/2 cross */
+function pucS(th, De, amp, ph) {   // returns 16 complex entries as [re, im] arrays (row-major); amp = α, ph = ωτ
+  const c = Math.cos(th), s = Math.sin(th), a = -De - ph - Math.PI / 2, fr = amp * Math.cos(a), fi = amp * Math.sin(a);
+  const R = [0, 0, c, -s, 0, 0, s, c, c, s, 0, 0, -s, c, 0, 0], re = new Float64Array(16), im = new Float64Array(16);
+  for (let k = 0; k < 16; k++) { re[k] = R[k] * fr; im[k] = R[k] * fi; }
+  return { re, im };
+}
+/* ---------------------------------------------------------------- global solve for one input port at one frequency
+   unknowns: incoming wave a_p at every internal port p.  a_p = b_q (q = link[p]),  b_q = Σ_r S_PUC(q, r) a_r
+   ⇒ a_p − Σ_{r internal} S(q,r) a_r = S(q, src) a_src.  Banded LU with partial pivoting. */
+function solveMesh(M, pucs, src, ph) {
+  const { internal, uIdx, link, extIdx, nP } = M, n = internal.length, Ss = pucs.map(P => pucS(P.th, P.De, P.amp, ph));
+  // bandwidths
+  let kl = 0, ku = 0;
+  for (let i = 0; i < n; i++) { const q = link[internal[i]], base = q & ~3; for (let r = base; r < base + 4; r++) { const j = uIdx[r]; if (j >= 0) { kl = Math.max(kl, i - j); ku = Math.max(ku, j - i); } } }
+  const W = 2 * kl + ku + 1, off = kl + ku;   // row storage: column j stored at (j − i + kl) … we use dense rows of width W centred
+  const Are = new Float64Array(n * W), Aim = new Float64Array(n * W), bre = new Float64Array(n), bim = new Float64Array(n);
+  const at = (i, j) => i * W + (j - i + kl);
+  for (let i = 0; i < n; i++) {
+    Are[at(i, i)] += 1;
+    const q = link[internal[i]], P = q >> 2, lq = q & 3, S = Ss[P];
+    for (let lr = 0; lr < 4; lr++) {
+      const r = (P << 2) | lr, k = lq * 4 + lr, sr = S.re[k], si = S.im[k]; if (sr === 0 && si === 0) continue;
+      const j = uIdx[r];
+      if (j >= 0) { Are[at(i, j)] -= sr; Aim[at(i, j)] -= si; }
+      else if (r === src) { bre[i] += sr; bim[i] += si; }
+    }
+  }
+  // banded Gaussian elimination with partial pivoting (row swaps within kl)
+  for (let k = 0; k < n; k++) {
+    let piv = k, best = -1;
+    for (let i = k; i <= Math.min(n - 1, k + kl); i++) { const x = Are[at(i, k)], y = Aim[at(i, k)], m = x * x + y * y; if (m > best) { best = m; piv = i; } }
+    const jmax = Math.min(n - 1, k + kl + ku);
+    if (piv !== k) {
+      for (let j = k; j <= jmax; j++) { const a = at(k, j), b = at(piv, j); let t = Are[a]; Are[a] = Are[b]; Are[b] = t; t = Aim[a]; Aim[a] = Aim[b]; Aim[b] = t; }
+      let t = bre[k]; bre[k] = bre[piv]; bre[piv] = t; t = bim[k]; bim[k] = bim[piv]; bim[piv] = t;
+    }
+    const pr = Are[at(k, k)], pi = Aim[at(k, k)], pm = pr * pr + pi * pi; if (pm < 1e-300) continue;
+    for (let i = k + 1; i <= Math.min(n - 1, k + kl); i++) {
+      const xr = Are[at(i, k)], xi = Aim[at(i, k)]; if (xr === 0 && xi === 0) continue;
+      const fr = (xr * pr + xi * pi) / pm, fi = (xi * pr - xr * pi) / pm;
+      for (let j = k; j <= jmax; j++) { const a = at(k, j), b = at(i, j), ur = Are[a], ui = Aim[a]; Are[b] -= fr * ur - fi * ui; Aim[b] -= fr * ui + fi * ur; }
+      bre[i] -= fr * bre[k] - fi * bim[k]; bim[i] -= fr * bim[k] + fi * bre[k];
+    }
+  }
+  const xre = new Float64Array(n), xim = new Float64Array(n);
+  for (let k = n - 1; k >= 0; k--) {
+    let sr = bre[k], si = bim[k];
+    for (let j = k + 1; j <= Math.min(n - 1, k + kl + ku); j++) { const a = at(k, j), ar = Are[a], ai = Aim[a]; sr -= ar * xre[j] - ai * xim[j]; si -= ar * xim[j] + ai * xre[j]; }
+    const pr = Are[at(k, k)], pi = Aim[at(k, k)], pm = pr * pr + pi * pi || 1e-300;
+    xre[k] = (sr * pr + si * pi) / pm; xim[k] = (si * pr - sr * pi) / pm;
+  }
+  // incoming waves at every port (source included), outgoing waves b = S a
+  const ar = new Float64Array(nP), ai = new Float64Array(nP);
+  internal.forEach((p, i) => { ar[p] = xre[i]; ai[p] = xim[i]; }); ar[src] = 1;
+  const br = new Float64Array(nP), bi = new Float64Array(nP);
+  for (let P = 0; P < pucs.length; P++) { const S = Ss[P]; for (let lq = 0; lq < 4; lq++) { let sr = 0, si = 0; for (let lr = 0; lr < 4; lr++) { const k = lq * 4 + lr, r = (P << 2) | lr; sr += S.re[k] * ar[r] - S.im[k] * ai[r]; si += S.re[k] * ai[r] + S.im[k] * ar[r]; } br[(P << 2) | lq] = sr; bi[(P << 2) | lq] = si; } }
+  const out = M.ext.map(o => ({ re: br[o.p], im: bi[o.p] }));
+  return { ar, ai, br, bi, out, kl, ku };
+}
+
+
+const S = { topo: 'hex', size: 1, IL: 0.2, BUL: 900, ng: 4.2, span: 0.4, npts: 801, det: 0, glow: 'lin', plot: 'ports', inp: 0, outp: 1, sel: -1, seed: 1 };
+const C0 = 299792458;
+let routeMsg = '', LAT = null, MESH = null, PUC = [], SOL = null, SPEC = null, specKey = '', hits = [];
+const stateOf = p => Math.abs(p.th) < 1e-6 ? 'bar' : Math.abs(p.th - PI / 2) < 1e-6 ? 'cross' : 'tc';
+function newMesh() {
+  LAT = makeLattice(S.topo, S.size); MESH = buildMesh(LAT);
+  PUC = LAT.E.map(() => ({ th: PI / 2, De: 0 }));
+  S.inp = 0; S.outp = farthestReachable(); S.sel = -1;
+  fillPorts(); presetRing() || presetRoute(); invalidate();
+}
+/* ports that light from the input can reach for some setting of the PUCs (square and triangular meshes split the ports in two classes) */
+function reachable(srcE) { const BAR = [2, 3, 0, 1], CR = [3, 2, 1, 0], seen = new Set(), q = [MESH.ext[srcE].p], outs = new Set();
+  while (q.length) { const p = q.shift(); if (seen.has(p)) continue; seen.add(p); for (const m of [BAR, CR]) { const o = (p & ~3) | m[p & 3]; if (MESH.extIdx[o] >= 0) { outs.add(MESH.extIdx[o]); continue; } q.push(MESH.link[o]); } }
+  return outs; }
+function farthestReachable() { const R = reachable(S.inp), a = MESH.ext[S.inp]; let best = -1, bd = -1; R.forEach(k => { if (k === S.inp) return; const d = Math.hypot(MESH.ext[k].x - a.x, MESH.ext[k].y - a.y); if (d > bd) { bd = d; best = k; } }); return best; }
+function fillPorts() {
+  const R = reachable(S.inp), opts = MESH.ext.map((o, i) => `<option value="${i}">port ${i + 1}</option>`).join('');
+  document.getElementById('selIn').innerHTML = opts; document.getElementById('selOut').innerHTML = MESH.ext.map((o, i) => `<option value="${i}">port ${i + 1}${R.has(i) ? '' : ' (not reachable)'}</option>`).join('');
+  document.getElementById('selIn').value = S.inp; document.getElementById('selOut').value = S.outp;
+}
+const amp = () => Math.pow(10, -S.IL / 20);
+const phaseAt = lam => 2 * PI * S.ng * S.BUL * 1e3 / lam;   // ωτ with λ in nm, BUL in µm
+const pucList = () => PUC.map(p => ({ th: p.th, De: p.De, amp: amp() }));
+function solveAt(lam) { return solveMesh(MESH, pucList(), MESH.ext[S.inp].p, phaseAt(lam)); }
+function invalidate() { specKey = ''; dirty = true; }
+function spectrum() {
+  const key = JSON.stringify([PUC, S.inp, S.IL, S.BUL, S.ng, S.span, S.npts, S.topo, S.size]); if (key === specKey) return SPEC; specKey = key;
+  const lam = [], P = MESH.ext.map(() => []), ph = MESH.ext.map(() => []), list = pucList(), src = MESH.ext[S.inp].p;
+  for (let i = 0; i < S.npts; i++) { const l = 1550 - S.span / 2 + S.span * i / (S.npts - 1); lam.push(l); const s = solveMesh(MESH, list, src, phaseAt(l)); s.out.forEach((o, k) => { P[k].push(o.re * o.re + o.im * o.im); ph[k].push(Math.atan2(o.im, o.re)); }); }
+  return SPEC = { lam, P, ph };
+}
+/* ------------------------------------------------ routing presets (search over bar/cross states, each PUC used once) */
+function findRoute(srcE, dstE, banned = new Set(), must = -1, maxLen = 30) {   // iterative-deepening DFS over bar/cross choices, each PUC used once
+  const { link, ext, extIdx } = MESH, src = ext[srcE].p, dst = ext[dstE].p, BAR = [2, 3, 0, 1], CR = [3, 2, 1, 0]; let budget = 200000;
+  for (let lim = 1; lim <= maxLen; lim++) {
+    const used = new Set(), path = []; let found = null;
+    const dfs = p => {
+      if (found || --budget < 0) return; const P = p >> 2, lp = p & 3; if (used.has(P) || banned.has(P) || path.length >= lim) return; used.add(P);
+      for (const [st, map] of [['cross', CR], ['bar', BAR]]) { const q = (P << 2) | map[lp]; path.push([P, st]);
+        if (q === dst) { if (must < 0 || used.has(must)) found = path.slice(); } else if (extIdx[q] < 0) dfs(link[q]);
+        path.pop(); if (found) break; }
+      used.delete(P);
+    };
+    dfs(src); if (found) return found; if (budget < 0) return null;
+  }
+  return null;
+}
+function applyRoute(path) { PUC.forEach(p => { p.th = PI / 2; p.De = 0; }); path.forEach(([P, st]) => PUC[P].th = st === 'bar' ? 0 : PI / 2); }
+function presetRoute() { const r = findRoute(S.inp, S.outp); if (!r) { routeMsg = reachable(S.inp).has(S.outp) ? 'No route without reusing a PUC' : `Port ${S.outp + 1} cannot be reached from port ${S.inp + 1} in this mesh`; dirty = true; return false; } routeMsg = ''; applyRoute(r); invalidate(); return true; }
+function ringFor(outp) {
+  // for every cell and every edge e of it: route while avoiding the other edges of the cell; if the route uses e,
+  // close the cell (other edges in bar) and turn e into a tunable coupler. Keep the configuration with the deepest notch.
+  if (!findRoute(S.inp, outp)) return null;
+  const src = MESH.ext[S.inp].p; let best = null;
+  for (const c of LAT.C) for (const e of c.e) {
+    const r = findRoute(S.inp, outp, new Set(c.e.filter(x => x !== e)), e); if (!r) continue;
+    const hit = r.find(([P]) => P === e); if (!hit) continue;
+    applyRoute(r); c.e.forEach(x => { if (x !== e) PUC[x].th = 0; });
+    const k = Math.asin(Math.sqrt(0.2)), th = hit[1] === 'bar' ? k : PI / 2 - k; PUC[e].th = th;
+    const N = 61, list = pucList(), fsr = 1550 * 1550 / (S.ng * c.e.length * S.BUL * 1e3); let mn = 1e9, mx = 0;
+    for (let i = 0; i < N; i++) { const o = solveMesh(MESH, list, src, phaseAt(1550 + fsr * i / (N - 1))).out[outp], p = o.re * o.re + o.im * o.im; mn = Math.min(mn, p); mx = Math.max(mx, p); }
+    const score = mx > 1e-3 ? (mx / Math.max(mn, 1e-9)) * Math.pow(0.9, r.length) : 0;
+    if (!best || score > best.score) best = { score, r, c, e, th };
+  }
+  return best && best.score >= 1.5 ? best : null;
+}
+function presetRing() {
+  let best = ringFor(S.outp), moved = false;
+  if (!best) {   // no cell can be coupled on the way to this output: look for the farthest reachable output that allows a ring
+    const a = MESH.ext[S.inp], cand = [...reachable(S.inp)].filter(k => k !== S.inp).sort((p, q) => Math.hypot(MESH.ext[q].x - a.x, MESH.ext[q].y - a.y) - Math.hypot(MESH.ext[p].x - a.x, MESH.ext[p].y - a.y));
+    for (const k of cand) { best = ringFor(k); if (best) { S.outp = k; moved = true; fillPorts(); break; } }
+  }
+  if (!best) return presetRoute();
+  applyRoute(best.r); best.c.e.forEach(x => { if (x !== best.e) PUC[x].th = 0; }); PUC[best.e].th = best.th; S.sel = best.e;
+  routeMsg = moved ? `Ring filter: output moved to port ${S.outp + 1} (no cell can be coupled on the way to the previous output)` : ''; invalidate(); return true;
+}
+/* ------------------------------------------------ drawing */
+const cMesh = document.getElementById('cMesh');
+const glowT = p => S.glow === 'log' ? clamp((dB(p) + 40) / 40, 0, 1) : Math.sqrt(clamp(p, 0, 1));
+const glowCol = t => `rgb(${60 + 195 * t | 0},${76 - 20 * t | 0},${98 + 6 * t | 0})`;
+const STC = { bar: '#4aa8ff', cross: '#ff9548', tc: '#c08cff' };
+function drawMesh(t) {
+  const { ctx, w, h } = fitCanvas(cMesh); ctx.clearRect(0, 0, w, h);
+  const V = LAT.V, xs = V.map(v => v.x), ys = V.map(v => v.y), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const sc = Math.min((w - 140) / (x1 - x0 || 1), (h - 110) / (y1 - y0 || 1)), ox = w / 2 - (x0 + x1) / 2 * sc, oy = h / 2 + (y0 + y1) / 2 * sc;
+  const X = p => [ox + p[0] * sc, oy - p[1] * sc];
+  const sol = SOL, pw = p => (sol.ar[p] ** 2 + sol.ai[p] ** 2) + (sol.br[p] ** 2 + sol.bi[p] ** 2);
+  const rail = 0.075, gapEnd = 0.17;
+  const portPt = p => {   // end of the rail belonging to port p (lattice coordinates)
+    const E = LAT.E[p >> 2], u = V[E.u], v = V[E.v], dx = v.x - u.x, dy = v.y - u.y, L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, lp = p & 3;
+    const atU = lp < 2, base = atU ? [u.x + ux * gapEnd, u.y + uy * gapEnd] : [v.x - ux * gapEnd, v.y - uy * gapEnd], left = lp === 0 || lp === 2;
+    return [base[0] + (left ? nx : -nx) * rail, base[1] + (left ? ny : -ny) * rail];
+  };
+  const stroke = (path, p, wd = 2.2) => { const g = glowT(p); ctx.lineCap = 'round'; ctx.strokeStyle = g > 0.01 ? glowCol(g) : '#3c495c'; ctx.lineWidth = wd + 3 * g; path(); ctx.stroke();
+    if (g > 0.06) { ctx.save(); ctx.strokeStyle = `rgba(255,225,232,${0.5 * g})`; ctx.lineWidth = 1.3; ctx.setLineDash([4, 10]); ctx.lineDashOffset = -t * 30; path(); ctx.stroke(); ctx.restore(); } };
+  // vertex links
+  for (let p = 0; p < MESH.nP; p++) { const q = MESH.link[p]; if (q < p) continue; const A = X(portPt(p)), B = X(portPt(q)), E = LAT.E[p >> 2], vtx = X([V[(p & 3) < 2 ? E.u : E.v].x, V[(p & 3) < 2 ? E.u : E.v].y]);
+    const mx = (A[0] + B[0]) / 2 * 0.4 + vtx[0] * 0.6, my = (A[1] + B[1]) / 2 * 0.4 + vtx[1] * 0.6; stroke(() => { ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.quadraticCurveTo(mx, my, B[0], B[1]); }, pw(p), 1.8); }
+  // PUCs: two rails with the MZI in the middle
+  hits = [];
+  LAT.E.forEach((E, i) => {
+    const P0 = X(portPt(4 * i)), P1 = X(portPt(4 * i + 1)), P2 = X(portPt(4 * i + 2)), P3 = X(portPt(4 * i + 3)), st = stateOf(PUC[i]);
+    const mid = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], c = mid(mid(P0, P1, 0.5), mid(P2, P3, 0.5), 0.5);
+    stroke(() => { ctx.beginPath(); ctx.moveTo(...P0); ctx.lineTo(...mid(P0, P2, 0.32)); }, pw(4 * i)); stroke(() => { ctx.beginPath(); ctx.moveTo(...mid(P0, P2, 0.68)); ctx.lineTo(...P2); }, pw(4 * i + 2));
+    stroke(() => { ctx.beginPath(); ctx.moveTo(...P1); ctx.lineTo(...mid(P1, P3, 0.32)); }, pw(4 * i + 1)); stroke(() => { ctx.beginPath(); ctx.moveTo(...mid(P1, P3, 0.68)); ctx.lineTo(...P3); }, pw(4 * i + 3));
+    // MZI box with the state glyph
+    const a = mid(P0, P2, 0.32), b = mid(P1, P3, 0.32), d = mid(P0, P2, 0.68), e = mid(P1, P3, 0.68), col = STC[st];
+    ctx.fillStyle = 'rgba(14,19,26,0.92)'; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...d); ctx.lineTo(...e); ctx.lineTo(...b); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = col; ctx.lineWidth = i === S.sel ? 2.4 : 1.3; ctx.stroke();
+    ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.beginPath();
+    const s2 = Math.sin(PUC[i].th) ** 2;
+    if (st === 'bar') { ctx.moveTo(...a); ctx.lineTo(...d); ctx.moveTo(...b); ctx.lineTo(...e); }
+    else if (st === 'cross') { ctx.moveTo(...a); ctx.lineTo(...e); ctx.moveTo(...b); ctx.lineTo(...d); }
+    else { ctx.moveTo(...a); ctx.lineTo(...d); ctx.moveTo(...b); ctx.lineTo(...e); ctx.stroke(); ctx.beginPath(); ctx.globalAlpha = 0.4 + 0.6 * s2; ctx.moveTo(...a); ctx.lineTo(...e); ctx.moveTo(...b); ctx.lineTo(...d); }
+    ctx.stroke(); ctx.globalAlpha = 1;
+    if (i === S.sel) { ctx.save(); ctx.shadowColor = '#ffcc66'; ctx.shadowBlur = 12; ctx.strokeStyle = '#ffcc66'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(c[0], c[1], 0.3 * sc, 0, 2 * PI); ctx.stroke(); ctx.restore(); }
+    if (sc > 70) { ctx.fillStyle = '#8b98a9'; ctx.font = '10px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; const nrm = [-(P2[1] - P0[1]), P2[0] - P0[0]], L = Math.hypot(...nrm) || 1; ctx.fillText(i + 1, c[0] + nrm[0] / L * 0.21 * sc, c[1] + nrm[1] / L * 0.21 * sc); }
+    hits.push({ type: 'puc', i, x: c[0], y: c[1], r: 0.24 * sc });
+  });
+  if (routeMsg) { ctx.fillStyle = '#ffb27a'; ctx.font = '600 13px system-ui,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('⚠ ' + routeMsg, 12, 10); }
+  // external ports
+  const outs = SOL.out.map(o => o.re * o.re + o.im * o.im), pmax = Math.max(...outs, 1e-9);
+  MESH.ext.forEach((o, k) => {
+    const A = X(portPt(o.p)), B = X([o.x, o.y]), isIn = k === S.inp, isOut = k === S.outp;
+    stroke(() => { ctx.beginPath(); ctx.moveTo(...A); ctx.lineTo(...B); }, isIn ? 1 : outs[k], 1.8);
+    const g = Math.sqrt(clamp(outs[k] / pmax, 0, 1));
+    ctx.save(); if (g > 0.05 && !isIn) { ctx.shadowColor = 'rgba(255,77,109,0.9)'; ctx.shadowBlur = 14 * g; }
+    ctx.fillStyle = isIn ? '#ff4d6d' : `rgba(255,${120 + 100 * g | 0},${140 + 90 * g | 0},${0.15 + 0.85 * g})`; ctx.beginPath(); ctx.arc(B[0], B[1], 6.5, 0, 2 * PI); ctx.fill(); ctx.restore();
+    ctx.strokeStyle = isOut ? '#5fd38d' : isIn ? '#ff8fa8' : 'rgba(200,215,240,0.6)'; ctx.lineWidth = isOut || isIn ? 2.4 : 1.1; ctx.beginPath(); ctx.arc(B[0], B[1], isOut ? 9.5 : 6.5, 0, 2 * PI); ctx.stroke();
+    const dirx = B[0] - A[0], diry = B[1] - A[1], L = Math.hypot(dirx, diry) || 1, lx = B[0] + dirx / L * 20, ly = B[1] + diry / L * 16;
+    ctx.font = '600 11px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = isIn ? '#ff8fa8' : isOut ? '#5fd38d' : '#c9d3de'; ctx.fillText(k + 1, lx, ly);
+    if (!isIn && outs[k] > 1e-4) { ctx.font = '10px system-ui,sans-serif'; ctx.fillStyle = '#e6edf3'; ctx.fillText(S.glow === 'log' ? `${dB(outs[k]).toFixed(1)}dB` : `${(outs[k] * 100).toFixed(0)}%`, lx + dirx / L * 2, ly + 12); }
+    hits.push({ type: 'port', k, x: B[0], y: B[1], r: 11 });
+  });
+}
+/* ------------------------------------------------ plots */
+const cPlot = document.getElementById('cPlot');
+function drawPlot() {
+  const lam0 = 1550 + S.det / 1000;
+  if (S.plot === 'ports') {
+    const outs = SOL.out.map(o => o.re * o.re + o.im * o.im), xs = outs.map((_, i) => i + 1), ydb = outs.map(p => Math.max(-60, dB(p)));
+    setTxt('plotNote', `λ = ${lam0.toFixed(4)} nm · input port ${S.inp + 1} (1 = all the input power)`);
+    linePlot(cPlot, { x0: 0.5, x1: outs.length + 0.5, y0: -60, y1: 3, xlabel: 'Port', ylabel: 'Output power (dB)', xfmt: v => Number.isInteger(v) && v >= 1 ? String(v) : '',
+      series: [{ x: xs, y: ydb, color: 'rgba(95,211,141,0.35)', width: 1 }],
+      points: xs.map((x, i) => ({ x, y: ydb[i], color: i === S.inp ? '#ff4d6d' : i === S.outp ? '#5fd38d' : '#4aa8ff' })),
+      vlines: [{ x: S.outp + 1, color: 'rgba(95,211,141,0.6)', label: 'monitored' }, { x: S.inp + 1, color: 'rgba(255,77,109,0.6)', label: 'input (reflection)', row: 1 }] });
+    return;
+  }
+  const sp = spectrum(), xs = sp.lam.map(l => (l - 1550) * 1000);
+  if (S.plot === 'spec' || S.plot === 'all') {
+    const series = [], leg = [];
+    if (S.plot === 'all') MESH.ext.forEach((_, k) => { if (k !== S.outp && Math.max(...sp.P[k]) > 1e-3) { series.push({ x: xs, y: sp.P[k].map(p => Math.max(-50, dB(p))), color: `hsla(${(k * 47) % 360},70%,62%,0.75)`, width: 1.2 }); leg.push({ color: `hsla(${(k * 47) % 360},70%,62%,0.9)`, label: `port ${k + 1}` }); } });
+    series.push({ x: xs, y: sp.P[S.outp].map(p => Math.max(-50, dB(p))), color: '#5fd38d', width: 2.4 }); leg.unshift({ color: '#5fd38d', label: `port ${S.outp + 1} (monitored)` });
+    setTxt('plotNote', `input port ${S.inp + 1} · ${S.npts} wavelengths around 1550 nm`);
+    linePlot(cPlot, { x0: xs[0], x1: xs[xs.length - 1], y0: -50, y1: 3, xlabel: 'Detuning from 1550 nm (pm)', ylabel: 'Power (dB)', series, vlines: [{ x: S.det, color: '#ffcc66', label: 'map λ' }], legend: leg.slice(0, 8) });
+  } else {
+    const ph = sp.ph[S.outp], un = [ph[0]]; for (let i = 1; i < ph.length; i++) { let d = ph[i] - ph[i - 1]; while (d > PI) d -= 2 * PI; while (d < -PI) d += 2 * PI; un.push(un[i - 1] + d); }
+    const gd = [], gx = [];
+    for (let i = 1; i < un.length; i++) { const f1 = C0 / (sp.lam[i - 1] * 1e-9), f2 = C0 / (sp.lam[i] * 1e-9); gd.push(-(un[i] - un[i - 1]) / (2 * PI * (f2 - f1)) * 1e12); gx.push((xs[i] + xs[i - 1]) / 2); }
+    const lo = Math.min(...gd), hi = Math.max(...gd), pad = 0.1 * (hi - lo || 10);
+    setTxt('plotNote', `group delay of port ${S.outp + 1}; one PUC = ${(S.ng * S.BUL * 1e-6 / C0 * 1e12).toFixed(1)} ps`);
+    linePlot(cPlot, { x0: gx[0], x1: gx[gx.length - 1], y0: lo - pad, y1: hi + pad, xlabel: 'Detuning from 1550 nm (pm)', ylabel: 'Group delay (ps)', series: [{ x: gx, y: gd, color: '#ffcc66', width: 2 }], vlines: [{ x: S.det, color: 'rgba(255,255,255,0.4)', label: 'map λ' }] });
+  }
+}
+/* ------------------------------------------------ readouts */
+function update() {
+  const outs = SOL.out.map(o => o.re * o.re + o.im * o.im), tot = outs.reduce((a, b) => a + b, 0), tau = S.ng * S.BUL * 1e-6 / C0;
+  const ncell = S.topo === 'hex' ? 6 : S.topo === 'square' ? 4 : 3, fsr = 1550 * 1550 / (S.ng * ncell * S.BUL * 1e3);
+  const counts = { bar: 0, cross: 0, tc: 0 }; PUC.forEach(p => counts[stateOf(p)]++);
+  readouts('ro', [
+    ['PUCs · cells · ports', `${LAT.E.length} <small>·</small> ${LAT.C.length} <small>·</small> ${MESH.ext.length}`],
+    ['bar · cross · tunable', `${counts.bar} <small>·</small> ${counts.cross} <small>·</small> ${counts.tc}`],
+    [`Output port ${S.outp + 1}`, `${dB(outs[S.outp]).toFixed(2)} <small>dB</small>`],
+    [`Back to input port ${S.inp + 1}`, `${outs[S.inp] > 1e-12 ? dB(outs[S.inp]).toFixed(1) : '−∞'} <small>dB</small>`],
+    ['Total output power', `${(tot * 100).toFixed(2)} <small>%</small>`],
+    ['PUC delay τ', `${(tau * 1e12).toFixed(2)} <small>ps</small>`],
+    [`Cell FSR (${ncell} PUCs)`, `${(fsr * 1000).toFixed(1)} <small>pm ·</small> ${(1 / (ncell * tau) / 1e9).toFixed(1)} <small>GHz</small>`],
+    ['Unknowns · bandwidth', `${MESH.internal.length} <small>·</small> ${SOL.kl}+${SOL.ku}`]
+  ]);
+  setTxt('meshTitle', `${{ square: 'Square', tri: 'Triangular', hex: 'Hexagonal' }[S.topo]} mesh · ${LAT.E.length} PUCs`);
+  setTxt('lamNote', `· power map at λ = ${(1550 + S.det / 1000).toFixed(4)} nm`);
+  setTxt('lvP', `α = ${amp().toFixed(4)}, τ = ${(tau * 1e12).toFixed(2)} ps`); setTxt('lvS', `${MESH.internal.length} internal unknowns, total output ${(tot * 100).toFixed(1)} %`);
+  setTxt('lvF', `${ncell} PUCs: ${(fsr * 1000).toFixed(1)} pm`);
+  setTxt('topoNote', `${LAT.deg0} PUCs per vertex · smallest cell ${ncell} PUCs`);
+  const sel = S.sel >= 0;
+  setTxt('selTitle', sel ? `PUC ${S.sel + 1} · κ = sin²θ = ${(Math.sin(PUC[S.sel].th) ** 2 * 100).toFixed(1)} % (cross)` : 'No PUC selected (click one)');
+  document.getElementById('selBox').style.opacity = sel ? 1 : 0.55;
+  if (sel) setSeg('segState', stateOf(PUC[S.sel]));
+  SEL.forEach(c => document.getElementById('row_' + c.id).classList.toggle('off', !sel));
+}
+/* ------------------------------------------------ controls */
+const SL = [
+  { id: 'IL', g: 'phys', lab: 'Loss per PUC', min: 0, max: 1.5, step: 0.01, unit: 'dB', dec: 2, get: () => S.IL, set: v => S.IL = v, after: invalidate },
+  { id: 'BUL', g: 'phys', lab: 'Basic unit length (BUL)', min: 100, max: 3000, step: 10, unit: 'µm', dec: 0, get: () => S.BUL, set: v => S.BUL = v, after: invalidate },
+  { id: 'span', g: 'phys', lab: 'Wavelength span', min: 0.02, max: 5, step: 0.01, log: true, unit: 'nm', dec: 2, get: () => S.span, set: v => S.span = v, after: () => { S.det = clamp(S.det, -S.span * 500, S.span * 500); invalidate(); } },
+  { id: 'det', g: 'phys', lab: 'Wavelength of the power map', min: -2500, max: 2500, step: 0.1, unit: 'pm', dec: 1, get: () => S.det, set: v => S.det = clamp(v, -S.span * 500, S.span * 500), after: () => dirty = true }
+];
+const SEL = [
+  { id: 'kap', g: 'sel', lab: 'Coupling κ = sin²θ (to cross)', min: 0, max: 100, step: 0.1, unit: '%', dec: 1, get: () => S.sel >= 0 ? Math.sin(PUC[S.sel].th) ** 2 * 100 : 0, set: v => { if (S.sel >= 0) PUC[S.sel].th = Math.asin(Math.sqrt(clamp(v / 100, 0, 1))); }, after: invalidate },
+  { id: 'De', g: 'sel', lab: 'Common phase Δ', min: 0, max: 2, step: 0.001, unit: 'π', dec: 3, get: () => S.sel >= 0 ? PUC[S.sel].De / PI : 0, set: v => { if (S.sel >= 0) PUC[S.sel].De = v * PI; }, after: invalidate }
+];
+SL.push(...SEL);
+document.getElementById('selTopo').onchange = e => { S.topo = e.target.value; newMesh(); };
+wireSeg('segSize', v => { S.size = +v; newMesh(); });
+wireSeg('segGlow', v => S.glow = v);
+wireSeg('segPlot', v => S.plot = v);
+wireSeg('segState', v => { if (S.sel < 0) return; PUC[S.sel].th = v === 'bar' ? 0 : v === 'cross' ? PI / 2 : PI / 4; SL.forEach(syncSlider); invalidate(); });
+document.getElementById('selIn').onchange = e => { S.inp = +e.target.value; if (!reachable(S.inp).has(S.outp)) S.outp = farthestReachable(); fillPorts(); invalidate(); };
+document.getElementById('selOut').onchange = e => { S.outp = +e.target.value; invalidate(); };
+document.getElementById('bRoute').onclick = () => { presetRoute(); S.sel = -1; SL.forEach(syncSlider); };
+document.getElementById('bRing').onclick = () => { if (!presetRing()) setTxt('plotNote', 'No route found between these ports'); SL.forEach(syncSlider); };
+document.getElementById('bBar').onclick = () => { PUC.forEach(p => { p.th = 0; p.De = 0; }); invalidate(); };
+document.getElementById('bCross').onclick = () => { PUC.forEach(p => { p.th = PI / 2; p.De = 0; }); invalidate(); };
+document.getElementById('bRand').onclick = () => { let a = ++S.seed * 9973; const r = () => (a = (a * 16807) % 2147483647) / 2147483647; PUC.forEach(p => { p.th = r() * PI / 2; p.De = r() * 2 * PI; }); invalidate(); };
+document.getElementById('bDesel').onclick = () => { S.sel = -1; dirty = true; };
+function hitAt(e) { const r = cMesh.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; let best = null, bd = 1e9; for (const h of hits) { const d = Math.hypot(h.x - x, h.y - y); if (d < h.r && d < bd) { bd = d; best = h; } } return best; }
+cMesh.addEventListener('click', e => {
+  const h = hitAt(e); if (!h) return;
+  if (h.type === 'port') { if (e.shiftKey) S.outp = h.k; else { S.inp = h.k; if (!reachable(S.inp).has(S.outp)) S.outp = farthestReachable(); } fillPorts(); invalidate(); return; }
+  const st = stateOf(PUC[h.i]); PUC[h.i].th = st === 'bar' ? PI / 2 : st === 'cross' ? Math.asin(Math.sqrt(0.5)) : 0;
+  S.sel = h.i; SL.forEach(syncSlider); invalidate();
+});
+cMesh.addEventListener('contextmenu', e => { const h = hitAt(e); if (h && h.type === 'port') { e.preventDefault(); S.outp = h.k; fillPorts(); invalidate(); } });
+window.addEventListener('resize', () => dirty = true);
+buildSliders(); newMesh();
+let tA = 0, last = performance.now();
+(function loop(now) {
+  now = now || performance.now(); tA += Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now;
+  if (dirty) { SOL = solveAt(1550 + S.det / 1000); dirty = false; drawPlot(); update(); SL.forEach(syncOut); }
+  drawMesh(tA);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
