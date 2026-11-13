@@ -116,7 +116,7 @@ select.sm{background:#0f141b;color:var(--text);border:1px solid var(--line);bord
       <span style="margin-left:auto">Glow</span><span class="seg" id="segGlow"><button data-v="lin" class="on">linear</button><button data-v="log">log</button></span>
     </div>
     <canvas id="cMesh"></canvas>
-    <div class="legend-st" style="margin-top:6px"><span><i style="background:#4aa8ff"></i>bar (θ = 0)</span><span><i style="background:#ff9548"></i>cross (θ = π/2)</span><span><i style="background:#c08cff"></i>tunable coupler</span><span><i style="background:#ff4d6d"></i>input port</span><span><i style="background:#5fd38d"></i>monitored output</span><span id="lamNote"></span></div>
+    <div class="legend-st" style="margin-top:6px"><span><i style="background:#4aa8ff"></i>bar (θ = 0)</span><span><i style="background:#ff9548"></i>cross (θ = π/2)</span><span><i style="background:#c08cff"></i>tunable coupler</span><span><i style="background:#ffbe5a"></i>heaters φ₁ = Δ+θ, φ₂ = Δ−θ (glow ∝ phase)</span><span><i style="background:#ff4d6d"></i>input port</span><span><i style="background:#5fd38d"></i>monitored output</span><span id="lamNote"></span></div>
   </section>
 
   <section class="card">
@@ -443,7 +443,7 @@ function solveMesh(M, pucs, src, ph) {
 
 const S = { topo: 'hex', size: 1, IL: 0.2, BUL: 900, ng: 4.2, span: 0.4, npts: 801, det: 0, glow: 'lin', plot: 'ports', inp: 0, outp: 1, sel: -1, seed: 1 };
 const C0 = 299792458;
-let routeMsg = '', LAT = null, MESH = null, PUC = [], SOL = null, SPEC = null, specKey = '', hits = [];
+let hoverPuc = -1, routeMsg = '', LAT = null, MESH = null, PUC = [], SOL = null, SPEC = null, specKey = '', hits = [];
 const stateOf = p => Math.abs(p.th) < 1e-6 ? 'bar' : Math.abs(p.th - PI / 2) < 1e-6 ? 'cross' : 'tc';
 function newMesh() {
   LAT = makeLattice(S.topo, S.size); MESH = buildMesh(LAT);
@@ -539,28 +539,36 @@ function drawMesh(t) {
   // vertex links
   for (let p = 0; p < MESH.nP; p++) { const q = MESH.link[p]; if (q < p) continue; const A = X(portPt(p)), B = X(portPt(q)), E = LAT.E[p >> 2], vtx = X([V[(p & 3) < 2 ? E.u : E.v].x, V[(p & 3) < 2 ? E.u : E.v].y]);
     const mx = (A[0] + B[0]) / 2 * 0.4 + vtx[0] * 0.6, my = (A[1] + B[1]) / 2 * 0.4 + vtx[1] * 0.6; stroke(() => { ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.quadraticCurveTo(mx, my, B[0], B[1]); }, pw(p), 1.8); }
-  // PUCs: two rails with the MZI in the middle
+  // PUCs drawn as real MZIs: rails → coupler → two arms with heaters (φ1 = Δ + θ, φ2 = Δ − θ) → coupler → rails
   hits = [];
+  const heater = (A, B, level) => {   // heater strip along A→B, glow ∝ phase/2π
+    const on = level > 0.02; if (on) { ctx.save(); ctx.shadowColor = `rgba(255,150,60,${0.4 + 0.6 * level})`; ctx.shadowBlur = 4 + 10 * level; }
+    ctx.strokeStyle = `rgba(255,${190 - 40 * level | 0},${90 - 40 * level | 0},${0.25 + 0.75 * level})`; ctx.lineWidth = Math.max(2.5, 0.022 * sc); ctx.lineCap = 'butt';
+    ctx.beginPath(); ctx.moveTo(...A); ctx.lineTo(...B); ctx.stroke(); if (on) ctx.restore(); ctx.lineCap = 'round';
+  };
   LAT.E.forEach((E, i) => {
-    const P0 = X(portPt(4 * i)), P1 = X(portPt(4 * i + 1)), P2 = X(portPt(4 * i + 2)), P3 = X(portPt(4 * i + 3)), st = stateOf(PUC[i]);
-    const mid = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], c = mid(mid(P0, P1, 0.5), mid(P2, P3, 0.5), 0.5);
-    stroke(() => { ctx.beginPath(); ctx.moveTo(...P0); ctx.lineTo(...mid(P0, P2, 0.32)); }, pw(4 * i)); stroke(() => { ctx.beginPath(); ctx.moveTo(...mid(P0, P2, 0.68)); ctx.lineTo(...P2); }, pw(4 * i + 2));
-    stroke(() => { ctx.beginPath(); ctx.moveTo(...P1); ctx.lineTo(...mid(P1, P3, 0.32)); }, pw(4 * i + 1)); stroke(() => { ctx.beginPath(); ctx.moveTo(...mid(P1, P3, 0.68)); ctx.lineTo(...P3); }, pw(4 * i + 3));
-    // MZI box with the state glyph
-    const a = mid(P0, P2, 0.32), b = mid(P1, P3, 0.32), d = mid(P0, P2, 0.68), e = mid(P1, P3, 0.68), col = STC[st];
-    ctx.fillStyle = 'rgba(14,19,26,0.92)'; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...d); ctx.lineTo(...e); ctx.lineTo(...b); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = col; ctx.lineWidth = i === S.sel ? 2.4 : 1.3; ctx.stroke();
-    ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.beginPath();
-    const s2 = Math.sin(PUC[i].th) ** 2;
-    if (st === 'bar') { ctx.moveTo(...a); ctx.lineTo(...d); ctx.moveTo(...b); ctx.lineTo(...e); }
-    else if (st === 'cross') { ctx.moveTo(...a); ctx.lineTo(...e); ctx.moveTo(...b); ctx.lineTo(...d); }
-    else { ctx.moveTo(...a); ctx.lineTo(...d); ctx.moveTo(...b); ctx.lineTo(...e); ctx.stroke(); ctx.beginPath(); ctx.globalAlpha = 0.4 + 0.6 * s2; ctx.moveTo(...a); ctx.lineTo(...e); ctx.moveTo(...b); ctx.lineTo(...d); }
-    ctx.stroke(); ctx.globalAlpha = 1;
-    if (i === S.sel) { ctx.save(); ctx.shadowColor = '#ffcc66'; ctx.shadowBlur = 12; ctx.strokeStyle = '#ffcc66'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(c[0], c[1], 0.3 * sc, 0, 2 * PI); ctx.stroke(); ctx.restore(); }
-    if (sc > 70) { ctx.fillStyle = '#8b98a9'; ctx.font = '10px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; const nrm = [-(P2[1] - P0[1]), P2[0] - P0[0]], L = Math.hypot(...nrm) || 1; ctx.fillText(i + 1, c[0] + nrm[0] / L * 0.21 * sc, c[1] + nrm[1] / L * 0.21 * sc); }
-    hits.push({ type: 'puc', i, x: c[0], y: c[1], r: 0.24 * sc });
+    const u = V[E.u], v = V[E.v], dx = v.x - u.x, dy = v.y - u.y, Ln = Math.hypot(dx, dy), ux = dx / Ln, uy = dy / Ln, nx = -uy, ny = ux;
+    const f0 = gapEnd, f1 = Ln - gapEnd, Q = (f, o) => X([u.x + ux * (f0 + (f1 - f0) * f) + nx * o, u.y + uy * (f0 + (f1 - f0) * f) + ny * o]);
+    const r = rail, g = rail * 0.22, st = stateOf(PUC[i]), tot = pw(4 * i) + pw(4 * i + 1) + pw(4 * i + 2) + pw(4 * i + 3);
+    const sb = (fa, oa, fb, ob) => { const A = Q(fa, oa), B = Q(fb, ob), C1 = Q((fa + fb) / 2, oa), C2 = Q((fa + fb) / 2, ob); ctx.moveTo(...A); ctx.bezierCurveTo(...C1, ...C2, ...B); };
+    const line = (fa, fb, o) => { const A = Q(fa, o), B = Q(fb, o); ctx.moveTo(...A); ctx.lineTo(...B); };
+    for (const [sg, pIn, pOut] of [[1, 4 * i, 4 * i + 2], [-1, 4 * i + 1, 4 * i + 3]]) {
+      stroke(() => { ctx.beginPath(); line(0, 0.1, sg * r); sb(0.1, sg * r, 0.2, sg * g); line(0.2, 0.28, sg * g); }, pw(pIn));                 // input rail into coupler 1
+      stroke(() => { ctx.beginPath(); sb(0.28, sg * g, 0.38, sg * r); line(0.38, 0.62, sg * r); sb(0.62, sg * r, 0.72, sg * g); }, tot / 4);    // arm
+      stroke(() => { ctx.beginPath(); line(0.72, 0.8, sg * g); sb(0.8, sg * g, 0.9, sg * r); line(0.9, 1, sg * r); }, pw(pOut));               // coupler 2 out to rail
+    }
+    const p1 = (((PUC[i].De + PUC[i].th) % (2 * PI)) + 2 * PI) % (2 * PI), p2 = (((PUC[i].De - PUC[i].th) % (2 * PI)) + 2 * PI) % (2 * PI);
+    heater(Q(0.42, r + 0.028), Q(0.58, r + 0.028), p1 / (2 * PI)); heater(Q(0.42, -r - 0.028), Q(0.58, -r - 0.028), p2 / (2 * PI));
+    // state frame
+    const col = STC[st], c = Q(0.5, 0), fp = S.topo === 'tri' ? [0.22, 0.78, 0.04] : [0.08, 0.92, 0.07], corners = [Q(fp[0], r + fp[2]), Q(fp[1], r + fp[2]), Q(fp[1], -r - fp[2]), Q(fp[0], -r - fp[2])];
+    ctx.save(); ctx.strokeStyle = col; ctx.globalAlpha = i === S.sel ? 1 : 0.55; ctx.lineWidth = i === S.sel ? 2 : 1; ctx.setLineDash(i === S.sel ? [] : [4, 3]);
+    ctx.beginPath(); corners.forEach((q, k) => k ? ctx.lineTo(...q) : ctx.moveTo(...q)); ctx.closePath(); ctx.stroke(); ctx.restore();
+    if (i === S.sel) { ctx.save(); ctx.shadowColor = '#ffcc66'; ctx.shadowBlur = 14; ctx.strokeStyle = 'rgba(255,204,102,0.9)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(c[0], c[1], 0.34 * sc, 0, 2 * PI); ctx.stroke(); ctx.restore(); }
+    if (sc > (S.topo === 'tri' ? 120 : 70)) { const lp = Q(0.5, r + 0.15); ctx.fillStyle = '#8b98a9'; ctx.font = '10px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(i + 1, lp[0], lp[1]); }
+    hits.push({ type: 'puc', i, x: c[0], y: c[1], r: 0.26 * sc });
   });
-  if (routeMsg) { ctx.fillStyle = '#ffb27a'; ctx.font = '600 13px system-ui,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('⚠ ' + routeMsg, 12, 10); }
+  if (hoverPuc >= 0) { const h = hits.find(x => x.type === 'puc' && x.i === hoverPuc); if (h) { const P = PUC[hoverPuc], st = stateOf(P);
+    tag(ctx, clamp(h.x, 190, w - 190), Math.max(16, h.y - 0.4 * sc), `PUC ${hoverPuc + 1} · ${st === 'tc' ? 'tunable' : st} · θ = ${(P.th / PI).toFixed(3)}π · κ = ${(Math.sin(P.th) ** 2 * 100).toFixed(1)} % · Δ = ${(P.De / PI).toFixed(2)}π`, '#fff', 'rgba(8,11,16,0.92)'); } }
   // external ports
   const outs = SOL.out.map(o => o.re * o.re + o.im * o.im), pmax = Math.max(...outs, 1e-9);
   MESH.ext.forEach((o, k) => {
@@ -663,6 +671,8 @@ cMesh.addEventListener('click', e => {
   const st = stateOf(PUC[h.i]); PUC[h.i].th = st === 'bar' ? PI / 2 : st === 'cross' ? Math.asin(Math.sqrt(0.5)) : 0;
   S.sel = h.i; SL.forEach(syncSlider); invalidate();
 });
+cMesh.addEventListener('pointermove', e => { const h = hitAt(e); hoverPuc = h && h.type === 'puc' ? h.i : -1; });
+cMesh.addEventListener('pointerleave', () => hoverPuc = -1);
 cMesh.addEventListener('contextmenu', e => { const h = hitAt(e); if (h && h.type === 'port') { e.preventDefault(); S.outp = h.k; fillPorts(); invalidate(); } });
 window.addEventListener('resize', () => dirty = true);
 buildSliders(); newMesh();
