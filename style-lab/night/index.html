@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Programmable Photonics · Lab notebook · night (style test)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#0c1016; --card:#141a22; --card2:#10151c; --line:#243041; --text:#e6edf3; --muted:#8b98a9;
+  --accent:#ffcc66; --glow:#ff4d6d; --blue:#4aa8ff; --green:#5fd38d; --purple:#c792ea;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 24px}
+
+/* hero */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);background:radial-gradient(ellipse at 70% 40%,#16202c 0%,#0c1016 70%)}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:28px;align-items:center;padding-top:44px;padding-bottom:40px}
+@media (max-width:900px){.hero .wrap{grid-template-columns:1fr}}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.hero h1{font-size:40px;line-height:1.1;margin:10px 0 14px;font-weight:700;letter-spacing:-.01em}
+.hero p{color:#c3cdd8;margin:0 0 12px;max-width:600px}
+.hero .cta{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;text-decoration:none;border:1px solid var(--line);background:#1a2330;color:var(--text);border-radius:9px;padding:8px 14px;font-size:14px;cursor:pointer}
+.btn:hover{background:#223046}
+.btn.primary{background:#2d2615;border-color:#6b5a2b;color:var(--accent)}
+#mesh{width:100%;height:auto;display:block}
+
+/* concepts */
+section{padding:34px 0 8px}
+h2{font-size:22px;margin:0 0 6px}
+.lead{color:var(--muted);margin:0 0 18px;max-width:820px}
+.concepts{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.concept{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.concept h3{margin:8px 0 6px;font-size:16px}
+.concept p{margin:0;color:#b9c4cf;font-size:14px}
+.concept svg{width:100%;height:84px;display:block;background:var(--card2);border-radius:8px}
+
+/* catalogue */
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 16px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer}
+.chip.on{background:#223046;color:var(--text);border-color:#34465f}
+.search{margin-left:auto;background:#0f141b;border:1px solid var(--line);color:var(--text);border-radius:999px;padding:6px 14px;font:inherit;font-size:13px;min-width:220px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.comp{position:relative;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;text-decoration:none;transition:transform .15s,border-color .15s,box-shadow .15s}
+a.comp:hover{transform:translateY(-2px);border-color:#4a5d78;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.comp .ill{height:130px;background:radial-gradient(ellipse at 50% 40%,#18212d 0%,#0e131a 80%);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.comp .ill svg{width:88%;height:110px}
+.comp .body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
+.comp h3{margin:0;font-size:16px}
+.comp p{margin:0;color:#b9c4cf;font-size:13.5px;flex:1}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tag{font-size:11.5px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+.badge{position:absolute;z-index:2;top:10px;right:10px;font-size:11px;font-weight:600;letter-spacing:.04em;border-radius:999px;padding:2px 9px}
+.badge.ok{background:#14271d;color:var(--green);border:1px solid rgba(95,211,141,.4)}
+.badge.soon{background:#1a212b;color:var(--muted);border:1px solid var(--line)}
+.comp.soon{opacity:.62}
+.comp.soon .ill svg{filter:grayscale(.6)}
+.cat{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.empty{color:var(--muted);padding:20px 0}
+footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);margin-top:40px;padding:18px 0 30px}
+/* svg glow animation */
+.flow{stroke-dasharray:6 14;animation:flow 1.4s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-40}}
+@media (prefers-reduced-motion:reduce){.flow{animation:none}}
+
+/* ===== style-lab override ===== */
+
+:root{--bg:#1c1a17;--paper:#24211d;--ink:#ece6da;--muted:#a59d8f;--rule:#3a352e;--accent:#e2694f;--accent2:#7fa7d6;
+  --card:var(--paper);--card2:var(--paper);--line:var(--rule);--text:var(--ink);--green:#8fbf8a}
+html,body{background:var(--bg);color:var(--ink);font:16.5px/1.62 "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif}
+.wrap{max-width:1100px}
+.hero{background:none;border-bottom:1px solid var(--ink)}
+.hero .wrap{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:48px;padding-top:64px;padding-bottom:44px;align-items:start}
+.eyebrow{font:600 12px/1 "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.24em;color:var(--accent)}
+.hero h1{font-size:58px;font-weight:400;letter-spacing:-.02em;line-height:1.02;margin:14px 0 22px}
+.hero p{color:#d6cfc2} .hero p:first-of-type::first-letter{font-size:3.1em;float:left;line-height:.9;padding:4px 8px 0 0;color:var(--accent)}
+.btn{border-radius:0;background:transparent;border:1px solid var(--ink);color:var(--ink);font:italic 15px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;padding:8px 18px}
+.btn:hover{background:var(--ink);color:var(--paper)} .btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.fig{margin:0} .fig svg{background:var(--paper);border:1px solid var(--rule)}
+figcaption{font-size:14px;color:var(--muted);margin-top:10px;line-height:1.45} figcaption b{color:var(--ink);font-weight:600}
+section{padding:44px 0 8px}
+h2{font-size:34px;font-weight:400;letter-spacing:-.01em;border-top:3px double var(--ink);padding-top:16px;margin-bottom:8px}
+.lead{color:var(--muted);font-style:italic}
+.chip{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--muted);font:italic 15px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;padding:2px 0;margin-right:18px}
+.chip.on{color:var(--ink);border-bottom-color:var(--accent);background:none}
+.search{border:0;border-bottom:1px solid var(--ink);border-radius:0;background:transparent;color:var(--ink);font:italic 15px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif}
+.grid{grid-template-columns:1fr;gap:0;counter-reset:fig 1}
+.comp{flex-direction:row;gap:28px;background:none;border:0;border-top:1px solid var(--rule);border-radius:0;padding:22px 0;counter-increment:fig;overflow:visible}
+a.comp:hover{transform:none;box-shadow:none;background:linear-gradient(90deg,rgba(226,105,79,.10),transparent 60%)}
+a.comp:hover h3{color:var(--accent)}
+.comp .ill{width:260px;height:126px;flex:none;background:var(--paper);border:1px solid var(--rule)}
+.comp .body{padding:0;gap:4px}
+.comp .body::before{content:"Fig. " counter(fig);font:600 11px/1 "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.comp h3{font-size:25px;font-weight:400;letter-spacing:-.01em}
+.comp p{color:#d6cfc2;font-size:15.5px}
+.meta{gap:0} .tag{border:0;padding:0;font-size:13.5px;font-style:italic;color:var(--muted)} .tag+.tag::before{content:"\00a0·\00a0"}
+.badge{top:22px;right:0;background:none;border:0;padding:0;font:600 11px/1 "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.16em;text-transform:uppercase}
+.badge.ok{background:none;border:0;color:var(--green)} .badge.soon{background:none;border:0}
+.cat{font:italic 14px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;text-transform:none;letter-spacing:0;color:var(--accent)}
+footer{border-top:3px double var(--ink);font-style:italic}
+@media (max-width:760px){.comp{flex-direction:column}.comp .ill{width:100%}}
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:50;background:#ffd84a;color:#111;font:600 12.5px system-ui,sans-serif;padding:6px 14px;display:flex;gap:14px;align-items:center">STYLE TEST · Lab notebook · night — the live site is unchanged <a href="../index.html" style="color:#111">← all style tests</a><a href="dc.html" style="color:#111">simulation page in this style</a></div>
+
+<div class="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Interactive lab</div>
+      <h1>Programmable photonics</h1>
+      <p>Programmable photonics covers any photonic integrated circuit whose behaviour can be changed after fabrication, by electrically tuning phase shifters, couplers or resonators. The same chip can then be reconfigured, re-calibrated or corrected for fabrication errors.</p>
+      <p>Programmable circuits range from single tunable devices, such as switches, tunable filters and delay lines, to application-specific circuits, such as matrix multipliers, beamformers and switching fabrics. At the most flexible end are general-purpose waveguide meshes, which can be programmed to perform many different functions.</p>
+      <p>This site collects interactive simulations of these devices and circuits. Each one has a 3D view, live plots and the model behind it.</p>
+      <div class="cta">
+        <a class="btn primary" href="#catalogue">Browse components ↓</a>
+      </div>
+    </div>
+    <figure class="fig"><svg id="mesh" viewBox="0 0 560 360" aria-label="Hexagonal waveguide mesh"></svg><figcaption><b>Fig. 1</b> — A hexagonal waveguide mesh. Every edge is a tunable basic unit (an MZI) whose state routes the light.</figcaption></figure>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="catalogue">
+    <h2>Component catalogue</h2>
+    <p class="lead">Open an available component to run its simulation. Components marked “coming soon” will be added step by step.</p>
+    <div class="filters" id="filters">
+      <input class="search" id="search" type="search" placeholder="Search components…">
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="empty" hidden>No components match this filter.</div>
+  </section>
+
+  <footer>Programmable Photonics · interactive lab. All simulations run locally in the browser; no internet connection is needed.</footer>
+</div>
+
+<script>
+"use strict";
+/* ======================================================================
+   COMPONENT REGISTRY — to add a component, append an entry here.
+   status: 'available' (needs href) | 'soon'
+   icon:   key of an illustration in ICONS below
+   ====================================================================== */
+const COMPONENTS = [
+  { id: 'ps',   name: 'Thermo-optic phase shifter', category: 'Building blocks', status: 'available',
+    href: '../../components/ps.html', icon: 'ps', tags: ['heater', 'Pπ', 'thermal crosstalk', 'τ'],
+    summary: 'Where Pπ comes from: 2D heat conduction in the cross-section, heater–core distance, isolation trenches, thermal crosstalk and time response.' },
+  { id: 'dc',   name: 'Directional coupler', category: 'Building blocks', status: 'available',
+    href: 'dc.html', icon: 'dc', tags: ['coupled modes', 'gap', 'wavelength'],
+    summary: 'Coupled-mode theory: power exchange versus gap, length and wavelength, asymmetry, fabrication tolerance and link to the MZI imbalance.' },
+  { id: 'mmi',  name: 'MMI coupler', category: 'Building blocks', status: 'available',
+    href: '../../components/mmi.html', icon: 'mmi', tags: ['self-imaging', '1×2 · 2×2', 'imbalance'],
+    summary: 'Self-imaging in 1×2 and 2×2 MMIs by modal propagation analysis: field map, imaging lengths, imbalance, phase and equivalent MZI error.' },
+  { id: 'xing', name: 'Waveguide crossing', category: 'Building blocks', status: 'available',
+    href: '../../components/xing.html', icon: 'xing', tags: ['diffraction', 'tapered crossing', 'crosstalk', 'cascade'],
+    summary: 'Two waveguides crossing at 90°: diffraction in the intersection, tapered MMI-like crossings with an optimum centre width, insertion loss, crosstalk and cascades of N crossings.' },
+  { id: 'mzi',  name: 'MZI · tunable basic unit (TBU)', category: 'Building blocks', status: 'available',
+    href: '../../components/mzi.html', icon: 'tbu', tags: ['tunable coupler', 'dual drive', 'internal + external', 'Iπ · Vπ · Pπ'],
+    summary: 'The Mach–Zehnder interferometer as the tunable basic unit: one internal phase shifter, dual drive (two internal) or internal + external. Transfer matrix as a product of blocks, MMI imbalance and thermo-optic tuning.' },
+  { id: 'ring', name: 'Ring & racetrack (all-pass)', category: 'Building blocks', status: 'available',
+    href: '../../components/ring.html', icon: 'ring', tags: ['FSR', 'Q factor', 'backscattering'],
+    summary: 'Single-bus ring and racetrack: coupling regimes, Q factor, resonance splitting from backscattering, and thermal tuning.' },
+  { id: 'adddrop', name: 'Add-drop ring & racetrack', category: 'Building blocks', status: 'available',
+    href: '../../components/adddrop.html', icon: 'adddrop', tags: ['drop port', 'filter', 'backscattering'],
+    summary: 'Double-bus ring and racetrack filter: through and drop responses, critical coupling, Q factor, backscattering (reflection and add port) and thermal tuning with a side-wall heater.' },
+  { id: 'pd',   name: 'Photodetectors', category: 'Building blocks', status: 'available',
+    href: '../../components/pd.html', icon: 'pd', tags: ['Ge PIN', 'balanced', 'coherent 90° hybrid', 'noise'],
+    summary: 'Three detectors in one page: Ge-on-Si PIN photodiode (responsivity, bandwidth, noise), balanced photodetector (CMRR, RIN cancellation, LO detection) and coherent receiver with a 90° hybrid (I/Q, constellations, impairments).' },
+  { id: 'ff',   name: 'Feed-forward mesh (Reck / Clements)', category: 'Programmable circuits', status: 'available',
+    href: '../../components/ff.html', icon: 'ff', tags: ['unitary', 'Reck · Clements', 'fidelity'],
+    summary: 'Triangular (Reck) and rectangular (Clements) MZI meshes for arbitrary N×N unitaries: theory, decomposition, programming, hand editing of each MZI and robustness to errors and loss.' },
+  { id: 'osw',  name: 'Optical circuit switches', category: 'Programmable circuits', status: 'available',
+    href: '../../components/osw.html', icon: 'osw', tags: ['crossbar', 'Beneš', 'Spanke–Beneš', 'Omega'],
+    summary: 'N×N switch fabrics of 2×2 MZI switches (N = 4 to 32): crossbar, Beneš, Spanke–Beneš and Omega architectures, routing algorithms, blocking, insertion loss and crosstalk.' },
+  { id: 'wb',   name: 'Microring weight bank', category: 'Programmable circuits', status: 'available',
+    href: '../../components/wb.html', icon: 'wb', tags: ['WDM', 'dot product', 'balanced detection'],
+    summary: 'Photonic dot product: inputs on WDM channels set by all-pass ring modulators, weights by add-drop rings, summation by balanced photodetection, inter-channel crosstalk and calibration.' },
+  { id: 'gpp',  name: 'General-purpose processor', category: 'Programmable circuits', status: 'available',
+    href: '../../components/gpp.html', icon: 'hex', tags: ['square · triangular · hexagonal', 'S-parameters', 'recirculation'],
+    summary: 'Recirculating waveguide meshes simulated with scattering parameters: choose the topology, the input and output ports and the state of every PUC, and see routes and synthesized ring resonators in power and wavelength.' }
+];
+
+/* ====================================================================== icons (inline SVG) */
+const WG = '#8a8173', LT = '#e2694f', HT = '#e3b55b', AU = '#c9a54a';
+const ICONS = {
+  ps: `<svg viewBox="0 0 240 110"><path d="M10 60 H230" stroke="${WG}" stroke-width="4" fill="none"/><path d="M10 60 H230" stroke="${LT}" stroke-width="3" class="flow" fill="none"/>
+       <rect x="70" y="44" width="100" height="9" rx="3" fill="${HT}"/><rect x="58" y="30" width="20" height="16" rx="2" fill="${AU}"/><rect x="162" y="30" width="20" height="16" rx="2" fill="${AU}"/>
+       <text x="120" y="92" fill="#a59d8f" font-size="12" text-anchor="middle" font-family="system-ui">Δφ = π·P / Pπ</text></svg>`,
+  dc: `<svg viewBox="0 0 240 110"><g fill="none" stroke-width="4" stroke-linecap="round">
+       <path d="M10 25 C60 25 70 50 95 50 H145 C170 50 180 25 230 25" stroke="${WG}"/><path d="M10 85 C60 85 70 60 95 60 H145 C170 60 180 85 230 85" stroke="${WG}"/>
+       <path d="M10 25 C60 25 70 50 95 50 H145" stroke="${LT}" stroke-width="3" class="flow"/><path d="M120 60 H145 C170 60 180 85 230 85" stroke="${LT}" stroke-width="3" class="flow"/></g></svg>`,
+  mmi: `<svg viewBox="0 0 240 110" class="mmisvg"></svg>`,
+  mzi: `<svg viewBox="0 0 240 110"><g fill="none" stroke-width="4" stroke-linecap="round">
+       <path d="M8 45 H40 M8 65 H40 M200 45 H232 M200 65 H232" stroke="${WG}"/>
+       <path d="M60 50 C75 50 78 22 95 22 H145 C162 22 165 50 180 50 M60 60 C75 60 78 88 95 88 H145 C162 88 165 60 180 60" stroke="${WG}"/>
+       <path d="M8 45 H40" stroke="${LT}" stroke-width="3" class="flow"/><path d="M60 50 C75 50 78 22 95 22 H145 C162 22 165 50 180 50 M60 60 C75 60 78 88 95 88 H145 C162 88 165 60 180 60" stroke="${LT}" stroke-width="3" class="flow" opacity=".8"/><path d="M200 65 H232" stroke="${LT}" stroke-width="3" class="flow"/></g>
+       <rect x="40" y="38" width="22" height="34" rx="2" fill="#2e2a25" stroke="${WG}"/><rect x="178" y="38" width="22" height="34" rx="2" fill="#2e2a25" stroke="${WG}"/>
+       <rect x="98" y="11" width="44" height="7" rx="2" fill="${HT}"/></svg>`,
+  ring: `<svg viewBox="0 0 240 110"><g fill="none" stroke-width="4"><circle cx="120" cy="46" r="32" stroke="${WG}"/><path d="M10 88 H230" stroke="${WG}"/>
+       <circle cx="120" cy="46" r="32" stroke="${LT}" stroke-width="3" class="flow"/><path d="M10 88 H230" stroke="${LT}" stroke-width="3" class="flow"/></g>
+       <path d="M92.29 30 A32 32 0 0 1 147.71 30" stroke="${HT}" stroke-width="6" stroke-linecap="round" fill="none" opacity=".95"/></svg>`,
+  adddrop: `<svg viewBox="0 0 240 110"><g fill="none" stroke-width="4"><circle cx="120" cy="55" r="30" stroke="${WG}"/><path d="M10 96 H230 M10 14 H230" stroke="${WG}"/>
+       <circle cx="120" cy="55" r="30" stroke="${LT}" stroke-width="3" class="flow"/><path d="M10 96 H230" stroke="${LT}" stroke-width="3" class="flow"/><path d="M120 14 H10" stroke="${LT}" stroke-width="3" class="flow"/></g>
+       <path d="M102.79 30.42 A30 30 0 0 0 102.79 79.58" stroke="${HT}" stroke-width="6" stroke-linecap="round" fill="none" opacity=".95"/>
+       <text x="18" y="34" fill="#a59d8f" font-size="11" font-family="system-ui">drop</text><text x="196" y="88" fill="#a59d8f" font-size="11" font-family="system-ui">thru</text></svg>`,
+  tbu: `<svg viewBox="0 0 240 110"><g fill="none" stroke-width="4" stroke-linecap="round">
+       <path d="M8 45 H40 M8 65 H40 M200 45 H232 M200 65 H232" stroke="${WG}"/>
+       <path d="M60 50 C75 50 78 26 95 26 H145 C162 26 165 50 180 50 M60 60 C75 60 78 84 95 84 H145 C162 84 165 60 180 60" stroke="${WG}"/>
+       <path d="M8 45 H40 M60 50 C75 50 78 26 95 26 H145 C162 26 165 50 180 50 M200 45 H232" stroke="${LT}" stroke-width="3" class="flow"/></g>
+       <rect x="40" y="38" width="22" height="34" rx="2" fill="#2e2a25" stroke="${WG}"/><rect x="178" y="38" width="22" height="34" rx="2" fill="#2e2a25" stroke="${WG}"/>
+       <rect x="98" y="15" width="44" height="7" rx="2" fill="${HT}"/><rect x="98" y="88" width="44" height="7" rx="2" fill="${HT}"/></svg>`,
+  ff: `<svg viewBox="0 0 240 110" class="ffsvg"></svg>`,
+  xing: `<svg viewBox="0 0 240 110"><g fill="#3a352e" stroke="${WG}" stroke-width="1.5"><path d="M30 52 H90 L112 46 H128 L150 52 H210 V58 H150 L128 64 H112 L90 58 H30 Z"/><path d="M117 8 V30 L111 44 V66 L117 80 V102 H123 V80 L129 66 V44 L123 30 V8 Z"/></g>
+       <path d="M30 55 H210" stroke="${LT}" stroke-width="3" class="flow" fill="none"/><path d="M120 66 V102" stroke="${LT}" stroke-width="1.5" opacity=".35" fill="none"/></svg>`,
+  pd: `<svg viewBox="0 0 240 110"><defs><linearGradient id="gge" x1="0" x2="1"><stop offset="0" stop-color="#ff7a9a"/><stop offset="1" stop-color="#6b6157"/></linearGradient></defs>
+       <path d="M10 58 H92" stroke="${WG}" stroke-width="4" fill="none"/><path d="M10 58 H92" stroke="${LT}" stroke-width="3" class="flow" fill="none"/>
+       <path d="M92 52 L104 46 H104 V70 L92 64 Z" fill="#4a443b"/><rect x="104" y="44" width="72" height="28" rx="3" fill="url(#gge)"/>
+       <rect x="104" y="30" width="72" height="8" rx="2" fill="${AU}"/><rect x="104" y="78" width="72" height="8" rx="2" fill="${AU}"/><rect x="134" y="54" width="44" height="8" rx="2" fill="${AU}" opacity=".9"/>
+       <rect x="190" y="26" width="34" height="16" rx="2" fill="${AU}"/><rect x="190" y="50" width="34" height="16" rx="2" fill="${AU}"/><rect x="190" y="74" width="34" height="16" rx="2" fill="${AU}"/>
+       <path d="M176 34 H190 M178 58 H190 M176 82 H190" stroke="${AU}" stroke-width="3"/><text x="140" y="104" fill="#a59d8f" font-size="11" text-anchor="middle" font-family="system-ui">Ge</text></svg>`,
+  bpd: `<svg viewBox="0 0 240 110"><g fill="none" stroke-width="4" stroke-linecap="round">
+       <path d="M8 30 C40 30 45 50 70 50 H95 C120 50 125 24 150 24 H160 M8 80 C40 80 45 60 70 60 H95 C120 60 125 86 150 86 H160" stroke="${WG}"/>
+       <path d="M8 30 C40 30 45 50 70 50 H95 C120 50 125 24 150 24 H160 M8 80 C40 80 45 60 70 60 H95 C120 60 125 86 150 86 H160" stroke="${LT}" stroke-width="3" class="flow"/></g>
+       <rect x="160" y="14" width="26" height="20" rx="3" fill="#6b4a40"/><rect x="160" y="76" width="26" height="20" rx="3" fill="#6b4a40"/>
+       <path d="M186 24 H200 V86 H186 M200 55 H226" stroke="${AU}" stroke-width="3" fill="none"/><circle cx="200" cy="55" r="9" fill="#24211d" stroke="${AU}" stroke-width="2"/>
+       <text x="200" y="59.5" fill="#ffcc66" font-size="13" text-anchor="middle" font-family="system-ui">−</text><text x="12" y="20" fill="#a59d8f" font-size="10.5" font-family="system-ui">signal</text><text x="12" y="100" fill="#a59d8f" font-size="10.5" font-family="system-ui">LO</text></svg>`,
+  coh: `<svg viewBox="0 0 240 110"><g fill="none" stroke-width="3.5" stroke-linecap="round">
+       <path d="M8 32 C35 32 40 46 62 46 M8 78 C35 78 40 64 62 64" stroke="${LT}" class="flow"/>
+       <path d="M128 40 C150 40 152 16 172 16 M128 50 C150 50 152 40 172 40 M128 60 C150 60 152 70 172 70 M128 70 C150 70 152 94 172 94" stroke="${LT}" class="flow" opacity=".85"/></g>
+       <rect x="62" y="34" width="66" height="42" rx="4" fill="#3d2e2a" stroke="#ff7a9a" stroke-opacity=".5"/><text x="95" y="59" fill="#ece6da" font-size="12" text-anchor="middle" font-family="system-ui">90°</text>
+       <g fill="#6b4a40"><rect x="172" y="9" width="18" height="14" rx="2"/><rect x="172" y="33" width="18" height="14" rx="2"/><rect x="172" y="63" width="18" height="14" rx="2"/><rect x="172" y="87" width="18" height="14" rx="2"/></g>
+       <path d="M190 16 H200 V40 H190 M200 28 H214 M190 70 H200 V94 H190 M200 82 H214" stroke="${AU}" stroke-width="2.5" fill="none"/>
+       <text x="226" y="32" fill="#4aa8ff" font-size="12" text-anchor="middle" font-family="system-ui">I</text><text x="226" y="86" fill="#ff9548" font-size="12" text-anchor="middle" font-family="system-ui">Q</text></svg>`,
+  osw: `<svg viewBox="0 0 240 110"><g fill="none" stroke-width="3" stroke-linecap="round" stroke="${WG}">
+       <path d="M8 20 H40 M8 43 H40 M8 66 H40 M8 89 H40"/><path d="M68 20 H96 M68 43 C82 43 82 66 96 66 M68 66 C82 66 82 43 96 43 M68 89 H96"/>
+       <path d="M124 20 C138 20 138 43 152 43 M124 43 C138 43 138 20 152 20 M124 66 H152 M124 89 H152"/><path d="M180 20 H232 M180 43 H232 M180 66 H232 M180 89 H232"/></g>
+       <g fill="none" stroke="${LT}" stroke-width="3" class="flow"><path d="M8 66 H40 L68 66 C82 66 82 43 96 43 H124 C138 43 138 20 152 20 H232"/></g>
+       <g fill="#2e2a25" stroke="${WG}"><rect x="40" y="12" width="28" height="39" rx="4"/><rect x="40" y="58" width="28" height="39" rx="4"/><rect x="96" y="12" width="28" height="39" rx="4"/><rect x="96" y="58" width="28" height="39" rx="4"/><rect x="152" y="12" width="28" height="39" rx="4"/><rect x="152" y="58" width="28" height="39" rx="4"/></g>
+       <g fill="${HT}"><rect x="47" y="64" width="14" height="4" rx="1.5"/><rect x="103" y="18" width="14" height="4" rx="1.5"/><rect x="159" y="64" width="14" height="4" rx="1.5"/></g></svg>`,
+  wb: `<svg viewBox="0 0 240 110"><g fill="none" stroke-width="3.5"><path d="M8 84 H200" stroke="${LT}" class="flow"/><path d="M196 30 H40" stroke="${LT}" class="flow" opacity=".8"/>
+       <circle cx="70" cy="57" r="17" stroke="#4fd1ff"/><circle cx="114" cy="57" r="17" stroke="#a46bff"/><circle cx="158" cy="57" r="17" stroke="#ff6b9a"/></g>
+       <rect x="200" y="74" width="20" height="20" rx="3" fill="#6b4a40"/><rect x="196" y="20" width="20" height="20" rx="3" fill="#6b4a40"/>
+       <path d="M216 30 H228 V84 H220" stroke="${AU}" stroke-width="2.5" fill="none"/><circle cx="228" cy="57" r="7" fill="#24211d" stroke="${AU}" stroke-width="2"/><text x="228" y="61" fill="#ffcc66" font-size="11" text-anchor="middle" font-family="system-ui">−</text>
+       <g font-size="10.5" font-family="system-ui" text-anchor="middle"><text x="70" y="106" fill="#4fd1ff">w₁</text><text x="114" y="106" fill="#a46bff">w₂</text><text x="158" y="106" fill="#ff6b9a">w₃</text></g></svg>`,
+  hex: `<svg viewBox="0 0 240 110" class="hexsvg"></svg>`
+};
+
+/* ====================================================================== hex-mesh generator (used by hero and icons) */
+function hexMesh(svg, W, H, size, opts = {}) {
+  const ns = 'http://www.w3.org/2000/svg', g = document.createElementNS(ns, 'g');
+  const w = Math.sqrt(3) * size, edges = new Map(), key = (a, b) => { const k1 = a.map(v => v.toFixed(1)).join(','), k2 = b.map(v => v.toFixed(1)).join(','); return k1 < k2 ? k1 + '|' + k2 : k2 + '|' + k1; };
+  const cols = Math.ceil(W / w) + 1, rows = Math.ceil(H / (1.5 * size)) + 1, cells = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const cx = c * w + (r % 2) * w / 2 + (opts.ox || 0), cy = r * 1.5 * size + (opts.oy || 0);
+    const v = []; for (let i = 0; i < 6; i++) { const a = PI / 3 * i - PI / 2; v.push([cx + size * Math.cos(a), cy + size * Math.sin(a)]); }
+    cells.push({ cx, cy, v });
+    for (let i = 0; i < 6; i++) { const a = v[i], b = v[(i + 1) % 6]; edges.set(key(a, b), [a, b]); }
+  }
+  for (const [, [a, b]] of edges) {
+    const l = document.createElementNS(ns, 'line'); l.setAttribute('x1', a[0]); l.setAttribute('y1', a[1]); l.setAttribute('x2', b[0]); l.setAttribute('y2', b[1]);
+    l.setAttribute('stroke', opts.stroke || '#4a443b'); l.setAttribute('stroke-width', opts.sw || 2.4); l.setAttribute('stroke-linecap', 'round'); g.appendChild(l);
+    if (opts.tbu) { const m = document.createElementNS(ns, 'rect'), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / PI;
+      m.setAttribute('x', mx - opts.tbu / 2); m.setAttribute('y', my - 2.2); m.setAttribute('width', opts.tbu); m.setAttribute('height', 4.4); m.setAttribute('rx', 1.5);
+      m.setAttribute('fill', '#8a8173'); m.setAttribute('transform', `rotate(${ang} ${mx} ${my})`); g.appendChild(m); }
+  }
+  svg.appendChild(g);
+  return cells;
+}
+const PI = Math.PI;
+function drawPath(svg, pts, color, width, cls) {
+  const ns = 'http://www.w3.org/2000/svg', p = document.createElementNS(ns, 'polyline');
+  p.setAttribute('points', pts.map(q => q.join(',')).join(' ')); p.setAttribute('fill', 'none'); p.setAttribute('stroke', color);
+  p.setAttribute('stroke-width', width); p.setAttribute('stroke-linejoin', 'round'); p.setAttribute('stroke-linecap', 'round'); if (cls) p.setAttribute('class', cls);
+  svg.appendChild(p); return p;
+}
+function glowDefs(svg) {
+  svg.insertAdjacentHTML('afterbegin', `<defs><filter id="gl" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`);
+}
+
+/* hero: hexagonal waveguide mesh with its tunable basic units */
+hexMesh(document.getElementById('mesh'), 560, 360, 38, { ox: 12, oy: 20, tbu: 16, sw: 3 });
+
+/* ====================================================================== catalogue rendering */
+const grid = document.getElementById('grid'), filters = document.getElementById('filters');
+const cats = ['All', ...new Set(COMPONENTS.map(c => c.category)), 'Available'];
+let curCat = 'All', query = '';
+cats.forEach((c, i) => {
+  const b = document.createElement('button'); b.className = 'chip' + (i === 0 ? ' on' : ''); b.textContent = c; b.dataset.c = c;
+  b.onclick = () => { curCat = c; document.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b)); render(); };
+  filters.insertBefore(b, document.getElementById('search'));
+});
+document.getElementById('search').addEventListener('input', e => { query = e.target.value.trim().toLowerCase(); render(); });
+function render() {
+  const list = COMPONENTS.filter(c =>
+    (curCat === 'All' || c.category === curCat || (curCat === 'Available' && c.status === 'available')) &&
+    (!query || (c.name + ' ' + c.summary + ' ' + c.tags.join(' ') + ' ' + c.category).toLowerCase().includes(query)));
+  grid.innerHTML = '';
+  for (const c of list) {
+    const ok = c.status === 'available';
+    const el = document.createElement(ok ? 'a' : 'div');
+    el.className = 'comp' + (ok ? '' : ' soon'); if (ok) el.href = c.href;
+    el.innerHTML = `<span class="badge ${ok ? 'ok' : 'soon'}">${ok ? 'Available' : 'Coming soon'}</span>
+      <div class="ill">${ICONS[c.icon] || ''}</div>
+      <div class="body"><span class="cat">${c.category}</span><h3>${c.name}</h3><p>${c.summary}</p>
+      <div class="meta">${c.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div></div>`;
+    grid.appendChild(el);
+  }
+  // procedural icons
+  grid.querySelectorAll('svg.hexsvg').forEach(s => { glowDefs(s); const cells = hexMesh(s, 240, 110, 20, { ox: 8, oy: 8, tbu: 9, sw: 2.6 }); const c = cells.reduce((b, q) => Math.hypot(q.cx - 120, q.cy - 55) < Math.hypot(b.cx - 120, b.cy - 55) ? q : b); drawPath(s, [...c.v, c.v[0]], '#ff4d6d', 3, 'flow').setAttribute('filter', 'url(#gl)'); });
+  grid.querySelectorAll('svg.mmisvg').forEach(s => {
+    // real 1×2 self-imaging pattern (paraxial modal sum), rendered into the MMI body
+    const NZ = 200, NX = 64, M = 14, w0 = 0.09, cv = document.createElement('canvas'); cv.width = NZ; cv.height = NX;
+    const cx = cv.getContext('2d'), im = cx.createImageData(NZ, NX), c = [], pts = 200;
+    for (let n = 0; n < M; n++) { let a = 0; for (let k = 0; k < pts; k++) { const x = (k + 0.5) / pts - 0.5; a += Math.SQRT2 * Math.sin((n + 1) * PI * (x + 0.5)) * Math.exp(-((x / w0) ** 2)); } c.push(a / pts); }
+    const I = new Float32Array(NZ * NX); let mx = 0;
+    for (let j = 0; j < NZ; j++) { const z = (j + 0.5) / NZ * 3 / 8; for (let i = 0; i < NX; i++) { const x = (i + 0.5) / NX - 0.5; let re = 0, imv = 0; for (let n = 0; n < M; n++) { const ph = -n * (n + 2) * PI / 3 * z, v = c[n] * Math.SQRT2 * Math.sin((n + 1) * PI * (x + 0.5)); re += v * Math.cos(ph); imv += v * Math.sin(ph); } const v = re * re + imv * imv; I[j * NX + i] = v; if (v > mx) mx = v; } }
+    const pal = [[0,[36,33,29]],[0.35,[110,40,28]],[0.65,[226,105,79]],[1,[255,222,200]]];
+    const col = t => { for (let k = 1; k < pal.length; k++) if (t <= pal[k][0]) { const u = (t - pal[k - 1][0]) / (pal[k][0] - pal[k - 1][0]), a = pal[k - 1][1], b = pal[k][1]; return a.map((v, q) => v + (b[q] - v) * u); } return pal[pal.length - 1][1]; };
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const cc = col(Math.pow(I[j * NX + i] / mx, 0.6)), k = (i * NZ + j) * 4; im.data[k] = cc[0]; im.data[k + 1] = cc[1]; im.data[k + 2] = cc[2]; im.data[k + 3] = 255; }
+    cx.putImageData(im, 0, 0);
+    s.innerHTML = `<g fill="none" stroke-width="4"><path d="M10 55 H70 M170 39.5 H230 M170 70.5 H230" stroke="${WG}"/>
+      <path d="M10 55 H70" stroke="${LT}" stroke-width="3" class="flow"/><path d="M170 39.5 H230 M170 70.5 H230" stroke="${LT}" stroke-width="3" class="flow"/></g>
+      <image href="${cv.toDataURL()}" x="70" y="24" width="100" height="62" preserveAspectRatio="none"/>
+      <rect x="70" y="24" width="100" height="62" rx="2" fill="none" stroke="#8a8173" stroke-width="1.5"/>`;
+  });
+  grid.querySelectorAll('svg.ffsvg').forEach(s => {
+    const ns = 'http://www.w3.org/2000/svg';
+    for (let i = 0; i < 5; i++) { const p = document.createElementNS(ns, 'path'); p.setAttribute('d', `M10 ${15 + i * 20} H230`); p.setAttribute('stroke', '#8a8173'); p.setAttribute('stroke-width', 3); s.appendChild(p); }
+    for (let col = 0; col < 7; col++) for (let r = (col % 2); r < 4; r += 2) { const x = 40 + col * 27, y = 15 + r * 20; const m = document.createElementNS(ns, 'rect'); m.setAttribute('x', x - 8); m.setAttribute('y', y - 3); m.setAttribute('width', 16); m.setAttribute('height', 26); m.setAttribute('rx', 2); m.setAttribute('fill', '#2a3546'); m.setAttribute('stroke', '#5c6c84'); s.appendChild(m); }
+    // light path routed through the mesh: enters waveguide 0 and is switched down one waveguide at each
+    // MZI set to the cross state until it reaches waveguide 3; the remaining MZIs on its way are in bar state
+    let r = 0, d = 'M10 15'; const target = 3;
+    for (let col = 0; col < 7; col++) {
+      const x = 40 + col * 27, top = (col % 2 === r % 2) ? r : r - 1;   // the MZI in this column that touches row r covers rows top, top+1
+      if (r < target && top === r) { d += ` H${x - 8} L${x + 8} ${15 + (r + 1) * 20}`; r++; }
+    }
+    d += ' H230';
+    const p = document.createElementNS(ns, 'path'); p.setAttribute('d', d); p.setAttribute('stroke', '#e2694f'); p.setAttribute('stroke-width', 2.5); p.setAttribute('stroke-linejoin', 'round'); p.setAttribute('class', 'flow'); p.setAttribute('fill', 'none'); s.appendChild(p);
+  });
+  document.getElementById('empty').hidden = list.length > 0;
+}
+render();
+</script>
+</body>
+</html>
