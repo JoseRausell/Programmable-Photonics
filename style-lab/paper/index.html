@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Programmable Photonics · Lab notebook (style test)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 :root{
   --bg:#0c1016; --card:#141a22; --card2:#10151c; --line:#243041; --text:#e6edf3; --muted:#8b98a9;
@@ -69,36 +70,36 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);margin
 
 :root{--bg:#f3efe6;--paper:#fbf9f4;--ink:#1f1d1a;--muted:#6f685c;--rule:#d8d0c0;--accent:#c23b22;--accent2:#1f4e79;
   --card:var(--paper);--card2:var(--paper);--line:var(--rule);--text:var(--ink);--green:#2c7a4b}
-html,body{background:var(--bg);color:var(--ink);font:16.5px/1.62 "Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif}
+html,body{background:var(--bg);color:var(--ink);font:16.5px/1.62 "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif}
 .wrap{max-width:1100px}
 .hero{background:none;border-bottom:1px solid var(--ink)}
 .hero .wrap{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:48px;padding-top:64px;padding-bottom:44px;align-items:start}
-.eyebrow{font:600 12px/1 "Helvetica Neue",Helvetica,Arial,"Nimbus Sans","Liberation Sans",sans-serif;letter-spacing:.24em;color:var(--accent)}
+.eyebrow{font:600 12px/1 "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.24em;color:var(--accent)}
 .hero h1{font-size:58px;font-weight:400;letter-spacing:-.02em;line-height:1.02;margin:14px 0 22px}
 .hero p{color:#3b372f} .hero p:first-of-type::first-letter{font-size:3.1em;float:left;line-height:.9;padding:4px 8px 0 0;color:var(--accent)}
-.btn{border-radius:0;background:transparent;border:1px solid var(--ink);color:var(--ink);font:italic 15px "Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;padding:8px 18px}
+.btn{border-radius:0;background:transparent;border:1px solid var(--ink);color:var(--ink);font:italic 15px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;padding:8px 18px}
 .btn:hover{background:var(--ink);color:var(--paper)} .btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .fig{margin:0} .fig svg{background:var(--paper);border:1px solid var(--rule)}
 figcaption{font-size:14px;color:var(--muted);margin-top:10px;line-height:1.45} figcaption b{color:var(--ink);font-weight:600}
 section{padding:44px 0 8px}
 h2{font-size:34px;font-weight:400;letter-spacing:-.01em;border-top:3px double var(--ink);padding-top:16px;margin-bottom:8px}
 .lead{color:var(--muted);font-style:italic}
-.chip{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--muted);font:italic 15px "Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;padding:2px 0;margin-right:18px}
+.chip{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--muted);font:italic 15px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;padding:2px 0;margin-right:18px}
 .chip.on{color:var(--ink);border-bottom-color:var(--accent);background:none}
-.search{border:0;border-bottom:1px solid var(--ink);border-radius:0;background:transparent;color:var(--ink);font:italic 15px "Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif}
+.search{border:0;border-bottom:1px solid var(--ink);border-radius:0;background:transparent;color:var(--ink);font:italic 15px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif}
 .grid{grid-template-columns:1fr;gap:0;counter-reset:fig 1}
 .comp{flex-direction:row;gap:28px;background:none;border:0;border-top:1px solid var(--rule);border-radius:0;padding:22px 0;counter-increment:fig;overflow:visible}
 a.comp:hover{transform:none;box-shadow:none;background:linear-gradient(90deg,rgba(194,59,34,.05),transparent 60%)}
 a.comp:hover h3{color:var(--accent)}
 .comp .ill{width:260px;height:126px;flex:none;background:var(--paper);border:1px solid var(--rule)}
 .comp .body{padding:0;gap:4px}
-.comp .body::before{content:"Fig. " counter(fig);font:600 11px/1 "Helvetica Neue",Helvetica,Arial,"Nimbus Sans","Liberation Sans",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.comp .body::before{content:"Fig. " counter(fig);font:600 11px/1 "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .comp h3{font-size:25px;font-weight:400;letter-spacing:-.01em}
 .comp p{color:#3b372f;font-size:15.5px}
 .meta{gap:0} .tag{border:0;padding:0;font-size:13.5px;font-style:italic;color:var(--muted)} .tag+.tag::before{content:"\00a0·\00a0"}
-.badge{top:22px;right:0;background:none;border:0;padding:0;font:600 11px/1 "Helvetica Neue",Helvetica,Arial,"Nimbus Sans","Liberation Sans",sans-serif;letter-spacing:.16em;text-transform:uppercase}
+.badge{top:22px;right:0;background:none;border:0;padding:0;font:600 11px/1 "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.16em;text-transform:uppercase}
 .badge.ok{background:none;border:0;color:var(--green)} .badge.soon{background:none;border:0}
-.cat{font:italic 14px "Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;text-transform:none;letter-spacing:0;color:var(--accent)}
+.cat{font:italic 14px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;text-transform:none;letter-spacing:0;color:var(--accent)}
 footer{border-top:3px double var(--ink);font-style:italic}
 @media (max-width:760px){.comp{flex-direction:column}.comp .ill{width:100%}}
 </style>
