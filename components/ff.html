@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Feed-forward meshes · Reck and Clements</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 
 :root{
@@ -113,6 +114,49 @@ input.ni{width:56px}
 .sx table.pt td,.sx table.pt th{border-bottom:1px solid #1e2836;padding:2px 8px;text-align:right}
 .sx table.pt th{color:var(--muted);font-weight:500}
 #cStep{width:100%;height:210px;display:block;border-radius:8px;background:#0b0f15;margin-top:12px}
+
+/* ===== style-lab override ===== */
+
+:root{--bg:#f3efe6;--card:#fbf9f4;--card2:#f7f3ea;--line:#d8d0c0;--text:#1f1d1a;--muted:#6f685c;--accent:#c23b22;--laser:#c23b22}
+html,body{font:15.5px/1.55 "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;background:var(--bg);color:var(--text)}
+header{border-bottom:1px solid var(--text);padding:22px 28px 14px;margin:0 0 6px}
+header h1{font-size:34px;font-weight:400;letter-spacing:-.01em} header .sub{font-style:italic;font-size:14.5px}
+a.back{background:none;border:0;color:var(--accent);font-style:italic;font-size:14.5px;padding:0} a.back:hover{background:none;text-decoration:underline}
+main{gap:26px 36px;padding:14px 28px 30px}
+.card{background:transparent;border:0;border-top:1px solid var(--text);border-radius:0;padding:12px 0 0}
+.card h2{font:italic 15px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;text-transform:none;letter-spacing:0;color:var(--muted)}
+#c3d{background:radial-gradient(ellipse at 50% 40%,#f1ece2 0%,#e2dccf 80%);border:1px solid var(--line);border-radius:0}
+#cPlot,#cP2{background:#fbf9f4;border:1px solid var(--line);border-radius:0}
+.toolbar{color:var(--muted)}
+.seg{border-radius:0;border-color:var(--text)} .seg button{color:var(--muted);font:italic 14px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif} .seg button+button{border-color:var(--text)} .seg button.on{background:var(--text);color:#fbf9f4}
+.group{background:transparent;border:0;border-left:2px solid var(--line);border-radius:0;padding:4px 0 4px 14px}
+.group h3{color:var(--accent);font:italic 16px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif}
+.row .lab{color:#4b463d;font-size:14px} .row input[type=range]{accent-color:var(--accent)}
+input[type=number],.numin{background:#fff;color:var(--text);border-color:var(--line);border-radius:0}
+.btn{border-radius:0;background:transparent;border:1px solid var(--text);color:var(--text);font:italic 14px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif}
+.btn:hover{background:var(--text);color:#fbf9f4} .btn.primary{background:var(--text);color:#fbf9f4;border-color:var(--text)}
+.ro{background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:4px 0}
+.ro .k{font-style:italic;font-size:13px} .ro .v{font-weight:400;font-size:18px}
+.th{background:transparent;border:0;border-top:1px solid var(--line);border-radius:0;padding:12px 0}
+.th h3{color:var(--accent);font-weight:400;font-size:19px} .th p,.th li{color:#3b372f!important;font-size:15px}
+.eq,table.fm td.f{color:var(--text)} .frac>span:first-child{border-color:var(--text)} .smat{border-color:var(--text)}
+.live{background:#f6e4dd;border-color:#e6bcae;color:var(--accent)}
+table.fm td{color:#3b372f;border-color:var(--line)}
+.cfgsel{background:#fff;color:var(--text);border-color:var(--text);border-radius:0}
+.gdshead .gdsseg{border-radius:0;border-color:var(--text)} .gdshead .gdsseg button{color:var(--muted);font:italic 14px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif} .gdshead .gdsseg button.on{background:var(--text);color:#fbf9f4}
+
+select.sm{background:#fff;color:var(--text);border:1px solid var(--text);border-radius:0;font:14px var(--serif, inherit)}
+#cMesh,#cNet,#cSch,#cStep,.schem,#cF{border-radius:0!important}
+.mt td{background:#fbf9f4;border-color:#d8d0c0;border-radius:0;color:var(--text)}
+.mt td.z{color:#b5ad9f;background:#f3efe6}
+.mt td.zn{color:#2c7a4b;background:#e3efe5;border-color:#9cc7a8}
+.mt td.inv{background:#f6ecd5;border-color:#d9b46a}
+.mt td.ab{background:#f6e4dd;border-color:var(--accent);color:var(--text)}
+.mt td.dg{background:#e3ecf6;border-color:#7fa7d6;color:#1f4e79}
+.sx .f{color:var(--text);background:#fff;border-color:var(--line);border-radius:0}
+.dots i{background:#d8d0c0}
+.selbox{border-color:#d9b46a;background:#f7f0e0;border-radius:0}
+.tabs button.on{background:#f6e4dd}
 </style>
 </head>
 <body>
@@ -273,7 +317,7 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 let dirty = true;
 function f3(v) { const a = Math.abs(v); return !isFinite(v) ? '∞' : a >= 1000 ? v.toFixed(0) : a >= 100 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : a >= 1 ? v.toFixed(3) : v.toFixed(4); }
 const dB = p => 10 * Math.log10(Math.max(p, 1e-12));
-const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+const FONT = '13px \"Newsreader\",\"Iowan Old Style\",\"Palatino Linotype\",\"Book Antiqua\",Palatino,\"URW Palladio L\",Georgia,serif';
 function fitCanvas(c) {
   const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
   const W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
@@ -289,7 +333,7 @@ function niceTicks(a, b, n) {
 }
 function tickFmt(v, step) { const d = Math.max(0, Math.min(6, -Math.floor(Math.log10(step || 1) + 1e-9))); return v.toFixed(d); }
 function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
-function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
+function tag(ctx, x, y, text, color, bg = 'rgba(251,249,244,0.94)', align = 'center') {
   ctx.font = FONT; const w = ctx.measureText(text).width + 10, x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
   ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
   ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + 0.5);
@@ -297,6 +341,8 @@ function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center
 /* colour maps: 'light' (dark → red → white, for optical intensity) and 'heat' (dark blue → red → yellow) */
 const CMAPS = {
   light: [[0, [8, 10, 16]], [0.25, [90, 10, 40]], [0.5, [210, 40, 80]], [0.75, [255, 120, 120]], [1, [255, 235, 230]]],
+  paperI: [[0, [251, 249, 244]], [0.35, [240, 196, 176]], [0.65, [205, 80, 48]], [1, [110, 22, 10]]],
+  paperE: [[0, [251, 249, 244]], [0.4, [243, 214, 150]], [0.75, [214, 110, 40]], [1, [140, 30, 20]]],
   heat: [[0, [14, 22, 48]], [0.25, [60, 30, 110]], [0.5, [180, 40, 90]], [0.75, [245, 120, 40]], [1, [255, 240, 150]]]
 };
 function cmap(name, t) {
@@ -348,12 +394,12 @@ function linePlot(canvas, o) {
   const ty = v => o.ylog ? Math.log10(Math.max(v, 1e-30)) : v;
   const Y0 = ty(o.y0), Y1 = ty(o.y1);
   const X = v => m.l + (v - o.x0) / (o.x1 - o.x0) * pw, Y = v => m.t + (1 - (ty(v) - Y0) / (Y1 - Y0)) * ph;
-  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  ctx.fillStyle = '#fbf9f4'; ctx.fillRect(m.l, m.t, pw, ph);
   const xt = niceTicks(o.x0, o.x1, Math.max(3, Math.round(pw / 90))), xst = xt.length > 1 ? xt[1] - xt[0] : 1;
   let yt; if (o.ylog) { yt = []; for (let d = Math.ceil(Y0); d <= Math.floor(Y1); d++) yt.push(Math.pow(10, d)); } else yt = niceTicks(o.y0, o.y1, Math.max(3, Math.round(ph / 55)));
   const yst = !o.ylog && yt.length > 1 ? yt[1] - yt[0] : 1;
   ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(31,29,26,0.08)'; ctx.lineWidth = 1;
   for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
   for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
   for (const b of (o.bands || [])) { ctx.fillStyle = b.color; ctx.fillRect(X(b.x0), m.t, X(b.x1) - X(b.x0), ph); }
@@ -370,15 +416,15 @@ function linePlot(canvas, o) {
   }
   for (const p of (o.points || [])) { if (p.x < o.x0 || p.x > o.x1) continue; ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 5, 0, 2 * PI); ctx.fillStyle = p.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); }
   ctx.restore();
-  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
-  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.strokeStyle = '#1f1d1a'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#6f685c'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
   for (const t of xt) ctx.fillText(o.xfmt ? o.xfmt(t) : tickFmt(t, xst), X(t), m.t + ph + 6);
   ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
   for (const t of yt) ctx.fillText(o.yfmt ? o.yfmt(t) : (o.ylog ? (t >= 1 ? String(t) : t.toExponential(0)) : tickFmt(t, yst)), m.l - 6, Y(t));
-  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
+  ctx.fillStyle = '#2b2925'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
   ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText(o.ylabel, 0, 0); ctx.restore();
   let lx = m.l; const ly = 14; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
+  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#2b2925'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
   return { X, Y, m, pw, ph };
 }
 
@@ -533,18 +579,18 @@ function drawPD(ctx, x, y, p, pmax) {   // photodetector: metallic body, glowing
   gr.addColorStop(0, '#3a475d'); gr.addColorStop(0.5, '#232c3a'); gr.addColorStop(1, '#151b24');
   ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 2; ctx.fillStyle = gr; roundRect(ctx, x0, y0, bw, bh, 7); ctx.fill(); ctx.restore();
   ctx.strokeStyle = 'rgba(160,180,210,0.55)'; ctx.lineWidth = 1; roundRect(ctx, x0 + 0.5, y0 + 0.5, bw - 1, bh - 1, 7); ctx.stroke();
-  ctx.fillStyle = '#ffcc66'; ctx.fillRect(x0 + bw - 6, y0 + 4, 2.5, 2.5); ctx.fillRect(x0 + bw - 6, y0 + bh - 6.5, 2.5, 2.5);   // bond pads
+  ctx.fillStyle = '#a8720c'; ctx.fillRect(x0 + bw - 6, y0 + 4, 2.5, 2.5); ctx.fillRect(x0 + bw - 6, y0 + bh - 6.5, 2.5, 2.5);   // bond pads
   const t = Math.sqrt(clamp(p / Math.max(pmax, 1e-9), 0, 1)) * Math.min(1, 0.35 + 3 * Math.sqrt(p)), cxp = x0 + bw / 2 - 2;
   ctx.fillStyle = '#0b0f15'; ctx.beginPath(); ctx.arc(cxp, y, 8.5, 0, 2 * PI); ctx.fill();
   const rg = ctx.createRadialGradient(cxp, y, 0, cxp, y, 11);
   rg.addColorStop(0, `rgba(255,${215 + 40 * t | 0},${225 + 30 * t | 0},${0.15 + 0.85 * t})`); rg.addColorStop(0.5, `rgba(255,70,110,${0.1 + 0.8 * t})`); rg.addColorStop(1, 'rgba(255,40,90,0)');
-  ctx.save(); if (t > 0.05) { ctx.shadowColor = `rgba(255,77,109,${t})`; ctx.shadowBlur = 18 * t; }
+  ctx.save(); if (t > 0.05) { ctx.shadowColor = `rgba(194,59,34,${t})`; ctx.shadowBlur = 18 * t; }
   ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(cxp, y, 11, 0, 2 * PI); ctx.fill(); ctx.restore();
   ctx.strokeStyle = 'rgba(200,215,240,0.7)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(cxp, y, 8.5, 0, 2 * PI); ctx.stroke();
   const bx = x0 + bw + 8, bl = 46;
   ctx.fillStyle = '#1a212c'; roundRect(ctx, bx, y - 3.5, bl, 7, 3.5); ctx.fill();
-  if (p > 0.002) { const lg = ctx.createLinearGradient(bx, 0, bx + bl, 0); lg.addColorStop(0, '#ff4d6d'); lg.addColorStop(1, '#ffc2cf'); ctx.fillStyle = lg; roundRect(ctx, bx, y - 3.5, Math.max(5, bl * clamp(p, 0, 1)), 7, 3.5); ctx.fill(); }
-  ctx.fillStyle = p > 0.005 ? '#e6edf3' : '#5c6c84'; ctx.font = '600 11.5px system-ui,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  if (p > 0.002) { const lg = ctx.createLinearGradient(bx, 0, bx + bl, 0); lg.addColorStop(0, '#c23b22'); lg.addColorStop(1, '#ffc2cf'); ctx.fillStyle = lg; roundRect(ctx, bx, y - 3.5, Math.max(5, bl * clamp(p, 0, 1)), 7, 3.5); ctx.fill(); }
+  ctx.fillStyle = p > 0.005 ? '#1f1d1a' : '#5c6c84'; ctx.font = '600 11.5px system-ui,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillText(`${(p * 100).toFixed(1)}%`, bx + bl + 6, y);
 }
 function drawMesh(cv, ms, opt) {
@@ -577,7 +623,7 @@ function drawMesh(cv, ms, opt) {
     heater(ctx, f(0.43), f(0.57), ya, o.th / (2 * PI), lit);    // internal phase shifter (θ)
     const bx0 = f(0.0), bx1 = f(1.0), by0 = ya - 14, by1 = yb + 10;
     if (i === opt.sel || i === opt.hover) { ctx.save(); ctx.strokeStyle = i === opt.sel ? 'rgba(255,255,255,0.85)' : 'rgba(255,204,102,0.7)'; ctx.lineWidth = 1.4; ctx.setLineDash(i === opt.sel ? [] : [4, 3]); roundRect(ctx, bx0 + 2, by0, bx1 - bx0 - 4, by1 - by0, 8); ctx.stroke(); ctx.restore(); }
-    if (opt.num) { ctx.fillStyle = i === opt.sel ? '#ffcc66' : '#8b98a9'; ctx.font = '600 11px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(`#${i + 1}`, x, by0 - 2); }
+    if (opt.num) { ctx.fillStyle = i === opt.sel ? '#a8720c' : '#8b98a9'; ctx.font = '600 11px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(`#${i + 1}`, x, by0 - 2); }
     ctx.restore();
     bx.push({ i, x0: bx0 + 2, x1: bx1 - 2, y0: by0, y1: by1 });
   });
@@ -586,7 +632,7 @@ function drawMesh(cv, ms, opt) {
     if (opt.num) {   // worked example: output phase screen and port labels
       ctx.font = FONT; ctx.textBaseline = 'middle';
       for (let k = 0; k < N; k++) { ctx.save(); if (!opt.dDone) ctx.globalAlpha = 0.2; heater(ctx, xD - 9, xD + 9, yk(k), ms.D[k] / (2 * PI), true); ctx.restore(); }
-      ctx.fillStyle = opt.dDone ? '#ffcc66' : '#5c6c84'; ctx.textAlign = 'center'; ctx.fillText('D', xD, m.t - 12);
+      ctx.fillStyle = opt.dDone ? '#a8720c' : '#5c6c84'; ctx.textAlign = 'center'; ctx.fillText('D', xD, m.t - 12);
       ctx.fillStyle = '#8b98a9'; ctx.fillText('in', 10, m.t - 12); ctx.fillText('out', w - 12, m.t - 12);
     }
     return;
@@ -596,7 +642,7 @@ function drawMesh(cv, ms, opt) {
   for (let k = 0; k < N; k++) {
     heater(ctx, xD - 9, xD + 9, yk(k), ms.D[k] / (2 * PI), true);
     drawPD(ctx, xEnd + 6, yk(k), cols[ms.depth][k], Math.max(...cols[ms.depth]));
-    const pin = cols[0][k]; ctx.textAlign = 'right'; ctx.fillStyle = pin > 0.001 ? '#ff8fa8' : '#5c6c84'; ctx.fillText(`in ${k + 1}${pin > 0.001 ? ` · ${(pin * 100).toFixed(0)}%` : ''}`, m.l - 12, yk(k) - 11);
+    const pin = cols[0][k]; ctx.textAlign = 'right'; ctx.fillStyle = pin > 0.001 ? '#c23b22' : '#5c6c84'; ctx.fillText(`in ${k + 1}${pin > 0.001 ? ` · ${(pin * 100).toFixed(0)}%` : ''}`, m.l - 12, yk(k) - 11);
   }
   ctx.fillStyle = '#8b98a9'; ctx.textAlign = 'center'; ctx.fillText('D', xD, m.t - 12); ctx.fillText('photodetectors', xEnd + 52, m.t - 12);
   if (opt.hover >= 0 && opt.hover < ms.ops.length) { const o = ms.ops[opt.hover], b = bx[opt.hover]; tag(ctx, clamp((b.x0 + b.x1) / 2, 180, w - 180), b.y0 - 12, `MZI ${opt.hover + 1} · θ = ${(o.th / PI).toFixed(3)}π · φ = ${(o.ph / PI).toFixed(3)}π · bar ${(Math.sin(o.th / 2) ** 2 * 100).toFixed(0)} %`, '#fff', 'rgba(8,11,16,0.92)'); }
@@ -605,15 +651,15 @@ function drawMesh(cv, ms, opt) {
 function drawMatrices() {
   const { ctx, w, h } = fitCanvas(document.getElementById('cMat')); ctx.clearRect(0, 0, w, h);
   const N = S.N, size = Math.min((w - 40) / 3 - 10, h - 40), top = 26;
-  const mats = [['Target |U|²', U, 'light'], ['Implemented |T|²', Timp, 'light'], ['|T − U|', null, 'heat']];
+  const mats = [['Target |U|²', U, 'paperI'], ['Implemented |T|²', Timp, 'paperI'], ['|T − U|', null, 'paperE']];
   mats.forEach(([title, M, cm], q) => {
     const x0 = 10 + q * ((w - 20) / 3) + ((w - 20) / 3 - size) / 2, cs = size / N;
-    ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(title, x0 + size / 2, top - 8);
+    ctx.fillStyle = '#2b2925'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(title, x0 + size / 2, top - 8);
     for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
       const v = M ? cabs2(M[i][j]) : cabs(csub(Timp[i][j], cmul(cexpj(globalPhase()), U[i][j])));
       const c = cmap(cm, M ? Math.sqrt(v) : clamp(v / 0.3, 0, 1)); ctx.fillStyle = `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`; ctx.fillRect(x0 + j * cs + 0.5, top + i * cs + 0.5, cs - 1, cs - 1);
     }
-    ctx.strokeStyle = '#3a4a60'; ctx.strokeRect(x0, top, size, size);
+    ctx.strokeStyle = '#1f1d1a'; ctx.strokeRect(x0, top, size, size);
   });
 }
 function globalPhase() { let tr = [0, 0]; for (let i = 0; i < S.N; i++) for (let j = 0; j < S.N; j++) tr = cadd(tr, cmul(cconj(U[i][j]), Timp[i][j])); return carg(tr); }
@@ -628,9 +674,9 @@ function drawPlot() {
     const xs = pr.map((_, i) => i + 1), lo = Math.min(...pr, ...pc);
     setTxt('plotNote', `Total transmission for light entering each input, with ${L} dB loss per MZI${S.loss < 0.2 ? ' (example value)' : ''}`);
     linePlot(cv, { x0: 0.8, x1: S.N + 0.2, y0: Math.floor(lo - 0.5), y1: 0.2, xlabel: 'Input port', ylabel: 'Transmission (dB)',
-      series: [{ x: xs, y: pr, color: '#ff9548', width: 2.2 }, { x: xs, y: pc, color: '#5fd38d', width: 2.2 }],
-      points: xs.map((x, i) => ({ x, y: pr[i], color: '#ff9548' })).concat(xs.map((x, i) => ({ x, y: pc[i], color: '#5fd38d' }))),
-      legend: [{ color: '#ff9548', label: `Reck (spread ${(Math.max(...pr) - Math.min(...pr)).toFixed(2)} dB)` }, { color: '#5fd38d', label: `Clements (spread ${(Math.max(...pc) - Math.min(...pc)).toFixed(2)} dB)` }] });
+      series: [{ x: xs, y: pr, color: '#c0571a', width: 2.2 }, { x: xs, y: pc, color: '#2c7a4b', width: 2.2 }],
+      points: xs.map((x, i) => ({ x, y: pr[i], color: '#c0571a' })).concat(xs.map((x, i) => ({ x, y: pc[i], color: '#2c7a4b' }))),
+      legend: [{ color: '#c0571a', label: `Reck (spread ${(Math.max(...pr) - Math.min(...pr)).toFixed(2)} dB)` }, { color: '#2c7a4b', label: `Clements (spread ${(Math.max(...pc) - Math.min(...pc)).toFixed(2)} dB)` }] });
     return;
   }
   const key = S.plot + '|' + S.N + '|' + S.target + '|' + S.randSeed + '|' + S.ri + '|' + S.rj;
@@ -649,9 +695,9 @@ function drawPlot() {
   const cur = S.plot === 'mcph' ? S.sph : S.plot === 'mcal' ? S.sal : S.loss;
   setTxt('plotNote', `Mean fidelity over 30 random samples, same target for both meshes`);
   linePlot(cv, { x0: 0, x1: xmax, y0: Math.max(0, Math.min(0.9, lo - 0.02)), y1: 1.002, xlabel: lab, ylabel: 'Fidelity F',
-    series: [{ x: xs, y: fr, color: '#ff9548', width: 2.2 }, { x: xs, y: fc, color: '#5fd38d', width: 2.2 }],
-    vlines: cur > 0 ? [{ x: cur, color: 'rgba(255,255,255,0.6)', label: 'current' }] : [],
-    legend: [{ color: '#ff9548', label: 'Reck' }, { color: '#5fd38d', label: 'Clements' }] });
+    series: [{ x: xs, y: fr, color: '#c0571a', width: 2.2 }, { x: xs, y: fc, color: '#2c7a4b', width: 2.2 }],
+    vlines: cur > 0 ? [{ x: cur, color: 'rgba(31,29,26,0.55)', label: 'current' }] : [],
+    legend: [{ color: '#c0571a', label: 'Reck' }, { color: '#2c7a4b', label: 'Clements' }] });
 }
 /* ------------------------------------------------ readouts */
 function update() {

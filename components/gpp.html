@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>General-purpose programmable processor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 
 :root{
@@ -89,6 +90,49 @@ select.sm{background:#0f141b;color:var(--text);border:1px solid var(--line);bord
 .selbox h3{margin:0 0 6px;color:var(--accent)}
 .legend-st{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
 .legend-st i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+
+/* ===== style-lab override ===== */
+
+:root{--bg:#f3efe6;--card:#fbf9f4;--card2:#f7f3ea;--line:#d8d0c0;--text:#1f1d1a;--muted:#6f685c;--accent:#c23b22;--laser:#c23b22}
+html,body{font:15.5px/1.55 "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;background:var(--bg);color:var(--text)}
+header{border-bottom:1px solid var(--text);padding:22px 28px 14px;margin:0 0 6px}
+header h1{font-size:34px;font-weight:400;letter-spacing:-.01em} header .sub{font-style:italic;font-size:14.5px}
+a.back{background:none;border:0;color:var(--accent);font-style:italic;font-size:14.5px;padding:0} a.back:hover{background:none;text-decoration:underline}
+main{gap:26px 36px;padding:14px 28px 30px}
+.card{background:transparent;border:0;border-top:1px solid var(--text);border-radius:0;padding:12px 0 0}
+.card h2{font:italic 15px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;text-transform:none;letter-spacing:0;color:var(--muted)}
+#c3d{background:radial-gradient(ellipse at 50% 40%,#f1ece2 0%,#e2dccf 80%);border:1px solid var(--line);border-radius:0}
+#cPlot,#cP2{background:#fbf9f4;border:1px solid var(--line);border-radius:0}
+.toolbar{color:var(--muted)}
+.seg{border-radius:0;border-color:var(--text)} .seg button{color:var(--muted);font:italic 14px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif} .seg button+button{border-color:var(--text)} .seg button.on{background:var(--text);color:#fbf9f4}
+.group{background:transparent;border:0;border-left:2px solid var(--line);border-radius:0;padding:4px 0 4px 14px}
+.group h3{color:var(--accent);font:italic 16px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif}
+.row .lab{color:#4b463d;font-size:14px} .row input[type=range]{accent-color:var(--accent)}
+input[type=number],.numin{background:#fff;color:var(--text);border-color:var(--line);border-radius:0}
+.btn{border-radius:0;background:transparent;border:1px solid var(--text);color:var(--text);font:italic 14px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif}
+.btn:hover{background:var(--text);color:#fbf9f4} .btn.primary{background:var(--text);color:#fbf9f4;border-color:var(--text)}
+.ro{background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:4px 0}
+.ro .k{font-style:italic;font-size:13px} .ro .v{font-weight:400;font-size:18px}
+.th{background:transparent;border:0;border-top:1px solid var(--line);border-radius:0;padding:12px 0}
+.th h3{color:var(--accent);font-weight:400;font-size:19px} .th p,.th li{color:#3b372f!important;font-size:15px}
+.eq,table.fm td.f{color:var(--text)} .frac>span:first-child{border-color:var(--text)} .smat{border-color:var(--text)}
+.live{background:#f6e4dd;border-color:#e6bcae;color:var(--accent)}
+table.fm td{color:#3b372f;border-color:var(--line)}
+.cfgsel{background:#fff;color:var(--text);border-color:var(--text);border-radius:0}
+.gdshead .gdsseg{border-radius:0;border-color:var(--text)} .gdshead .gdsseg button{color:var(--muted);font:italic 14px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif} .gdshead .gdsseg button.on{background:var(--text);color:#fbf9f4}
+
+select.sm{background:#fff;color:var(--text);border:1px solid var(--text);border-radius:0;font:14px var(--serif, inherit)}
+#cMesh,#cNet,#cSch,#cStep,.schem,#cF{border-radius:0!important}
+.mt td{background:#fbf9f4;border-color:#d8d0c0;border-radius:0;color:var(--text)}
+.mt td.z{color:#b5ad9f;background:#f3efe6}
+.mt td.zn{color:#2c7a4b;background:#e3efe5;border-color:#9cc7a8}
+.mt td.inv{background:#f6ecd5;border-color:#d9b46a}
+.mt td.ab{background:#f6e4dd;border-color:var(--accent);color:var(--text)}
+.mt td.dg{background:#e3ecf6;border-color:#7fa7d6;color:#1f4e79}
+.sx .f{color:var(--text);background:#fff;border-color:var(--line);border-radius:0}
+.dots i{background:#d8d0c0}
+.selbox{border-color:#d9b46a;background:#f7f0e0;border-radius:0}
+.tabs button.on{background:#f6e4dd}
 </style>
 </head>
 <body>
@@ -206,7 +250,7 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 let dirty = true;
 function f3(v) { const a = Math.abs(v); return !isFinite(v) ? '∞' : a >= 1000 ? v.toFixed(0) : a >= 100 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : a >= 1 ? v.toFixed(3) : v.toFixed(4); }
 const dB = p => 10 * Math.log10(Math.max(p, 1e-12));
-const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+const FONT = '13px \"Newsreader\",\"Iowan Old Style\",\"Palatino Linotype\",\"Book Antiqua\",Palatino,\"URW Palladio L\",Georgia,serif';
 function fitCanvas(c) {
   const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
   const W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
@@ -222,7 +266,7 @@ function niceTicks(a, b, n) {
 }
 function tickFmt(v, step) { const d = Math.max(0, Math.min(6, -Math.floor(Math.log10(step || 1) + 1e-9))); return v.toFixed(d); }
 function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
-function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
+function tag(ctx, x, y, text, color, bg = 'rgba(251,249,244,0.94)', align = 'center') {
   ctx.font = FONT; const w = ctx.measureText(text).width + 10, x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
   ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
   ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + 0.5);
@@ -281,12 +325,12 @@ function linePlot(canvas, o) {
   const ty = v => o.ylog ? Math.log10(Math.max(v, 1e-30)) : v;
   const Y0 = ty(o.y0), Y1 = ty(o.y1);
   const X = v => m.l + (v - o.x0) / (o.x1 - o.x0) * pw, Y = v => m.t + (1 - (ty(v) - Y0) / (Y1 - Y0)) * ph;
-  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  ctx.fillStyle = '#fbf9f4'; ctx.fillRect(m.l, m.t, pw, ph);
   const xt = niceTicks(o.x0, o.x1, Math.max(3, Math.round(pw / 90))), xst = xt.length > 1 ? xt[1] - xt[0] : 1;
   let yt; if (o.ylog) { yt = []; for (let d = Math.ceil(Y0); d <= Math.floor(Y1); d++) yt.push(Math.pow(10, d)); } else yt = niceTicks(o.y0, o.y1, Math.max(3, Math.round(ph / 55)));
   const yst = !o.ylog && yt.length > 1 ? yt[1] - yt[0] : 1;
   ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(31,29,26,0.08)'; ctx.lineWidth = 1;
   for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
   for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
   for (const b of (o.bands || [])) { ctx.fillStyle = b.color; ctx.fillRect(X(b.x0), m.t, X(b.x1) - X(b.x0), ph); }
@@ -303,15 +347,15 @@ function linePlot(canvas, o) {
   }
   for (const p of (o.points || [])) { if (p.x < o.x0 || p.x > o.x1) continue; ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 5, 0, 2 * PI); ctx.fillStyle = p.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); }
   ctx.restore();
-  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
-  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.strokeStyle = '#1f1d1a'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#6f685c'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
   for (const t of xt) ctx.fillText(o.xfmt ? o.xfmt(t) : tickFmt(t, xst), X(t), m.t + ph + 6);
   ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
   for (const t of yt) ctx.fillText(o.yfmt ? o.yfmt(t) : (o.ylog ? (t >= 1 ? String(t) : t.toExponential(0)) : tickFmt(t, yst)), m.l - 6, Y(t));
-  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
+  ctx.fillStyle = '#2b2925'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
   ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText(o.ylabel, 0, 0); ctx.restore();
   let lx = m.l; const ly = 14; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
+  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#2b2925'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
   return { X, Y, m, pw, ph };
 }
 
@@ -521,7 +565,7 @@ function presetRing() {
 const cMesh = document.getElementById('cMesh');
 const glowT = p => S.glow === 'log' ? clamp((dB(p) + 40) / 40, 0, 1) : Math.sqrt(clamp(p, 0, 1));
 const glowCol = t => `rgb(${60 + 195 * t | 0},${76 - 20 * t | 0},${98 + 6 * t | 0})`;
-const STC = { bar: '#4aa8ff', cross: '#ff9548', tc: '#c08cff' };
+const STC = { bar: '#1f5fa8', cross: '#c0571a', tc: '#c08cff' };
 function drawMesh(t) {
   const { ctx, w, h } = fitCanvas(cMesh); ctx.clearRect(0, 0, w, h);
   const V = LAT.V, xs = V.map(v => v.x), ys = V.map(v => v.y), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
@@ -563,7 +607,7 @@ function drawMesh(t) {
     const col = STC[st], c = Q(0.5, 0), fp = S.topo === 'tri' ? [0.22, 0.78, 0.04] : [0.08, 0.92, 0.07], corners = [Q(fp[0], r + fp[2]), Q(fp[1], r + fp[2]), Q(fp[1], -r - fp[2]), Q(fp[0], -r - fp[2])];
     ctx.save(); ctx.strokeStyle = col; ctx.globalAlpha = i === S.sel ? 1 : 0.55; ctx.lineWidth = i === S.sel ? 2 : 1; ctx.setLineDash(i === S.sel ? [] : [4, 3]);
     ctx.beginPath(); corners.forEach((q, k) => k ? ctx.lineTo(...q) : ctx.moveTo(...q)); ctx.closePath(); ctx.stroke(); ctx.restore();
-    if (i === S.sel) { ctx.save(); ctx.shadowColor = '#ffcc66'; ctx.shadowBlur = 14; ctx.strokeStyle = 'rgba(255,204,102,0.9)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(c[0], c[1], 0.34 * sc, 0, 2 * PI); ctx.stroke(); ctx.restore(); }
+    if (i === S.sel) { ctx.save(); ctx.shadowColor = '#a8720c'; ctx.shadowBlur = 14; ctx.strokeStyle = 'rgba(255,204,102,0.9)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(c[0], c[1], 0.34 * sc, 0, 2 * PI); ctx.stroke(); ctx.restore(); }
     if (sc > (S.topo === 'tri' ? 120 : 70)) { const lp = Q(0.5, r + 0.15); ctx.fillStyle = '#8b98a9'; ctx.font = '10px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(i + 1, lp[0], lp[1]); }
     hits.push({ type: 'puc', i, x: c[0], y: c[1], r: 0.26 * sc });
   });
@@ -575,12 +619,12 @@ function drawMesh(t) {
     const A = X(portPt(o.p)), B = X([o.x, o.y]), isIn = k === S.inp, isOut = k === S.outp;
     stroke(() => { ctx.beginPath(); ctx.moveTo(...A); ctx.lineTo(...B); }, isIn ? 1 : outs[k], 1.8);
     const g = Math.sqrt(clamp(outs[k] / pmax, 0, 1));
-    ctx.save(); if (g > 0.05 && !isIn) { ctx.shadowColor = 'rgba(255,77,109,0.9)'; ctx.shadowBlur = 14 * g; }
-    ctx.fillStyle = isIn ? '#ff4d6d' : `rgba(255,${120 + 100 * g | 0},${140 + 90 * g | 0},${0.15 + 0.85 * g})`; ctx.beginPath(); ctx.arc(B[0], B[1], 6.5, 0, 2 * PI); ctx.fill(); ctx.restore();
-    ctx.strokeStyle = isOut ? '#5fd38d' : isIn ? '#ff8fa8' : 'rgba(200,215,240,0.6)'; ctx.lineWidth = isOut || isIn ? 2.4 : 1.1; ctx.beginPath(); ctx.arc(B[0], B[1], isOut ? 9.5 : 6.5, 0, 2 * PI); ctx.stroke();
+    ctx.save(); if (g > 0.05 && !isIn) { ctx.shadowColor = 'rgba(194,59,34,0.9)'; ctx.shadowBlur = 14 * g; }
+    ctx.fillStyle = isIn ? '#c23b22' : `rgba(255,${120 + 100 * g | 0},${140 + 90 * g | 0},${0.15 + 0.85 * g})`; ctx.beginPath(); ctx.arc(B[0], B[1], 6.5, 0, 2 * PI); ctx.fill(); ctx.restore();
+    ctx.strokeStyle = isOut ? '#2c7a4b' : isIn ? '#c23b22' : 'rgba(200,215,240,0.6)'; ctx.lineWidth = isOut || isIn ? 2.4 : 1.1; ctx.beginPath(); ctx.arc(B[0], B[1], isOut ? 9.5 : 6.5, 0, 2 * PI); ctx.stroke();
     const dirx = B[0] - A[0], diry = B[1] - A[1], L = Math.hypot(dirx, diry) || 1, lx = B[0] + dirx / L * 20, ly = B[1] + diry / L * 16;
-    ctx.font = '600 11px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = isIn ? '#ff8fa8' : isOut ? '#5fd38d' : '#c9d3de'; ctx.fillText(k + 1, lx, ly);
-    if (!isIn && outs[k] > 1e-4) { ctx.font = '10px system-ui,sans-serif'; ctx.fillStyle = '#e6edf3'; ctx.fillText(S.glow === 'log' ? `${dB(outs[k]).toFixed(1)}dB` : `${(outs[k] * 100).toFixed(0)}%`, lx + dirx / L * 2, ly + 12); }
+    ctx.font = '600 11px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = isIn ? '#c23b22' : isOut ? '#2c7a4b' : '#2b2925'; ctx.fillText(k + 1, lx, ly);
+    if (!isIn && outs[k] > 1e-4) { ctx.font = '10px system-ui,sans-serif'; ctx.fillStyle = '#1f1d1a'; ctx.fillText(S.glow === 'log' ? `${dB(outs[k]).toFixed(1)}dB` : `${(outs[k] * 100).toFixed(0)}%`, lx + dirx / L * 2, ly + 12); }
     hits.push({ type: 'port', k, x: B[0], y: B[1], r: 11 });
   });
 }
@@ -593,24 +637,24 @@ function drawPlot() {
     setTxt('plotNote', `λ = ${lam0.toFixed(4)} nm · input port ${S.inp + 1} (1 = all the input power)`);
     linePlot(cPlot, { x0: 0.5, x1: outs.length + 0.5, y0: -60, y1: 3, xlabel: 'Port', ylabel: 'Output power (dB)', xfmt: v => Number.isInteger(v) && v >= 1 ? String(v) : '',
       series: [{ x: xs, y: ydb, color: 'rgba(95,211,141,0.35)', width: 1 }],
-      points: xs.map((x, i) => ({ x, y: ydb[i], color: i === S.inp ? '#ff4d6d' : i === S.outp ? '#5fd38d' : '#4aa8ff' })),
-      vlines: [{ x: S.outp + 1, color: 'rgba(95,211,141,0.6)', label: 'monitored' }, { x: S.inp + 1, color: 'rgba(255,77,109,0.6)', label: 'input (reflection)', row: 1 }] });
+      points: xs.map((x, i) => ({ x, y: ydb[i], color: i === S.inp ? '#c23b22' : i === S.outp ? '#2c7a4b' : '#1f5fa8' })),
+      vlines: [{ x: S.outp + 1, color: 'rgba(95,211,141,0.6)', label: 'monitored' }, { x: S.inp + 1, color: 'rgba(194,59,34,0.6)', label: 'input (reflection)', row: 1 }] });
     return;
   }
   const sp = spectrum(), xs = sp.lam.map(l => (l - 1550) * 1000);
   if (S.plot === 'spec' || S.plot === 'all') {
     const series = [], leg = [];
     if (S.plot === 'all') MESH.ext.forEach((_, k) => { if (k !== S.outp && Math.max(...sp.P[k]) > 1e-3) { series.push({ x: xs, y: sp.P[k].map(p => Math.max(-50, dB(p))), color: `hsla(${(k * 47) % 360},70%,62%,0.75)`, width: 1.2 }); leg.push({ color: `hsla(${(k * 47) % 360},70%,62%,0.9)`, label: `port ${k + 1}` }); } });
-    series.push({ x: xs, y: sp.P[S.outp].map(p => Math.max(-50, dB(p))), color: '#5fd38d', width: 2.4 }); leg.unshift({ color: '#5fd38d', label: `port ${S.outp + 1} (monitored)` });
+    series.push({ x: xs, y: sp.P[S.outp].map(p => Math.max(-50, dB(p))), color: '#2c7a4b', width: 2.4 }); leg.unshift({ color: '#2c7a4b', label: `port ${S.outp + 1} (monitored)` });
     setTxt('plotNote', `input port ${S.inp + 1} · ${S.npts} wavelengths around 1550 nm`);
-    linePlot(cPlot, { x0: xs[0], x1: xs[xs.length - 1], y0: -50, y1: 3, xlabel: 'Detuning from 1550 nm (pm)', ylabel: 'Power (dB)', series, vlines: [{ x: S.det, color: '#ffcc66', label: 'map λ' }], legend: leg.slice(0, 8) });
+    linePlot(cPlot, { x0: xs[0], x1: xs[xs.length - 1], y0: -50, y1: 3, xlabel: 'Detuning from 1550 nm (pm)', ylabel: 'Power (dB)', series, vlines: [{ x: S.det, color: '#a8720c', label: 'map λ' }], legend: leg.slice(0, 8) });
   } else {
     const ph = sp.ph[S.outp], un = [ph[0]]; for (let i = 1; i < ph.length; i++) { let d = ph[i] - ph[i - 1]; while (d > PI) d -= 2 * PI; while (d < -PI) d += 2 * PI; un.push(un[i - 1] + d); }
     const gd = [], gx = [];
     for (let i = 1; i < un.length; i++) { const f1 = C0 / (sp.lam[i - 1] * 1e-9), f2 = C0 / (sp.lam[i] * 1e-9); gd.push(-(un[i] - un[i - 1]) / (2 * PI * (f2 - f1)) * 1e12); gx.push((xs[i] + xs[i - 1]) / 2); }
     const lo = Math.min(...gd), hi = Math.max(...gd), pad = 0.1 * (hi - lo || 10);
     setTxt('plotNote', `group delay of port ${S.outp + 1}; one PUC = ${(S.ng * S.BUL * 1e-6 / C0 * 1e12).toFixed(1)} ps`);
-    linePlot(cPlot, { x0: gx[0], x1: gx[gx.length - 1], y0: lo - pad, y1: hi + pad, xlabel: 'Detuning from 1550 nm (pm)', ylabel: 'Group delay (ps)', series: [{ x: gx, y: gd, color: '#ffcc66', width: 2 }], vlines: [{ x: S.det, color: 'rgba(255,255,255,0.4)', label: 'map λ' }] });
+    linePlot(cPlot, { x0: gx[0], x1: gx[gx.length - 1], y0: lo - pad, y1: hi + pad, xlabel: 'Detuning from 1550 nm (pm)', ylabel: 'Group delay (ps)', series: [{ x: gx, y: gd, color: '#a8720c', width: 2 }], vlines: [{ x: S.det, color: 'rgba(31,29,26,0.45)', label: 'map λ' }] });
   }
 }
 /* ------------------------------------------------ readouts */

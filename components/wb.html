@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Microring weight bank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 
 :root{
@@ -84,6 +85,49 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
 .cfgbar .seg button{padding:5px 14px;font-size:13.5px}
 .theory p, .theory li{color:#c9d3de;font-size:13px}
 .chgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+
+/* ===== style-lab override ===== */
+
+:root{--bg:#f3efe6;--card:#fbf9f4;--card2:#f7f3ea;--line:#d8d0c0;--text:#1f1d1a;--muted:#6f685c;--accent:#c23b22;--laser:#c23b22}
+html,body{font:15.5px/1.55 "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;background:var(--bg);color:var(--text)}
+header{border-bottom:1px solid var(--text);padding:22px 28px 14px;margin:0 0 6px}
+header h1{font-size:34px;font-weight:400;letter-spacing:-.01em} header .sub{font-style:italic;font-size:14.5px}
+a.back{background:none;border:0;color:var(--accent);font-style:italic;font-size:14.5px;padding:0} a.back:hover{background:none;text-decoration:underline}
+main{gap:26px 36px;padding:14px 28px 30px}
+.card{background:transparent;border:0;border-top:1px solid var(--text);border-radius:0;padding:12px 0 0}
+.card h2{font:italic 15px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;text-transform:none;letter-spacing:0;color:var(--muted)}
+#c3d{background:radial-gradient(ellipse at 50% 40%,#f1ece2 0%,#e2dccf 80%);border:1px solid var(--line);border-radius:0}
+#cPlot,#cP2{background:#fbf9f4;border:1px solid var(--line);border-radius:0}
+.toolbar{color:var(--muted)}
+.seg{border-radius:0;border-color:var(--text)} .seg button{color:var(--muted);font:italic 14px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif} .seg button+button{border-color:var(--text)} .seg button.on{background:var(--text);color:#fbf9f4}
+.group{background:transparent;border:0;border-left:2px solid var(--line);border-radius:0;padding:4px 0 4px 14px}
+.group h3{color:var(--accent);font:italic 16px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif}
+.row .lab{color:#4b463d;font-size:14px} .row input[type=range]{accent-color:var(--accent)}
+input[type=number],.numin{background:#fff;color:var(--text);border-color:var(--line);border-radius:0}
+.btn{border-radius:0;background:transparent;border:1px solid var(--text);color:var(--text);font:italic 14px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif}
+.btn:hover{background:var(--text);color:#fbf9f4} .btn.primary{background:var(--text);color:#fbf9f4;border-color:var(--text)}
+.ro{background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:4px 0}
+.ro .k{font-style:italic;font-size:13px} .ro .v{font-weight:400;font-size:18px}
+.th{background:transparent;border:0;border-top:1px solid var(--line);border-radius:0;padding:12px 0}
+.th h3{color:var(--accent);font-weight:400;font-size:19px} .th p,.th li{color:#3b372f!important;font-size:15px}
+.eq,table.fm td.f{color:var(--text)} .frac>span:first-child{border-color:var(--text)} .smat{border-color:var(--text)}
+.live{background:#f6e4dd;border-color:#e6bcae;color:var(--accent)}
+table.fm td{color:#3b372f;border-color:var(--line)}
+.cfgsel{background:#fff;color:var(--text);border-color:var(--text);border-radius:0}
+.gdshead .gdsseg{border-radius:0;border-color:var(--text)} .gdshead .gdsseg button{color:var(--muted);font:italic 14px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif} .gdshead .gdsseg button.on{background:var(--text);color:#fbf9f4}
+
+select.sm{background:#fff;color:var(--text);border:1px solid var(--text);border-radius:0;font:14px var(--serif, inherit)}
+#cMesh,#cNet,#cSch,#cStep,.schem,#cF{border-radius:0!important}
+.mt td{background:#fbf9f4;border-color:#d8d0c0;border-radius:0;color:var(--text)}
+.mt td.z{color:#b5ad9f;background:#f3efe6}
+.mt td.zn{color:#2c7a4b;background:#e3efe5;border-color:#9cc7a8}
+.mt td.inv{background:#f6ecd5;border-color:#d9b46a}
+.mt td.ab{background:#f6e4dd;border-color:var(--accent);color:var(--text)}
+.mt td.dg{background:#e3ecf6;border-color:#7fa7d6;color:#1f4e79}
+.sx .f{color:var(--text);background:#fff;border-color:var(--line);border-radius:0}
+.dots i{background:#d8d0c0}
+.selbox{border-color:#d9b46a;background:#f7f0e0;border-radius:0}
+.tabs button.on{background:#f6e4dd}
 </style>
 </head>
 <body>
@@ -179,7 +223,7 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 let dirty = true;
 function f3(v) { const a = Math.abs(v); return !isFinite(v) ? '∞' : a >= 1000 ? v.toFixed(0) : a >= 100 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : a >= 1 ? v.toFixed(3) : v.toFixed(4); }
 const dB = p => 10 * Math.log10(Math.max(p, 1e-12));
-const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+const FONT = '13px \"Newsreader\",\"Iowan Old Style\",\"Palatino Linotype\",\"Book Antiqua\",Palatino,\"URW Palladio L\",Georgia,serif';
 function fitCanvas(c) {
   const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
   const W = Math.max(1, Math.round(r.width * d)), H = Math.max(1, Math.round(r.height * d));
@@ -195,7 +239,7 @@ function niceTicks(a, b, n) {
 }
 function tickFmt(v, step) { const d = Math.max(0, Math.min(6, -Math.floor(Math.log10(step || 1) + 1e-9))); return v.toFixed(d); }
 function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
-function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
+function tag(ctx, x, y, text, color, bg = 'rgba(251,249,244,0.94)', align = 'center') {
   ctx.font = FONT; const w = ctx.measureText(text).width + 10, x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
   ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
   ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + 0.5);
@@ -254,12 +298,12 @@ function linePlot(canvas, o) {
   const ty = v => o.ylog ? Math.log10(Math.max(v, 1e-30)) : v;
   const Y0 = ty(o.y0), Y1 = ty(o.y1);
   const X = v => m.l + (v - o.x0) / (o.x1 - o.x0) * pw, Y = v => m.t + (1 - (ty(v) - Y0) / (Y1 - Y0)) * ph;
-  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  ctx.fillStyle = '#fbf9f4'; ctx.fillRect(m.l, m.t, pw, ph);
   const xt = niceTicks(o.x0, o.x1, Math.max(3, Math.round(pw / 90))), xst = xt.length > 1 ? xt[1] - xt[0] : 1;
   let yt; if (o.ylog) { yt = []; for (let d = Math.ceil(Y0); d <= Math.floor(Y1); d++) yt.push(Math.pow(10, d)); } else yt = niceTicks(o.y0, o.y1, Math.max(3, Math.round(ph / 55)));
   const yst = !o.ylog && yt.length > 1 ? yt[1] - yt[0] : 1;
   ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(31,29,26,0.08)'; ctx.lineWidth = 1;
   for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
   for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
   for (const b of (o.bands || [])) { ctx.fillStyle = b.color; ctx.fillRect(X(b.x0), m.t, X(b.x1) - X(b.x0), ph); }
@@ -276,15 +320,15 @@ function linePlot(canvas, o) {
   }
   for (const p of (o.points || [])) { if (p.x < o.x0 || p.x > o.x1) continue; ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 5, 0, 2 * PI); ctx.fillStyle = p.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); }
   ctx.restore();
-  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
-  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.strokeStyle = '#1f1d1a'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#6f685c'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
   for (const t of xt) ctx.fillText(o.xfmt ? o.xfmt(t) : tickFmt(t, xst), X(t), m.t + ph + 6);
   ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
   for (const t of yt) ctx.fillText(o.yfmt ? o.yfmt(t) : (o.ylog ? (t >= 1 ? String(t) : t.toExponential(0)) : tickFmt(t, yst)), m.l - 6, Y(t));
-  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
+  ctx.fillStyle = '#2b2925'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(o.xlabel, m.l + pw / 2, h - 8);
   ctx.save(); ctx.translate(14, m.t + ph / 2); ctx.rotate(-PI / 2); ctx.fillText(o.ylabel, 0, 0); ctx.restore();
   let lx = m.l; const ly = 14; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#c9d3de'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
+  for (const L of (o.legend || [])) { ctx.strokeStyle = L.color; ctx.lineWidth = 2.5; ctx.setLineDash(L.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#2b2925'; ctx.fillText(L.label, lx + 21, ly); lx += 30 + ctx.measureText(L.label).width; }
   return { X, Y, m, pw, ph };
 }
 
@@ -348,7 +392,7 @@ function pd(ctx, x, y, p, label) {
   rg.addColorStop(0, `rgba(255,235,240,${0.15 + 0.85 * t})`); rg.addColorStop(0.5, `rgba(255,70,110,${0.1 + 0.8 * t})`); rg.addColorStop(1, 'rgba(255,40,90,0)');
   ctx.fillStyle = '#0b0f15'; ctx.beginPath(); ctx.arc(cx0, y, 8.5, 0, 2 * PI); ctx.fill(); ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(cx0, y, 11, 0, 2 * PI); ctx.fill();
   ctx.strokeStyle = 'rgba(200,215,240,0.7)'; ctx.beginPath(); ctx.arc(cx0, y, 8.5, 0, 2 * PI); ctx.stroke();
-  ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, x + bw + 6, y);
+  ctx.fillStyle = '#2b2925'; ctx.font = FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, x + bw + 6, y);
 }
 function drawSch(t) {
   const { ctx, w, h } = fitCanvas(cSch); ctx.clearRect(0, 0, w, h);
@@ -373,7 +417,7 @@ function drawSch(t) {
     ring(ctx, x, y, R, chCol(k, M), rem, clamp(sl.din[k] / (g.fwhmIn * 4), 0, 1));
     ctx.fillStyle = chCol(k, M); ctx.font = '600 11.5px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(`x${k + 1}=${sl.xr[k].toFixed(2)}`, x, yB + 10 + (sp < 72 && k % 2 ? 15 : 0));
   }
-  ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('input modulators (all-pass)', xm0 + M * sp / 2, yD - 26);
+  ctx.fillStyle = '#2b2925'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('input modulators (all-pass)', xm0 + M * sp / 2, yD - 26);
   // weight bank
   for (let s = 0; s <= M; s++) { const xa = s === 0 ? xw0 - 30 : xw0 + (s - 0.5) * sp, xb = s === M ? xEnd : xw0 + (s + 0.5) * sp; wg(ctx, () => { ctx.beginPath(); ctx.moveTo(xa, yB); ctx.lineTo(xb, yB); }, thr[s], t); }
   // drop bus: light travels right → left, then loops over the top to the drop photodiode
@@ -385,15 +429,15 @@ function drawSch(t) {
     ring(ctx, x, y, R, chCol(k, M), q.D, clamp(sl.dw[k] / (g.fwhm * 4), 0, 1));
     ctx.fillStyle = chCol(k, M); ctx.font = '600 11.5px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(`w${k + 1}=${sl.wr[k] >= 0 ? '+' : ''}${sl.wr[k].toFixed(2)}`, x, yB + 10 + (sp < 72 && k % 2 ? 15 : 0));
   }
-  ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('weight bank (add-drop)', xw0 + M * sp / 2, yD - 26);
+  ctx.fillStyle = '#2b2925'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('weight bank (add-drop)', xw0 + M * sp / 2, yD - 26);
   // balanced photodetector
   const Pd = drp[0], Pt = thr[M], xp = xEnd + 4;
   pd(ctx, xp, yTop, Pd * M / Math.max(1, M) , `drop  ${(Pd * M).toFixed(2)}`); pd(ctx, xp, yB, Pt, `through  ${(Pt * M).toFixed(2)}`);
   ctx.strokeStyle = '#c9a75a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(xp + 15, yTop + 13); ctx.lineTo(xp + 15, yB - 13); ctx.stroke();
   const ym = (yTop + yB) / 2; ctx.fillStyle = '#1d2735'; ctx.beginPath(); ctx.arc(xp + 15, ym, 13, 0, 2 * PI); ctx.fill(); ctx.strokeStyle = '#c9a75a'; ctx.stroke();
-  ctx.fillStyle = '#ffcc66'; ctx.font = '600 15px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('−', xp + 15, ym);
+  ctx.fillStyle = '#a8720c'; ctx.font = '600 15px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('−', xp + 15, ym);
   ctx.strokeStyle = '#c9a75a'; ctx.beginPath(); ctx.moveTo(xp + 28, ym); ctx.lineTo(xp + 60, ym); ctx.stroke();
-  tag(ctx, xp + 120, ym, `y = ${sl.yR.toFixed(3)}`, '#5fd38d', 'rgba(8,11,16,0.92)');
+  tag(ctx, xp + 120, ym, `y = ${sl.yR.toFixed(3)}`, '#2c7a4b', 'rgba(8,11,16,0.92)');
   ctx.fillStyle = '#8b98a9'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('balanced PD', xp + 60, h - 12);
   ctx.fillText('powers in units of one laser', xp + 60, h - 30);
 }
@@ -406,25 +450,25 @@ function drawPlot() {
     for (let i = 0; i <= 900; i++) { const l = l0 + (l1 - l0) * i / 900, b = bankAt(l, sl.dw, g); xs.push(l); ti.push(inputsAt(l, sl.din, g)); dd.push(b.D); tt.push(b.T); }
     setTxt('plotNote', 'Input-modulator transmission and weight-bank drop/through spectra · vertical lines = laser channels (height = input power x_k)');
     const r = linePlot(cPlot, { x0: l0, x1: l1, y0: 0, y1: 1.08, xlabel: 'Wavelength (nm)', ylabel: 'Transmission',
-      series: [{ x: xs, y: ti, color: '#ffcc66', dash: [6, 4], width: 1.6 }, { x: xs, y: tt, color: '#4aa8ff', width: 2 }, { x: xs, y: dd, color: '#5fd38d', width: 2 }],
-      legend: [{ color: '#ffcc66', label: 'input modulators', dash: [6, 4] }, { color: '#4aa8ff', label: 'weight bank through' }, { color: '#5fd38d', label: 'weight bank drop' }] });
+      series: [{ x: xs, y: ti, color: '#a8720c', dash: [6, 4], width: 1.6 }, { x: xs, y: tt, color: '#1f5fa8', width: 2 }, { x: xs, y: dd, color: '#2c7a4b', width: 2 }],
+      legend: [{ color: '#a8720c', label: 'input modulators', dash: [6, 4] }, { color: '#1f5fa8', label: 'weight bank through' }, { color: '#2c7a4b', label: 'weight bank drop' }] });
     if (r) { const { ctx } = fitCanvas(cPlot); g.lam.forEach((l, k) => { ctx.strokeStyle = chCol(k, M); ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(r.X(l), r.Y(0)); ctx.lineTo(r.X(l), r.Y(sl.xr[k])); ctx.stroke(); ctx.fillStyle = chCol(k, M); ctx.beginPath(); ctx.arc(r.X(l), r.Y(sl.xr[k]), 4.5, 0, 2 * PI); ctx.fill(); }); }
   } else if (S.plot === 'w') {
     const xs = g.lam.map((_, k) => k + 1);
     setTxt('plotNote', `Rings set ${S.cal === 'comp' ? 'together, compensating crosstalk' : 'one by one, ignoring the other rings'} · open = target, filled = realized`);
     linePlot(cPlot, { x0: 0.5, x1: M + 0.5, y0: -1.1, y1: 1.1, xlabel: 'Channel k', ylabel: 'Value', xfmt: v => Number.isInteger(v) && v >= 1 && v <= M ? String(v) : '',
-      series: [{ x: xs, y: sl.wt, color: 'rgba(95,211,141,0.5)', dash: [4, 4], width: 1.2 }, { x: xs, y: sl.wr, color: '#5fd38d', width: 2 }, { x: xs, y: sl.xt, color: 'rgba(255,204,102,0.5)', dash: [4, 4], width: 1.2 }, { x: xs, y: sl.xr, color: '#ffcc66', width: 2 }],
-      points: xs.map((x, k) => ({ x, y: sl.wr[k], color: '#5fd38d' })).concat(xs.map((x, k) => ({ x, y: sl.xr[k], color: '#ffcc66' }))),
-      legend: [{ color: '#5fd38d', label: 'weight w (dashed = target)' }, { color: '#ffcc66', label: 'input x (dashed = target)' }] });
+      series: [{ x: xs, y: sl.wt, color: 'rgba(95,211,141,0.5)', dash: [4, 4], width: 1.2 }, { x: xs, y: sl.wr, color: '#2c7a4b', width: 2 }, { x: xs, y: sl.xt, color: 'rgba(255,204,102,0.5)', dash: [4, 4], width: 1.2 }, { x: xs, y: sl.xr, color: '#a8720c', width: 2 }],
+      points: xs.map((x, k) => ({ x, y: sl.wr[k], color: '#2c7a4b' })).concat(xs.map((x, k) => ({ x, y: sl.xr[k], color: '#a8720c' }))),
+      legend: [{ color: '#2c7a4b', label: 'weight w (dashed = target)' }, { color: '#a8720c', label: 'input x (dashed = target)' }] });
   } else if (S.plot === 'tf') {
     const xs = [], wv = [], dv = [], tv = [], dm = Math.min(g.FSR / 2, 12 * g.fwhm);
     for (let i = 0; i <= 400; i++) { const d = dm * i / 400, q = adddrop(2 * PI * d / g.FSR, S.r, g.a); xs.push(d * 1000); wv.push(q.D - q.T); dv.push(q.D); tv.push(q.T); }
     setTxt('plotNote', 'Single add-drop ring: weight as a function of the detuning of its resonance from the channel');
     linePlot(cPlot, { x0: 0, x1: dm * 1000, y0: -1.05, y1: 1.05, xlabel: 'Resonance detuning δλ (pm)', ylabel: 'Value',
-      series: [{ x: xs, y: dv, color: '#5fd38d', dash: [6, 4], width: 1.4 }, { x: xs, y: tv, color: '#4aa8ff', dash: [6, 4], width: 1.4 }, { x: xs, y: wv, color: '#fff', width: 2.4 }],
+      series: [{ x: xs, y: dv, color: '#2c7a4b', dash: [6, 4], width: 1.4 }, { x: xs, y: tv, color: '#1f5fa8', dash: [6, 4], width: 1.4 }, { x: xs, y: wv, color: '#fff', width: 2.4 }],
       points: sl.dw.map((d, k) => ({ x: d * 1000, y: (q => q.D - q.T)(adddrop(2 * PI * d / g.FSR, S.r, g.a)), color: chCol(k, M) })),
       vlines: [{ x: g.fwhm * 500, color: 'rgba(255,204,102,0.6)', label: 'HWHM' }],
-      legend: [{ color: '#fff', label: 'w = D − T' }, { color: '#5fd38d', label: 'drop D', dash: [6, 4] }, { color: '#4aa8ff', label: 'through T', dash: [6, 4] }] });
+      legend: [{ color: '#fff', label: 'w = D − T' }, { color: '#2c7a4b', label: 'drop D', dash: [6, 4] }, { color: '#1f5fa8', label: 'through T', dash: [6, 4] }] });
   } else {
     const xs = [], e0 = [], e1 = [], keep = { dl: S.dl, cal: S.cal };
     for (let i = 0; i <= 24; i++) {
@@ -434,9 +478,9 @@ function drawPlot() {
     Object.assign(S, keep);
     setTxt('plotNote', `RMS weight error for the current target weights, versus channel spacing in units of the ring linewidth (${(g.fwhm * 1000).toFixed(0)} pm)`);
     linePlot(cPlot, { x0: 1, x1: 12, y0: 1e-4, y1: 1, ylog: true, xlabel: 'Channel spacing / FWHM', ylabel: 'RMS weight error',
-      series: [{ x: xs, y: e0.map(v => Math.max(v, 1e-4)), color: '#ff9548', width: 2.2 }, { x: xs, y: e1.map(v => Math.max(v, 1e-4)), color: '#5fd38d', width: 2.2 }],
-      vlines: [{ x: S.dl / g.fwhm, color: 'rgba(255,255,255,0.6)', label: 'current' }],
-      legend: [{ color: '#ff9548', label: 'independent rings' }, { color: '#5fd38d', label: 'crosstalk-compensated' }] });
+      series: [{ x: xs, y: e0.map(v => Math.max(v, 1e-4)), color: '#c0571a', width: 2.2 }, { x: xs, y: e1.map(v => Math.max(v, 1e-4)), color: '#2c7a4b', width: 2.2 }],
+      vlines: [{ x: S.dl / g.fwhm, color: 'rgba(31,29,26,0.55)', label: 'current' }],
+      legend: [{ color: '#c0571a', label: 'independent rings' }, { color: '#2c7a4b', label: 'crosstalk-compensated' }] });
   }
 }
 /* ------------------------------------------------ readouts */

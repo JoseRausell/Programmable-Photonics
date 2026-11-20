@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MZI Interactive Lab – Thermo-optic phase shifter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 :root{
   --bg:#0c1016; --card:#141a22; --card2:#10151c; --line:#243041; --text:#e6edf3; --muted:#8b98a9;
@@ -88,6 +89,49 @@ a.back{color:#ffcc66;text-decoration:none;font-size:13px;border:1px solid #4a3d1
 .row .unit{color:var(--muted);font-size:12px;min-width:18px;text-align:left}
 .row .extra{color:var(--muted);font-size:11.5px;white-space:nowrap}
 .cfgsel{background:#1f1a0e;color:var(--accent);border:1px solid #6b5a2b;border-radius:9px;padding:6px 10px;font:inherit;font-size:13.5px;cursor:pointer}
+
+/* ===== style-lab override ===== */
+
+:root{--bg:#f3efe6;--card:#fbf9f4;--card2:#f7f3ea;--line:#d8d0c0;--text:#1f1d1a;--muted:#6f685c;--accent:#c23b22;--laser:#c23b22}
+html,body{font:15.5px/1.55 "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;background:var(--bg);color:var(--text)}
+header{border-bottom:1px solid var(--text);padding:22px 28px 14px;margin:0 0 6px}
+header h1{font-size:34px;font-weight:400;letter-spacing:-.01em} header .sub{font-style:italic;font-size:14.5px}
+a.back{background:none;border:0;color:var(--accent);font-style:italic;font-size:14.5px;padding:0} a.back:hover{background:none;text-decoration:underline}
+main{gap:26px 36px;padding:14px 28px 30px}
+.card{background:transparent;border:0;border-top:1px solid var(--text);border-radius:0;padding:12px 0 0}
+.card h2{font:italic 15px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif;text-transform:none;letter-spacing:0;color:var(--muted)}
+#c3d{background:radial-gradient(ellipse at 50% 40%,#f1ece2 0%,#e2dccf 80%);border:1px solid var(--line);border-radius:0}
+#cPlot,#cP2{background:#fbf9f4;border:1px solid var(--line);border-radius:0}
+.toolbar{color:var(--muted)}
+.seg{border-radius:0;border-color:var(--text)} .seg button{color:var(--muted);font:italic 14px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif} .seg button+button{border-color:var(--text)} .seg button.on{background:var(--text);color:#fbf9f4}
+.group{background:transparent;border:0;border-left:2px solid var(--line);border-radius:0;padding:4px 0 4px 14px}
+.group h3{color:var(--accent);font:italic 16px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif}
+.row .lab{color:#4b463d;font-size:14px} .row input[type=range]{accent-color:var(--accent)}
+input[type=number],.numin{background:#fff;color:var(--text);border-color:var(--line);border-radius:0}
+.btn{border-radius:0;background:transparent;border:1px solid var(--text);color:var(--text);font:italic 14px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif}
+.btn:hover{background:var(--text);color:#fbf9f4} .btn.primary{background:var(--text);color:#fbf9f4;border-color:var(--text)}
+.ro{background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:4px 0}
+.ro .k{font-style:italic;font-size:13px} .ro .v{font-weight:400;font-size:18px}
+.th{background:transparent;border:0;border-top:1px solid var(--line);border-radius:0;padding:12px 0}
+.th h3{color:var(--accent);font-weight:400;font-size:19px} .th p,.th li{color:#3b372f!important;font-size:15px}
+.eq,table.fm td.f{color:var(--text)} .frac>span:first-child{border-color:var(--text)} .smat{border-color:var(--text)}
+.live{background:#f6e4dd;border-color:#e6bcae;color:var(--accent)}
+table.fm td{color:#3b372f;border-color:var(--line)}
+.cfgsel{background:#fff;color:var(--text);border-color:var(--text);border-radius:0}
+.gdshead .gdsseg{border-radius:0;border-color:var(--text)} .gdshead .gdsseg button{color:var(--muted);font:italic 14px "Newsreader","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L",Georgia,serif} .gdshead .gdsseg button.on{background:var(--text);color:#fbf9f4}
+
+select.sm{background:#fff;color:var(--text);border:1px solid var(--text);border-radius:0;font:14px var(--serif, inherit)}
+#cMesh,#cNet,#cSch,#cStep,.schem,#cF{border-radius:0!important}
+.mt td{background:#fbf9f4;border-color:#d8d0c0;border-radius:0;color:var(--text)}
+.mt td.z{color:#b5ad9f;background:#f3efe6}
+.mt td.zn{color:#2c7a4b;background:#e3efe5;border-color:#9cc7a8}
+.mt td.inv{background:#f6ecd5;border-color:#d9b46a}
+.mt td.ab{background:#f6e4dd;border-color:var(--accent);color:var(--text)}
+.mt td.dg{background:#e3ecf6;border-color:#7fa7d6;color:#1f4e79}
+.sx .f{color:var(--text);background:#fff;border-color:var(--line);border-radius:0}
+.dots i{background:#d8d0c0}
+.selbox{border-color:#d9b46a;background:#f7f0e0;border-radius:0}
+.tabs button.on{background:#f6e4dd}
 </style>
 </head>
 <body>
@@ -383,8 +427,8 @@ function niceTicks(a, b, n) {
   return t;
 }
 function tickFmt(v) { const a = Math.abs(v); return a === 0 ? '0' : a >= 100 ? v.toFixed(0) : a >= 10 ? v.toFixed(0) : a >= 1 ? (+v.toFixed(2)).toString() : (+v.toFixed(3)).toString(); }
-const FONT = '12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-function tag(ctx, x, y, text, color, bg = 'rgba(12,16,22,0.85)', align = 'center') {
+const FONT = '13px \"Newsreader\",\"Iowan Old Style\",\"Palatino Linotype\",\"Book Antiqua\",Palatino,\"URW Palladio L\",Georgia,serif';
+function tag(ctx, x, y, text, color, bg = 'rgba(251,249,244,0.94)', align = 'center') {
   ctx.font = FONT; const w = ctx.measureText(text).width + 10;
   let x0 = align === 'center' ? x - w / 2 : align === 'left' ? x : x - w;
   ctx.fillStyle = bg; roundRect(ctx, x0, y - 9, w, 18, 4); ctx.fill();
@@ -414,7 +458,7 @@ function drawPlot() {
   const X = v => m.l + (v - x0) / (x1 - x0) * pw, Y = v => m.t + (1 - (v - y0) / (y1 - y0)) * ph;
   const yv = p => lin ? p : Math.max(-40, dB(p));
   plotGeom = { m, pw, ph, x0, x1, X };
-  ctx.fillStyle = '#0e131a'; ctx.fillRect(m.l, m.t, pw, ph);
+  ctx.fillStyle = '#fbf9f4'; ctx.fillRect(m.l, m.t, pw, ph);
 
   ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
   // ---- Pπ bands (heater-induced Δφ = kπ)
@@ -436,7 +480,7 @@ function drawPlot() {
   // ---- grid
   const xt = niceTicks(x0, x1, Math.max(3, Math.round(pw / 90)));
   const yt = lin ? [0, 0.2, 0.4, 0.6, 0.8, 1.0] : [-40, -30, -20, -10, 0];
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(31,29,26,0.08)'; ctx.lineWidth = 1;
   for (const t of xt) { ctx.beginPath(); ctx.moveTo(X(t), m.t); ctx.lineTo(X(t), m.t + ph); ctx.stroke(); }
   for (const t of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(t)); ctx.lineTo(m.l + pw, Y(t)); ctx.stroke(); }
 
@@ -452,8 +496,8 @@ function drawPlot() {
     }
     ctx.strokeStyle = color; ctx.lineWidth = 2.2; ctx.lineJoin = 'round'; ctx.stroke();
   };
-  if (S.showCross) curve('cross', '#ff9548');
-  if (S.showBar) curve('bar', '#4aa8ff');
+  if (S.showCross) curve('cross', '#c0571a');
+  if (S.showBar) curve('bar', '#1f5fa8');
 
   // ---- unreachable (source limits) hatch
   let sStart = null;
@@ -464,7 +508,7 @@ function drawPlot() {
     if ((ok || i === NS) && sStart !== null) {
       const A = X(sStart), B = X(ok ? xv : x1);
       ctx.fillStyle = hatchPattern(ctx); ctx.fillRect(A, m.t, B - A, ph);
-      if (B - A > 110) tag(ctx, (A + B) / 2, m.t + ph - 14, 'beyond source limits', '#c9d3de');
+      if (B - A > 110) tag(ctx, (A + B) / 2, m.t + ph - 14, 'beyond source limits', '#2b2925');
       sStart = null;
     }
   }
@@ -476,8 +520,8 @@ function drawPlot() {
     ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.2;
     ctx.beginPath(); ctx.moveTo(px, m.t); ctx.lineTo(px, m.t + ph); ctx.stroke(); ctx.setLineDash([]);
     const dot = (val, col) => { ctx.beginPath(); ctx.arc(px, Y(yv(val)), 5, 0, 2 * PI); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); };
-    if (S.showCross) dot(t.cross, '#ff9548');
-    if (S.showBar) dot(t.bar, '#4aa8ff');
+    if (S.showCross) dot(t.cross, '#c0571a');
+    if (S.showBar) dot(t.bar, '#1f5fa8');
   }
   // ---- hover
   if (S.hover && S.hover.x >= m.l && S.hover.x <= m.l + pw && S.hover.y >= m.t && S.hover.y <= m.t + ph) {
@@ -504,31 +548,31 @@ function drawPlot() {
   // ---- Pπ bracket above the plot
   if (band1) {
     const yb = m.t - 9, A = band1.A, B = band1.B;
-    ctx.strokeStyle = '#ffcc66'; ctx.lineWidth = 1.3; ctx.beginPath();
+    ctx.strokeStyle = '#a8720c'; ctx.lineWidth = 1.3; ctx.beginPath();
     ctx.moveTo(A + 1, yb - 5); ctx.lineTo(A + 1, yb); ctx.lineTo(B, yb); if (band1.full) ctx.lineTo(B, yb - 5); ctx.stroke();
     const txt = band1.full ? `${mode.pi} = ${f3(band1.xb)} ${mode.unit}` : `${mode.pi} = ${f3(band1.xb)} ${mode.unit} (beyond axis)`;
     const extra = S.xmode === 'P' ? `  ·  Iπ = ${f3(Phys.IfromP(S.Ppi))} mA, Vπ = ${f3(Phys.VfromP(S.Ppi))} V` : `  ·  Pπ = ${f3(S.Ppi)} mW`;
     ctx.font = FONT; const wTxt = ctx.measureText(txt + extra).width + 12;
     const cx = clamp((A + B) / 2, m.l + wTxt / 2, m.l + pw - wTxt / 2);
-    tag(ctx, cx, yb - 2, txt + extra, '#ffcc66', 'rgba(30,24,10,0.95)');
+    tag(ctx, cx, yb - 2, txt + extra, '#a8720c', 'rgba(30,24,10,0.95)');
   }
 
   // ---- axes
-  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
-  ctx.fillStyle = '#9fb0c3'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.strokeStyle = '#1f1d1a'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  ctx.fillStyle = '#6f685c'; ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
   for (const t of xt) ctx.fillText(tickFmt(t), X(t), m.t + ph + 6);
   ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
   for (const t of yt) ctx.fillText(lin ? t.toFixed(1) : t, m.l - 6, Y(t));
-  ctx.fillStyle = '#c9d3de'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#2b2925'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
   ctx.fillText(S.cfg === 'single' ? mode.label : `Heater ${S.sweep} · ` + mode.label.replace(/^Heater /, ''), m.l + pw / 2, h - 8);
   ctx.save(); ctx.translate(15, m.t + ph / 2); ctx.rotate(-PI / 2);
   ctx.fillText(lin ? 'Normalized optical transmission' : 'Optical transmission (dB)', 0, 0); ctx.restore();
   // ---- legend
   let lx = m.l; const ly = 16; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
-  const leg = (draw, text) => { draw(lx, ly); ctx.fillStyle = '#c9d3de'; ctx.fillText(text, lx + 22, ly); lx += 30 + ctx.measureText(text).width; };
+  const leg = (draw, text) => { draw(lx, ly); ctx.fillStyle = '#2b2925'; ctx.fillText(text, lx + 22, ly); lx += 30 + ctx.measureText(text).width; };
   const lineSw = c => (x, y) => { ctx.strokeStyle = c; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 16, y); ctx.stroke(); };
-  if (S.showBar) leg(lineSw('#4aa8ff'), 'Out 1 (bar) |E₁|²');
-  if (S.showCross) leg(lineSw('#ff9548'), 'Out 2 (cross) |E₂|²');
+  if (S.showBar) leg(lineSw('#1f5fa8'), 'Out 1 (bar) |E₁|²');
+  if (S.showCross) leg(lineSw('#c0571a'), 'Out 2 (cross) |E₂|²');
   leg((x, y) => { ctx.fillStyle = 'rgba(255,204,102,0.35)'; ctx.fillRect(x, y - 7, 16, 14); }, 'Pπ bands (Δφ = π)');
 }
 function plotSetI(px) {
@@ -785,31 +829,31 @@ function draw3D(time) {
   drawLayer(ctx, C, LAYERS[3], st, false);
   drawHeat(ctx, C, st, time);
   // labels
-  label3D(ctx, C, [-12.6, Y0, 1.25], S.inp === 'both' ? 'Laser 1' : 'Laser in', '#ff8fa8');
-  if (S.inp === 'both') label3D(ctx, C, [-12.2, -Y0 - 1.1, 0.9], `Laser 2 (ψ = ${(S.psi / PI).toFixed(2)}π)`, '#ff8fa8');
-  label3D(ctx, C, [-6.5, 0, 0.95], 'MMI 1', '#c9d3de');
-  label3D(ctx, C, [6.5, 0, 0.95], 'MMI 2', '#c9d3de');
+  label3D(ctx, C, [-12.6, Y0, 1.25], S.inp === 'both' ? 'Laser 1' : 'Laser in', '#c23b22');
+  if (S.inp === 'both') label3D(ctx, C, [-12.2, -Y0 - 1.1, 0.9], `Laser 2 (ψ = ${(S.psi / PI).toFixed(2)}π)`, '#c23b22');
+  label3D(ctx, C, [-6.5, 0, 0.95], 'MMI 1', '#2b2925');
+  label3D(ctx, C, [6.5, 0, 0.95], 'MMI 2', '#2b2925');
   if (S.cfg !== 'dual') label3D(ctx, C, [0, -YA, 0.95], 'reference arm', '#8b98a9');
-  label3D(ctx, C, [0, 3.7, 1.15], `Heater 1 · I₁ = ${o1.I.toFixed(3)} mA · P₁ = ${f3(o1.P)} mW`, '#ffcc66');
-  if (S.cfg === 'dual') label3D(ctx, C, [0, -3.7, 1.15], `Heater 2 · I₂ = ${o2.I.toFixed(3)} mA · P₂ = ${f3(o2.P)} mW`, '#ffcc66');
-  if (S.cfg === 'intext') label3D(ctx, C, [(S.extPos === 'in' ? -1 : 1) * 9.3, 3.4, 1.15], `External · I₂ = ${o2.I.toFixed(3)} mA`, '#ffcc66');
-  if (isFull()) { label3D(ctx, C, [-9.3, 3.4, 1.15], `Input · I₂ = ${o2.I.toFixed(3)} mA`, '#ffcc66'); label3D(ctx, C, [9.3, 3.4, 1.15], `Output · I₃ = ${o3.I.toFixed(3)} mA`, '#ffcc66'); }
-  if (S.cfg === 'u2') label3D(ctx, C, [9.3, -3.4, 1.15], `Output 2 · I₄ = ${opH(4).I.toFixed(3)} mA`, '#ffcc66');
-  label3D(ctx, C, [12.65, Y0, 1.25], `OUT 1 ${(t.bar * 100).toFixed(1)} %`, '#4aa8ff');
-  label3D(ctx, C, [12.65, -Y0, 1.25], `OUT 2 ${(t.cross * 100).toFixed(1)} %`, '#ff9548');
+  label3D(ctx, C, [0, 3.7, 1.15], `Heater 1 · I₁ = ${o1.I.toFixed(3)} mA · P₁ = ${f3(o1.P)} mW`, '#a8720c');
+  if (S.cfg === 'dual') label3D(ctx, C, [0, -3.7, 1.15], `Heater 2 · I₂ = ${o2.I.toFixed(3)} mA · P₂ = ${f3(o2.P)} mW`, '#a8720c');
+  if (S.cfg === 'intext') label3D(ctx, C, [(S.extPos === 'in' ? -1 : 1) * 9.3, 3.4, 1.15], `External · I₂ = ${o2.I.toFixed(3)} mA`, '#a8720c');
+  if (isFull()) { label3D(ctx, C, [-9.3, 3.4, 1.15], `Input · I₂ = ${o2.I.toFixed(3)} mA`, '#a8720c'); label3D(ctx, C, [9.3, 3.4, 1.15], `Output · I₃ = ${o3.I.toFixed(3)} mA`, '#a8720c'); }
+  if (S.cfg === 'u2') label3D(ctx, C, [9.3, -3.4, 1.15], `Output 2 · I₄ = ${opH(4).I.toFixed(3)} mA`, '#a8720c');
+  label3D(ctx, C, [12.65, Y0, 1.25], `OUT 1 ${(t.bar * 100).toFixed(1)} %`, '#1f5fa8');
+  label3D(ctx, C, [12.65, -Y0, 1.25], `OUT 2 ${(t.cross * 100).toFixed(1)} %`, '#c0571a');
   // phase dial
   const cx = 48, cy = h - 50, R = 30;
   ctx.fillStyle = 'rgba(10,14,20,0.75)'; ctx.beginPath(); ctx.arc(cx, cy, R + 10, 0, 2 * PI); ctx.fill();
-  ctx.strokeStyle = '#3a4a60'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * PI); ctx.stroke();
+  ctx.strokeStyle = '#1f1d1a'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * PI); ctx.stroke();
   ctx.strokeStyle = 'rgba(255,204,102,0.9)'; ctx.lineWidth = 4; ctx.beginPath();
   const a0 = -S.theta0, a1 = -tph;
   ctx.arc(cx, cy, R, a0, a1, a1 > a0 ? false : true); ctx.stroke();
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(a1), cy + R * Math.sin(a1)); ctx.stroke();
-  ctx.fillStyle = '#c9d3de'; ctx.font = FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#2b2925'; ctx.font = FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillText(S.cfg === 'dual' ? `Δφ = φ₁ − φ₂ = ${(tph / PI).toFixed(2)}π` : `φ₁ = θ₀ + πP₁/Pπ = ${(tph / PI).toFixed(2)}π`, cx + R + 18, cy - 8);
   ctx.fillStyle = '#8b98a9';
   ctx.fillText(S.cfg === 'u2' ? `φ_in ${(t.p2 / PI).toFixed(2)}π · φ_out ${(t.p3 / PI).toFixed(2)}π, ${(t.p4 / PI).toFixed(2)}π` : isFull() ? `φ_in = ${(t.p2 / PI).toFixed(2)}π · φ_out = ${(t.p3 / PI).toFixed(2)}π` : S.cfg === 'intext' ? `external φ_ext = ${(t.p2 / PI).toFixed(2)}π` : S.cfg === 'dual' ? `φ₁ = ${(t.p1 / PI).toFixed(2)}π · φ₂ = ${(t.p2 / PI).toFixed(2)}π` : `heater adds ${(o1.P / S.Ppi).toFixed(2)}π`, cx + R + 18, cy + 10);
-  ctx.fillStyle = 'rgba(139,152,169,0.8)'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(80,74,64,0.85)'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
   ctx.fillText('drag: rotate · wheel: zoom · double-click: reset', w - 10, 8);
 }
 // camera interaction
